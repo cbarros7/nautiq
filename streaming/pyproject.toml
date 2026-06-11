@@ -1,0 +1,7 @@
+[project]
+name = "nautiq-streaming"
+version = "0.1.0"
+description = "Motor de Procesamiento Flink para Nautiq"
+# Deberá contener dependencias como:
+# - apache-flink
+# - kafka-python

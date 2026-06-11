@@ -1,0 +1,10 @@
+[project]
+name = "nautiq-api"
+version = "0.1.0"
+description = "Capa Cognitiva de Nautiq (FastAPI + LangGraph)"
+# Deberá contener dependencias como:
+# - fastapi
+# - uvicorn
+# - langgraph
+# - langchain-openai
+# - supabase

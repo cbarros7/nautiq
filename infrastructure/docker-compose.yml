@@ -1,0 +1,9 @@
+version: "3.8"
+# Entorno local de desarrollo para Nautiq
+# Deberá contener servicios para:
+# - Kafka (Confluent)
+# - PostgreSQL (simulando Supabase localmente)
+# - JobManager y TaskManager locales de Flink (opcional)
+
+services:
+  pass
