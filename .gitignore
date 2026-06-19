@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Certificados
+.certs/
+
+# Egg-info
+.egg-info/
+
+.DS_Store

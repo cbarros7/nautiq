@@ -1,0 +1,17 @@
+[project]
+name = "logistica-maritima"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.9"
+dependencies = [
+    "nautiq-ingestion",
+    "python-dotenv>=1.2.2",
+    "websockets>=16.0",
+]
+
+[tool.uv.workspace]
+members = ["ingestion", "streaming"]
+
+[tool.uv.sources]
+nautiq-ingestion = { workspace = true }

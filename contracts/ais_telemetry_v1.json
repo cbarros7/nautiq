@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AIS Telemetry Data Contract v1",
+  "description": "Contrato centralizado de datos (Single Source of Truth) para la ingesta y validación de Flink",
+  "type": "object",
+  "properties": {
+    "mmsi": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lat": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "lon": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "speed": {
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "mmsi",
+    "timestamp",
+    "lat",
+    "lon",
+    "speed"
+  ]
+}
