@@ -1,60 +1,56 @@
+"""
+Servicio de ingesta AIS (Facade) — production-ready.
+
+Responsabilidad ÚNICA: adquirir datos de AIS y publicarlos validados en Kafka.
+Sin lógica de negocio (eso es Flink), sin DLQ, sin enriquecimiento.
+
+  1. Scraper  -> descubre la flota objetivo hacia Valencia/Algeciras/Barcelona.
+  2. Tracker  -> consume los dos endpoints AIS y publica en dos topics Avro:
+                 PositionReport -> vessel.positions.raw
+                 ShipStaticData -> vessel.static.raw
+
+La carga de datos de referencia (THETIS, UN/LOCODE -> PostgreSQL) es independiente
+y se ejecuta aparte (`python -m ingestion.src.reference.thetis|locode`).
+"""
+
 import asyncio
 import sys
-import time
 
-from .config import ConfigProvider, AISSTREAM_API_KEY
-from . import constants
-from .core.ais_client import AISStreamAdapter
-from .core.kafka_publisher import KafkaPublisher
-from .services.target_scraper import TargetScraper
-from .services.telemetry_tracker import TelemetryTracker
+from . import config, constants
+from .ais import scraper
+from .ais.client import AISStreamClient
+from .ais.publisher import build_publishers
+from .ais.tracker import AISTracker
 
 
-async def run_producer_orchestrator():
-    """
-    Patrón Facade.
-    Punto de entrada unificado para la aplicación de ingesta.
-    """
-    print("[INICIO] NÚCLEO DE INGESTA (PRODUCER ORCHESTRATOR)")
+async def run_ingestion_service():
+    print("[INICIO] SERVICIO DE INGESTA AIS -> KAFKA")
 
-    if not AISSTREAM_API_KEY:
+    if not config.AISSTREAM_API_KEY:
         print("[ERROR] AISSTREAM_API_KEY no encontrada en la configuración.")
         sys.exit(1)
 
-    # 1. Inicializar dependencias / Infraestructura (Inyección de Dependencias)
-    config_prov = ConfigProvider()
-    ais_client = AISStreamAdapter(api_key=AISSTREAM_API_KEY)
+    client = AISStreamClient(config.AISSTREAM_API_KEY)
 
-    # En producción este adapter leerá los certificados de Vault
-    kafka_certs = config_prov.get_kafka_certs()
-    kafka_pub = KafkaPublisher(certs=kafka_certs)
+    # 1. Descubrimiento de la flota objetivo (3 puertos).
+    targets = await scraper.find_target_fleet(client, constants.SCRAPER_DURATION_SECONDS)
 
-    # 2. Inicializar Servicios (Reglas de negocio)
-    scraper = TargetScraper(ais_client=ais_client)
-    tracker = TelemetryTracker(ais_client=ais_client, kafka_pub=kafka_pub)
+    # 2. Publicación a Kafka (Avro + Schema Registry).
+    publishers = build_publishers()
+    tracker = AISTracker(client, publishers, rate_limit=constants.PUBLISH_RATE_LIMIT)
 
-    # 3. Flujo Lógico de Ingesta (El pipeline)
-    print("--- FASE 1: ADQUISICIÓN DE OBJETIVOS ---")
-    target_mmsis = await scraper.find_fleet_to_valencia(
-        duration=constants.SCRAPER_DURATION_SECONDS
-    )
+    # Paralelismo: una conexión por puerto si la cuota de keys lo permite; si no,
+    # una sola conexión sobre el Mediterráneo occidental (cubre los tres puertos).
+    if constants.AIS_MAX_CONNECTIONS >= len(constants.PORTS):
+        bboxes = [p["bbox"] for p in constants.PORTS.values()]
+    else:
+        bboxes = [constants.WESTERN_MED_BBOX]
 
-    if not target_mmsis:
-        print("[INFO] No se encontraron barcos de carga hacia Valencia. Finalizando.")
-        return
-
-    print(
-        f"\n--- FASE 2: RASTREO Y PUBLICACIÓN A KAFKA ({len(target_mmsis)} barcos) ---"
-    )
-    await tracker.monitor_fleet_and_port(
-        target_mmsis=target_mmsis, duration=constants.TRACKER_DURATION_SECONDS
-    )
-
-    print("[FIN] ORQUESTADOR FINALIZADO CON ÉXITO")
+    await tracker.run(bboxes, filter_mmsis=list(targets) or None)
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(run_producer_orchestrator())
+        asyncio.run(run_ingestion_service())
     except KeyboardInterrupt:
-        print("\n[INTERRUPCIÓN] Orquestador detenido por el usuario.")
+        print("\n[INTERRUPCIÓN] Servicio de ingesta detenido por el usuario.")

@@ -1,28 +1,42 @@
+"""Constantes de dominio de Ingestion (puertos objetivo, tipos de buque)."""
+
 import os
 
 # ==========================================
-# CONSTANTES DE NEGOCIO Y DOMINIO
+# PUERTOS OBJETIVO (bounding boxes + destinos AIS)
 # ==========================================
+# Formato AISStream: [[[lat1, lon1], [lat2, lon2]]].
+PORTS = {
+    "valencia": {
+        "locode": "ESVLC",
+        "bbox": [[[39.176027, -0.344696], [39.659786, 0.466919]]],
+        "dest_keywords": ["VAL", "VLC", "ESVLC"],
+    },
+    "algeciras": {
+        "locode": "ESALG",
+        "bbox": [[[35.997, -5.520], [36.180, -5.330]]],
+        "dest_keywords": ["ALG", "ESALG", "ALGECIRAS"],
+    },
+    "barcelona": {
+        "locode": "ESBCN",
+        "bbox": [[[41.300, 2.090], [41.400, 2.260]]],
+        "dest_keywords": ["BCN", "ESBCN", "BARCELONA"],
+    },
+}
 
-# Bounding box global para buscar barcos en todo el mundo
-GLOBAL_BOUNDING_BOX = [[[-90, -180], [90, 180]]]
+# Mediterráneo occidental: cobertura común de aproximación a los tres puertos.
+WESTERN_MED_BBOX = [[[35.0, -6.0], [44.0, 10.0]]]
 
-# Bounding box del Puerto de Valencia y alrededores
-VALENCIA_BOUNDING_BOX = [[[39.176027, -0.344696], [39.659786, 0.466919]]]
-
-# Tipos de barcos de carga según el estándar AIS (70-79)
+# Tipos de barco de carga según el estándar AIS (70-79).
 CARGO_SHIP_TYPES = set(range(70, 80))
 
-
 # ==========================================
-# CONFIGURACIÓN TEMPORAL DEL PROTOTIPO MVP
+# OPERACIÓN
 # ==========================================
-
-# Tiempos de ejecución en segundos
-SCRAPER_DURATION_SECONDS = 5 * 60  # 5 minutos
-TRACKER_DURATION_SECONDS = 30 * 60  # 30 minutos
-
-# Ruta para el JSON temporal (relativa a la raíz del proyecto)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-TMP_DIR = os.path.join(BASE_DIR, "tmp")
-MMSI_TARGETS_FILE = os.path.join(TMP_DIR, "mmsi_targets.json")
+# Conexiones AIS concurrentes (paralelismo del tracker). AISStream limita a 1 por
+# API key; >1 requiere keys/cuentas adicionales.
+AIS_MAX_CONNECTIONS = int(os.getenv("AIS_MAX_CONNECTIONS", "1"))
+# Rate limit defensivo de publicación a Kafka (mensajes/seg, 0 = sin límite).
+PUBLISH_RATE_LIMIT = int(os.getenv("PUBLISH_RATE_LIMIT", "0"))
+# Duración de la fase de scraping de objetivos (s).
+SCRAPER_DURATION_SECONDS = int(os.getenv("SCRAPER_DURATION_SECONDS", str(5 * 60)))

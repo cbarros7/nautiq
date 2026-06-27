@@ -1,0 +1,99 @@
+"""
+AIS Tracker — consume los dos endpoints AIS y publica en dos topics Kafka.
+
+Responsabilidad única (§2 Services):
+  PositionReport  -> validar (contrato) -> Avro -> topic `vessel.positions.raw`
+  ShipStaticData  -> validar (contrato) -> Avro -> topic `vessel.static.raw`
+
+Gestiona:
+  - **Paralelismo**: una tarea asyncio por bounding box (`constants.AIS_MAX_CONNECTIONS`).
+  - **Rate limit**: token bucket asíncrono opcional para la publicación.
+  - **Reintentos**: reconexión + backoff exponencial en `AISStreamClient`.
+
+SIN lógica de negocio: nada de plausibilidad, DLQ ni enriquecimiento (eso es Flink).
+Los mensajes que no cumplen el contrato simplemente NO se publican.
+"""
+
+import asyncio
+import time
+
+from .. import constants
+from .client import AISStreamClient
+from .models import AISPosition, AISStatic, ContractError
+from .publisher import AvroTopicPublisher
+
+
+class _RateLimiter:
+    """Token bucket asíncrono simple (msgs/seg). rate<=0 -> sin límite."""
+
+    def __init__(self, rate: int):
+        self._interval = 1.0 / rate if rate > 0 else 0.0
+        self._next = 0.0
+
+    async def acquire(self) -> None:
+        if self._interval <= 0:
+            return
+        now = time.monotonic()
+        wait = self._next - now
+        if wait > 0:
+            await asyncio.sleep(wait)
+        self._next = max(now, self._next) + self._interval
+
+
+class AISTracker:
+    """Orquesta consumo AIS -> validación -> publicación Avro a Kafka."""
+
+    def __init__(self, client: AISStreamClient, publishers: dict[str, AvroTopicPublisher],
+                 rate_limit: int = 0):
+        self.client = client
+        self.pos_pub = publishers["position"]
+        self.static_pub = publishers["static"]
+        self.limiter = _RateLimiter(rate_limit)
+        self.stats = {"position": 0, "static": 0, "rejected": 0}
+
+    async def _handle(self, message: dict) -> None:
+        mtype = message.get("MessageType")
+        if mtype == "PositionReport":
+            try:
+                pos = AISPosition.from_message(message)
+            except ContractError:
+                self.stats["rejected"] += 1
+                return
+            await self.limiter.acquire()
+            self.pos_pub.publish(pos.model_dump(), mmsi=pos.mmsi)
+            self.stats["position"] += 1
+        elif mtype == "ShipStaticData":
+            try:
+                static = AISStatic.from_message(message)
+            except ContractError:
+                self.stats["rejected"] += 1
+                return
+            await self.limiter.acquire()
+            self.static_pub.publish(static.model_dump(), mmsi=static.mmsi)
+            self.stats["static"] += 1
+
+    async def _consume_bbox(self, bbox, filter_mmsis) -> None:
+        """Una conexión AIS (ambos endpoints) sobre un bounding box."""
+        stream = self.client.stream(
+            bounding_boxes=bbox,
+            message_types=["PositionReport", "ShipStaticData"],
+            filter_mmsis=filter_mmsis,
+        )
+        async for message in stream:
+            await self._handle(message)
+
+    async def run(self, bounding_boxes_list, filter_mmsis=None) -> None:
+        """
+        Lanza una tarea por bounding box (hasta AIS_MAX_CONNECTIONS) y corre hasta
+        cancelación. Cada tarea reconecta con backoff por sí misma.
+        """
+        boxes = bounding_boxes_list[: constants.AIS_MAX_CONNECTIONS]
+        print(f"[INICIO][Tracker] {len(boxes)} conexión(es) AIS -> topics "
+              f"{self.pos_pub.topic} / {self.static_pub.topic}")
+        tasks = [asyncio.create_task(self._consume_bbox(b, filter_mmsis)) for b in boxes]
+        try:
+            await asyncio.gather(*tasks)
+        finally:
+            self.pos_pub.flush()
+            self.static_pub.flush()
+            print(f"[FIN][Tracker] {self.stats}")

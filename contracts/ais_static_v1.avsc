@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "namespace": "io.nautiq.ais",
+  "name": "ShipStatic",
+  "doc": "Contrato v1 del topic 'vessel.static.raw' (AIS ShipStaticData validado). El maestro de buques se construye en Flink a partir de este topic (NO en ingestion). Fuente de verdad para Schema Registry (Avro).",
+  "fields": [
+    { "name": "mmsi", "type": "long", "doc": "Maritime Mobile Service Identity (partition key)." },
+    { "name": "imo", "type": ["null", "long"], "default": null, "doc": "Número IMO; null si AIS reporta 0." },
+    { "name": "name", "type": ["null", "string"], "default": null, "doc": "Nombre del buque (relleno '@' limpiado)." },
+    { "name": "callsign", "type": ["null", "string"], "default": null },
+    { "name": "ship_type", "type": ["null", "int"], "default": null, "doc": "Tipo AIS (carga = 70-79)." },
+    { "name": "length_m", "type": ["null", "int"], "default": null, "doc": "Eslora = Dimension A + B." },
+    { "name": "beam_m", "type": ["null", "int"], "default": null, "doc": "Manga = Dimension C + D." },
+    { "name": "draught_m", "type": ["null", "double"], "default": null, "doc": "Calado máximo estático." },
+    { "name": "destination", "type": ["null", "string"], "default": null, "doc": "Destino AIS (texto libre)." },
+    { "name": "eta", "type": ["null", "string"], "default": null, "doc": "ETA AIS cruda (texto)." }
+  ]
+}
