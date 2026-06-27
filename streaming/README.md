@@ -80,6 +80,58 @@ La API ejecuta la capa cognitiva (oráculo matemático + LLM) y emite la recomen
 | Kafka `*.dlq` | Eventos inválidos con ULID para auditoría. |
 | PostgreSQL | **Solo lectura** desde Flink: `ports`, `thetis_mrv` (referencia). |
 
+## Nice to have: índice de congestión portuaria
+
+> Extensión futura del apartado 5. No bloquea el MVP.
+
+### Concepto
+
+El índice se calcula **solo con el stream AIS**, sin fuentes externas de capacidad.
+El denominador no es la capacidad teórica del puerto (difícil de obtener y estática)
+sino el **baseline empírico derivado de los propios datos históricos**.
+
+```
+congestion_score(puerto, t) = buques_atracados_ahora / media_buques_atracados_últimos_30d
+```
+
+| Score | Interpretación |
+|-------|----------------|
+| < 0.7 | Infrautilizado — puerto con holgura |
+| 0.7 – 1.3 | Operación normal |
+| > 1.5 | Congestionado — posible cola |
+| > 2.0 | Saturado — activar alerta JIT |
+
+### Señales AIS utilizadas
+
+| Campo | `nav_status` | Significado |
+|-------|-------------|-------------|
+| Atracado en muelle | `5` | Ocupa berth productivo |
+| Fondeado en rada | `1` | En cola, esperando berth |
+| En ruta hacia puerto | `0` | Tráfico entrante próximo |
+
+La **cola en rada** (`nav_status=1` dentro del bbox del puerto) es el indicador
+más temprano de congestión inminente: aparece antes de que los berths se llenen.
+
+### Implementación Flink
+
+```
+vessel.positions.raw
+  └─▶ filter: bbox ∩ {nav_status ∈ [0,1,5]}
+  └─▶ keyBy(port)                          ← asignar puerto por bbox
+  └─▶ TumblingEventTimeWindow(5 min)
+        count por nav_status
+  └─▶ AggregateFunction
+        moored_now   = count(nav_status=5)
+        anchored_now = count(nav_status=1)
+  └─▶ LEFT JOIN con tabla baseline (PostgreSQL / Delta Lake)
+        baseline = avg(moored_5min) OVER últimos 30 días
+  └─▶ score = moored_now / baseline
+  └─▶ side output → webhook API si score > umbral configurable
+```
+
+El baseline se recalcula diariamente con un job batch sobre Delta Lake (capa Silver).
+No se necesita ninguna fuente externa de capacidad portuaria.
+
 ## Implementación futura (pendiente)
 
 - Job PyFlink: sources Avro, `KeyedProcessFunction` con `ValueState`, side outputs.

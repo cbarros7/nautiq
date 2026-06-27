@@ -13,6 +13,7 @@ DERIVA para los buques que reportan trabajo de transporte en base "dwt carried"
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -55,13 +56,16 @@ def _find_col(columns, *keywords, exclude=()):
 
 def _read_raw(path: Path) -> pd.DataFrame:
     read = pd.read_excel if path.suffix.lower() in {".xlsx", ".xls"} else pd.read_csv
-    preview = read(path, header=None, nrows=15, dtype=str)
-    header_row = 0
-    for i in range(len(preview)):
-        if preview.iloc[i].astype(str).str.contains("imo", case=False, na=False).any():
-            header_row = i
-            break
-    return read(path, header=header_row)
+    with warnings.catch_warnings():
+        # El Excel de EMSA no incluye estilo por defecto; openpyxl avisa pero carga bien.
+        warnings.filterwarnings("ignore", "Workbook contains no default style", UserWarning)
+        preview = read(path, header=None, nrows=15, dtype=str)
+        header_row = 0
+        for i in range(len(preview)):
+            if preview.iloc[i].astype(str).str.contains("imo", case=False, na=False).any():
+                header_row = i
+                break
+        return read(path, header=header_row)
 
 
 def _to_num(series: pd.Series) -> pd.Series:
