@@ -232,3 +232,6 @@ data/reference/
 .egg-info/
 
 .DS_Store
+
+#claude
+.claude/
