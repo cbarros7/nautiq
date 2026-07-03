@@ -1,10 +1,14 @@
 # Ingestion — adquisición de datos y publicación en Kafka
 
-Tras el refactor, Ingestion tiene **una responsabilidad única**: adquirir datos de
-fuentes externas, validarlos con Pydantic contra los contratos de `contracts/`,
-serializarlos con **Avro (Schema Registry)** y publicarlos en Kafka. **Sin lógica de
-negocio**: nada de plausibilidad, DLQ, enriquecimiento ni maestro de buques — todo
-eso vive en Flink (ver `streaming/README.md`).
+Ingestion tiene **una responsabilidad única**: adquirir datos de fuentes externas,
+validarlos con Pydantic contra los contratos de `contracts/`, serializarlos con
+**Avro (Schema Registry)** y publicarlos en Kafka. **Sin lógica de negocio**: nada de
+plausibilidad, enriquecimiento ni maestro de buques — todo eso vive en Flink
+(ver `streaming/README.md`).
+
+Los mensajes que no superan el contrato Pydantic se publican en la **DLQ de contrato**
+(`KAFKA_TOPIC_DLQ`) en JSON plano con la razón del fallo. La validación semántica
+(buque en tierra, salto imposible, spoofing) es responsabilidad de Flink.
 
 ## Estructura
 
@@ -35,11 +39,20 @@ uv run python main.py
 
 | Endpoint AIS | Topic Kafka | Contrato |
 |--------------|-------------|----------|
-| PositionReport | `vessel.positions.raw` | `contracts/ais_position_v1.avsc` |
-| ShipStaticData | `vessel.static.raw` | `contracts/ais_static_v1.avsc` |
+| PositionReport | `KAFKA_TOPIC_POSITIONS` | `contracts/ais_position_v1.avsc` |
+| ShipStaticData | `KAFKA_TOPIC_STATIC` | `contracts/ais_static_v1.avsc` |
+| Fallo de contrato | `KAFKA_TOPIC_DLQ` | JSON plano `{reason, message_type, raw}` |
 
-MMSI como **partition key**; ULID de linaje en **headers**. Mensajes que no cumplen
-el contrato **no se publican** (no hay DLQ en Ingestion).
+MMSI como **partition key**; ULID de linaje en **headers** (topics principales y DLQ).
+
+#### DLQ de contrato
+`ContractError` se lanza cuando Pydantic rechaza el mensaje crudo. Dos causas:
+- **Campo inválido**: `lat` fuera de `[-90, 90]`, `mmsi ≤ 0`, `speed < 0`, etc.
+- **Campo ausente o tipo incorrecto**: el mensaje AIS no trae un campo obligatorio o no es convertible.
+
+El payload en la DLQ incluye la razón textual y el mensaje AIS original completo para
+facilitar la depuración del contrato. La validación **semántica** (buque en tierra,
+salto imposible, spoofing) no ocurre aquí — es responsabilidad de Flink.
 
 ### 2. Carga de referencia (point-in-time -> PostgreSQL)
 ```bash
@@ -64,8 +77,10 @@ coordenadas**, por lo que no sirve para enrutar. **Decisión: persistir** el dat
 ## Configuración (entorno)
 
 `AISSTREAM_API_KEY`, `KAFKA_BROKER_URL` + certs SSL, `KAFKA_SCHEMA_REGISTRY_URL`
-(+ `KAFKA_SCHEMA_REGISTRY_AUTH`), `KAFKA_TOPIC_POSITIONS`/`KAFKA_TOPIC_STATIC`,
-`PG*` (PostgreSQL), `AIS_MAX_CONNECTIONS`, `PUBLISH_RATE_LIMIT`.
+(+ `KAFKA_SCHEMA_REGISTRY_AUTH`), `KAFKA_TOPIC_POSITIONS`, `KAFKA_TOPIC_STATIC`,
+`KAFKA_TOPIC_DLQ`, `PG*` (PostgreSQL), `AIS_MAX_CONNECTIONS`, `PUBLISH_RATE_LIMIT`.
+
+Ver `.env.example` en la raíz del proyecto para la plantilla completa.
 
 > El código es production-ready pero no se ejecuta contra Supabase/Kafka reales en
 > local; configura el entorno y despliega (imágenes ARM64 en OCI).
