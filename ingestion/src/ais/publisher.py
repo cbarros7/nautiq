@@ -5,16 +5,17 @@ Un `AvroTopicPublisher` por topic (cada uno con su esquema de `contracts/`). La
 clave de partición es el **MMSI** (orden causal por buque en Flink; evita el
 round-robin). El **ULID** de linaje viaja en los *headers* de Kafka.
 
-> Production-ready: la conexión real a Aiven Kafka + Schema Registry se configura
-> por entorno (ver `config.py`). No publica en infra real en local.
+`DLQPublisher` publica en JSON plano (sin Avro) los mensajes que no superan el
+contrato Pydantic, incluyendo la razón del fallo.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import ulid
-from confluent_kafka import SerializingProducer
+from confluent_kafka import Producer, SerializingProducer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.avro import AvroSerializer
 from confluent_kafka.serialization import StringSerializer
@@ -72,6 +73,52 @@ class AvroTopicPublisher:
         return self._producer.flush(timeout)
 
 
+_SSL_CONF = {
+    "bootstrap.servers": config.KAFKA_BROKER_URL,
+    "security.protocol": "SSL",
+    "ssl.ca.location": config.KAFKA_CERTS["ca"],
+    "ssl.certificate.location": config.KAFKA_CERTS["cert"],
+    "ssl.key.location": config.KAFKA_CERTS["key"],
+}
+
+
+class DLQPublisher:
+    """Publica mensajes rechazados por el contrato Pydantic en JSON plano (sin Avro)."""
+
+    def __init__(self, topic: str):
+        self.topic = topic
+        self._producer = Producer(_SSL_CONF)
+
+    def publish(self, raw_message: dict, *, reason: str) -> None:
+        """Publica el mensaje original + razón del fallo. MMSI como key si está disponible."""
+        mmsi = (raw_message.get("MetaData", {}).get("MMSI")
+                or raw_message.get("Message", {})
+                       .get(raw_message.get("MessageType", ""), {})
+                       .get("UserID"))
+        payload = json.dumps({
+            "reason": reason,
+            "message_type": raw_message.get("MessageType"),
+            "raw": raw_message,
+        }, default=str).encode()
+        headers = [("correlation_id", str(ulid.ULID()).encode())]
+        self._producer.produce(
+            topic=self.topic,
+            key=str(mmsi) if mmsi else None,
+            value=payload,
+            headers=headers,
+            on_delivery=self._on_delivery,
+        )
+        self._producer.poll(0)
+
+    @staticmethod
+    def _on_delivery(err, msg):
+        if err is not None:
+            print(f"[ERROR][DLQ] fallo de entrega en {msg.topic()}: {err}")
+
+    def flush(self, timeout: float = 10.0) -> int:
+        return self._producer.flush(timeout)
+
+
 def build_publishers() -> dict[str, AvroTopicPublisher]:
     """Crea los publicadores de los dos topics AIS (topics obligatorios vía entorno)."""
     if not config.TOPIC_POSITIONS or not config.TOPIC_STATIC:
@@ -83,3 +130,8 @@ def build_publishers() -> dict[str, AvroTopicPublisher]:
         "position": AvroTopicPublisher(config.TOPIC_POSITIONS, "ais_position_v1.avsc"),
         "static": AvroTopicPublisher(config.TOPIC_STATIC, "ais_static_v1.avsc"),
     }
+
+
+def build_dlq_publisher() -> DLQPublisher | None:
+    """Crea el publicador DLQ si KAFKA_TOPIC_DLQ está definido; None si no."""
+    return DLQPublisher(config.TOPIC_DLQ) if config.TOPIC_DLQ else None

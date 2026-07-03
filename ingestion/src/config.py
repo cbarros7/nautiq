@@ -30,6 +30,7 @@ KAFKA_CERTS = {
 # Topics: uno por endpoint AIS. OBLIGATORIOS vía entorno (sin valor por defecto).
 TOPIC_POSITIONS = os.getenv("KAFKA_TOPIC_POSITIONS")
 TOPIC_STATIC = os.getenv("KAFKA_TOPIC_STATIC")
+TOPIC_DLQ = os.getenv("KAFKA_TOPIC_DLQ")
 
 # --- Schema Registry: Aiven (Karapace) ---
 # URI del servicio Karapace de Aiven (puerto aparte del broker) + auth básica avnadmin.

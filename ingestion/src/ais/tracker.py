@@ -20,7 +20,7 @@ import time
 from .. import constants
 from .client import AISStreamClient
 from .models import AISPosition, AISStatic, ContractError
-from .publisher import AvroTopicPublisher
+from .publisher import AvroTopicPublisher, DLQPublisher
 
 
 class _RateLimiter:
@@ -44,10 +44,11 @@ class AISTracker:
     """Orquesta consumo AIS -> validación -> publicación Avro a Kafka."""
 
     def __init__(self, client: AISStreamClient, publishers: dict[str, AvroTopicPublisher],
-                 rate_limit: int = 0):
+                 rate_limit: int = 0, dlq_pub: DLQPublisher | None = None):
         self.client = client
         self.pos_pub = publishers["position"]
         self.static_pub = publishers["static"]
+        self.dlq_pub = dlq_pub
         self.limiter = _RateLimiter(rate_limit)
         self.stats = {"position": 0, "static": 0, "rejected": 0}
 
@@ -56,8 +57,10 @@ class AISTracker:
         if mtype == "PositionReport":
             try:
                 pos = AISPosition.from_message(message)
-            except ContractError:
+            except ContractError as e:
                 self.stats["rejected"] += 1
+                if self.dlq_pub:
+                    self.dlq_pub.publish(message, reason=str(e))
                 return
             await self.limiter.acquire()
             self.pos_pub.publish(pos.model_dump(), mmsi=pos.mmsi)
@@ -65,8 +68,10 @@ class AISTracker:
         elif mtype == "ShipStaticData":
             try:
                 static = AISStatic.from_message(message)
-            except ContractError:
+            except ContractError as e:
                 self.stats["rejected"] += 1
+                if self.dlq_pub:
+                    self.dlq_pub.publish(message, reason=str(e))
                 return
             await self.limiter.acquire()
             self.static_pub.publish(static.model_dump(), mmsi=static.mmsi)
@@ -96,4 +101,6 @@ class AISTracker:
         finally:
             self.pos_pub.flush()
             self.static_pub.flush()
+            if self.dlq_pub:
+                self.dlq_pub.flush()
             print(f"[FIN][Tracker] {self.stats}")

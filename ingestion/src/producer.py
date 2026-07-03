@@ -19,7 +19,7 @@ import sys
 from . import config, constants
 from .ais import scraper
 from .ais.client import AISStreamClient
-from .ais.publisher import build_publishers
+from .ais.publisher import build_dlq_publisher, build_publishers
 from .ais.tracker import AISTracker
 
 
@@ -37,7 +37,9 @@ async def run_ingestion_service():
 
     # 2. Publicación a Kafka (Avro + Schema Registry).
     publishers = build_publishers()
-    tracker = AISTracker(client, publishers, rate_limit=constants.PUBLISH_RATE_LIMIT)
+    dlq_pub = build_dlq_publisher()
+    tracker = AISTracker(client, publishers, rate_limit=constants.PUBLISH_RATE_LIMIT,
+                         dlq_pub=dlq_pub)
 
     # Paralelismo: una conexión por puerto si la cuota de keys lo permite; si no,
     # una sola conexión sobre el Mediterráneo occidental (cubre los tres puertos).
