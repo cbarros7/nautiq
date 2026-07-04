@@ -1,5 +1,5 @@
 """
-Publicador Kafka con serialización **Avro vía Schema Registry** (§2 Services, §3).
+Publicador Kafka con serialización **Avro vía Schema Registry
 
 Un `AvroTopicPublisher` por topic (cada uno con su esquema de `contracts/`). La
 clave de partición es el **MMSI** (orden causal por buque en Flink; evita el

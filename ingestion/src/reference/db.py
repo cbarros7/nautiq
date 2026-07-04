@@ -2,7 +2,7 @@
 Conexión y esquema de las tablas de REFERENCIA en PostgreSQL (Supabase).
 
 La capa Reference hace cargas puntuales (point-in-time) e importa los datos en
-PostgreSQL **exactamente como en producción** (§1/§5). Flink consume estas tablas
+PostgreSQL **exactamente como en producción. Flink consume estas tablas
 (LEFT JOIN por IMO / resolución de destino) para construir y enriquecer el maestro.
 
 Tablas:
@@ -12,32 +12,13 @@ Tablas:
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import psycopg
 
 from .. import config
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS ports (
-    locode   text PRIMARY KEY,
-    name     text,
-    country  text,
-    lat      double precision,
-    lon      double precision
-);
-
-CREATE TABLE IF NOT EXISTS thetis_mrv (
-    imo                 bigint PRIMARY KEY,
-    name                text,
-    ship_type           text,
-    dwt                 numeric,
-    gt                  numeric,
-    eexi                numeric,
-    annual_fuel_t       numeric,
-    annual_distance_nm  numeric,
-    annual_co2_t        numeric,
-    loaded_at           timestamptz DEFAULT now()
-);
-"""
+SCHEMA = (Path(__file__).parent / "schema.sql").read_text(encoding="utf-8")
 
 
 def connect() -> psycopg.Connection:

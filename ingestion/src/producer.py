@@ -8,9 +8,6 @@ Sin lógica de negocio (eso es Flink), sin DLQ, sin enriquecimiento.
   2. Tracker  -> consume los dos endpoints AIS y publica en dos topics Avro:
                  PositionReport -> vessel.positions.raw
                  ShipStaticData -> vessel.static.raw
-
-La carga de datos de referencia (THETIS, UN/LOCODE -> PostgreSQL) es independiente
-y se ejecuta aparte (`python -m ingestion.src.reference.thetis|locode`).
 """
 
 import asyncio
@@ -39,10 +36,8 @@ async def run_ingestion_service():
     publishers = build_publishers()
     dlq_pub = build_dlq_publisher()
     tracker = AISTracker(client, publishers, rate_limit=constants.PUBLISH_RATE_LIMIT,
-                         dlq_pub=dlq_pub)
+                         rate_burst=constants.PUBLISH_RATE_BURST, dlq_pub=dlq_pub)
 
-    # Paralelismo: una conexión por puerto si la cuota de keys lo permite; si no,
-    # una sola conexión sobre el Mediterráneo occidental (cubre los tres puertos).
     if constants.AIS_MAX_CONNECTIONS >= len(constants.PORTS):
         bboxes = [p["bbox"] for p in constants.PORTS.values()]
     else:

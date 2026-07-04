@@ -1,16 +1,3 @@
-"""
-Reference: THETIS-MRV -> tabla `thetis_mrv` en PostgreSQL (§2.2 / §5).
-
-Thetis deja de formar parte del pipeline de streaming: solo mantiene actualizada la
-tabla de referencia que Flink usará (LEFT JOIN por IMO) para enriquecer el maestro.
-
-Fichero anual público de EMSA; la descarga del portal usa reCAPTCHA -> manual
-(`data/reference/thetis_mrv.xlsx`). El loader es tolerante a las cabeceras reales
-(mapeo por palabras clave). OJO: el fichero NO trae DWT/GT directos; el DWT se
-DERIVA para los buques que reportan trabajo de transporte en base "dwt carried"
-(los portacontenedores reportan en otra base -> DWT NULL, sin capacidad).
-"""
-
 from __future__ import annotations
 
 import warnings

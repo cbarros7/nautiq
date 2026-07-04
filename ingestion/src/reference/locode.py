@@ -1,21 +1,3 @@
-"""
-Reference: UN/LOCODE -> tabla `ports` en PostgreSQL.
-
-EVALUACIÓN (§1) — librería `locode` de Python vs persistencia del dataset:
-  * La librería `locode` (PyPI) expone códigos ISO-3166 y ciudades, pero **NO trae
-    coordenadas**. searoute necesita lat/lon, así que la librería NO cubre el caso.
-  * `pyunlocode` parsea el CSV de la UNECE a SQLite (sigue siendo persistencia) y
-    su cobertura de coordenadas es la oficial (~80%, con huecos en puertos clave
-    como Valencia/Algeciras/Barcelona).
-  * Persistir el dataset `improved-un-locodes` (código UNECE + coordenadas
-    decimales de OSM/Wikidata, 98,6%) en PostgreSQL da cobertura completa y queda
-    consultable/joinable por Flink y la API.
-  => DECISIÓN: **persistencia en PostgreSQL** (más simple y mantenible para nuestro
-     caso). La librería se descarta por falta de coordenadas.
-
-El dataset se auto-descarga a `data/reference/un_locode.csv` si falta.
-"""
-
 from __future__ import annotations
 
 import urllib.request

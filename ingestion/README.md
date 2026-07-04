@@ -69,7 +69,7 @@ Flink consume estas tablas (LEFT JOIN por IMO / resolución de destino).
 | UN/LOCODE | `improved-un-locodes` (UNECE + coords OSM/Wikidata); auto-descarga a `data/reference/`. |
 | THETIS-MRV | Fichero anual público de EMSA (**descarga manual**, reCAPTCHA) en `data/reference/thetis_mrv.xlsx`. El fichero NO trae DWT/GT directos: el DWT se **deriva** del trabajo de transporte (solo buques que reportan en base dwt). |
 
-### UN/LOCODE: librería vs persistencia (decisión §1)
+### UN/LOCODE: librería vs persistencia
 Se evaluó la librería `locode` de Python: solo da códigos/ciudades, **sin
 coordenadas**, por lo que no sirve para enrutar. **Decisión: persistir** el dataset
 (con coords) en PostgreSQL — más simple y mantenible, y consultable por Flink/API.

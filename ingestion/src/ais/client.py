@@ -2,7 +2,7 @@
 Adapter de la conexión WebSocket de AISStream.
 
 Oculta los detalles de red y expone un generador asíncrono con **reconexión
-automática y backoff exponencial** (operación 24/7, §1). AISStream limita a UNA
+automática y backoff exponencial. AISStream limita a UNA
 conexión por API key y exige el mensaje de suscripción en los primeros 3 s.
 """
 

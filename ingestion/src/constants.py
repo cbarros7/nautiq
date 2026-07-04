@@ -38,5 +38,7 @@ CARGO_SHIP_TYPES = set(range(70, 80))
 AIS_MAX_CONNECTIONS = int(os.getenv("AIS_MAX_CONNECTIONS", "1"))
 # Rate limit defensivo de publicación a Kafka (mensajes/seg, 0 = sin límite).
 PUBLISH_RATE_LIMIT = int(os.getenv("PUBLISH_RATE_LIMIT", "0"))
+# Ráfaga tolerada por el rate limit tras un período ocioso (nº de mensajes, 1 = sin ráfaga).
+PUBLISH_RATE_BURST = int(os.getenv("PUBLISH_RATE_BURST", "1"))
 # Duración de la fase de scraping de objetivos (s).
 SCRAPER_DURATION_SECONDS = int(os.getenv("SCRAPER_DURATION_SECONDS", str(5 * 60)))

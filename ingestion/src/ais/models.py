@@ -1,10 +1,9 @@
 """
-Contratos Pydantic de AIS (gatekeeping del productor, §1 / SAD §6.1).
+Contratos Pydantic de AIS
 
 Validan rangos escalares y obligatoriedad sobre el crudo de AISStream y producen
 un dict que cumple el esquema Avro de `contracts/` (`ais_position_v1.avsc`,
-`ais_static_v1.avsc`). El productor SOLO publica mensajes válidos; NO hay DLQ ni
-plausibilidad aquí (eso es responsabilidad de Flink).
+`ais_static_v1.avsc`).
 """
 
 from __future__ import annotations
@@ -26,16 +25,15 @@ def _normalize_time(raw: str) -> str:
     if not raw:
         raise ContractError("timestamp ausente")
     cleaned = raw.replace(" UTC", "").strip()
-    for fmt in ("%Y-%m-%d %H:%M:%S.%f %z", "%Y-%m-%d %H:%M:%S %z"):
-        try:
-            return datetime.strptime(cleaned, fmt).astimezone(timezone.utc).isoformat()
-        except ValueError:
-            continue
-    return raw
+    fmt = "%Y-%m-%d %H:%M:%S.%f %z" if "." in cleaned else "%Y-%m-%d %H:%M:%S %z"
+    try:
+        return datetime.strptime(cleaned, fmt).astimezone(timezone.utc).isoformat()
+    except ValueError:
+        return raw
 
 
 def _clean_ais_text(value: str | None) -> str | None:
-    """Limpia el relleno '@' y espacios del texto AIS (§2.1)."""
+    """Limpia el relleno '@' y espacios del texto AIS."""
     if value is None:
         return None
     cleaned = value.replace("@", "").strip()

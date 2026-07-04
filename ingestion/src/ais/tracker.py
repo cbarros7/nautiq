@@ -1,7 +1,7 @@
 """
 AIS Tracker — consume los dos endpoints AIS y publica en dos topics Kafka.
 
-Responsabilidad única (§2 Services):
+Responsabilidad única:
   PositionReport  -> validar (contrato) -> Avro -> topic `vessel.positions.raw`
   ShipStaticData  -> validar (contrato) -> Avro -> topic `vessel.static.raw`
 
@@ -29,15 +29,17 @@ class _RateLimiter:
     def __init__(self, rate: int):
         self._interval = 1.0 / rate if rate > 0 else 0.0
         self._next = 0.0
+        self._lock = asyncio.Lock()
 
     async def acquire(self) -> None:
         if self._interval <= 0:
             return
-        now = time.monotonic()
-        wait = self._next - now
+        async with self._lock:
+            now = time.monotonic()
+            wait = self._next - now
+            self._next = max(now, self._next) + self._interval
         if wait > 0:
             await asyncio.sleep(wait)
-        self._next = max(now, self._next) + self._interval
 
 
 class AISTracker:
@@ -63,7 +65,13 @@ class AISTracker:
                     self.dlq_pub.publish(message, reason=str(e))
                 return
             await self.limiter.acquire()
-            self.pos_pub.publish(pos.model_dump(), mmsi=pos.mmsi)
+            try:
+                self.pos_pub.publish(pos.model_dump(), mmsi=pos.mmsi)
+            except Exception as e:
+                self.stats["rejected"] += 1
+                if self.dlq_pub:
+                    self.dlq_pub.publish(message, reason=f"fallo de serialización Avro: {e}")
+                return
             self.stats["position"] += 1
         elif mtype == "ShipStaticData":
             try:
@@ -74,7 +82,13 @@ class AISTracker:
                     self.dlq_pub.publish(message, reason=str(e))
                 return
             await self.limiter.acquire()
-            self.static_pub.publish(static.model_dump(), mmsi=static.mmsi)
+            try:
+                self.static_pub.publish(static.model_dump(), mmsi=static.mmsi)
+            except Exception as e:
+                self.stats["rejected"] += 1
+                if self.dlq_pub:
+                    self.dlq_pub.publish(message, reason=f"fallo de serialización Avro: {e}")
+                return
             self.stats["static"] += 1
 
     async def _consume_bbox(self, bbox, filter_mmsis) -> None:
