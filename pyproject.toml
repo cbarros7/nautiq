@@ -11,7 +11,12 @@ dependencies = [
 ]
 
 [tool.uv.workspace]
-members = ["ingestion", "streaming"]
+members = ["ingestion", "streaming", "api"]
 
 [tool.uv.sources]
 nautiq-ingestion = { workspace = true }
+
+[tool.pytest.ini_options]
+# Raíz del repo en sys.path para que `import ingestion.src...` funcione bajo uv run.
+pythonpath = ["."]
+testpaths = ["ingestion/tests"]

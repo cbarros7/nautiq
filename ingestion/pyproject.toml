@@ -7,5 +7,21 @@ requires-python = ">=3.11.9"
 dependencies = [
     "websockets>=16.0",
     "python-dotenv>=1.2.2",
-    "confluent-kafka",
+    "confluent-kafka[avro,schemaregistry]",
+    "pydantic>=2.13.4",
+    "python-ulid>=2.0",
+    "jsonschema>=4.26.0",
+    "searoute>=1.6.0",
+    "global-land-mask>=1.0.0",
+    "pandas>=3.0.3",
+    "openpyxl>=3.1.5",
+    "psycopg[binary]>=3.3.4",
+    "fastavro>=1.12.2",
+    "certifi>=2026.6.17",
+    "httpx>=0.28.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
 ]

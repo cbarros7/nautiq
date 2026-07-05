@@ -217,6 +217,14 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# SQLite del MVP (artefacto de runtime)
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Datasets de referencia reales (grandes; UN/LOCODE se auto-descarga, THETIS manual)
+data/reference/
+
 # Certificados
 .certs/
 
@@ -224,3 +232,6 @@ __marimo__/
 .egg-info/
 
 .DS_Store
+
+#claude
+.claude/
