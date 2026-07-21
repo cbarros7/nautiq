@@ -44,6 +44,9 @@ uv run python main.py
 | Fallo de contrato | `KAFKA_TOPIC_DLQ` | JSON plano `{reason, message_type, raw}` |
 
 MMSI como **partition key**; ULID de linaje en **headers** (topics principales y DLQ).
+Ambos contratos incluyen el metadato interno `_ingested_at` (prefijo `_` = no forma
+parte del payload AIS original): instante UTC ISO-8601 en que `AISPosition`/`AISStatic`
+validaron el mensaje (ver `models.py`), no el instante del propio reporte AIS.
 
 #### DLQ de contrato
 `ContractError` se lanza cuando Pydantic rechaza el mensaje crudo. Dos causas:

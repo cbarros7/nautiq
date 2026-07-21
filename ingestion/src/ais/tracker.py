@@ -66,7 +66,7 @@ class AISTracker:
                 return
             await self.limiter.acquire()
             try:
-                self.pos_pub.publish(pos.model_dump(), mmsi=pos.mmsi)
+                self.pos_pub.publish(pos.model_dump(by_alias=True), mmsi=pos.mmsi)
             except Exception as e:
                 self.stats["rejected"] += 1
                 if self.dlq_pub:
@@ -83,7 +83,7 @@ class AISTracker:
                 return
             await self.limiter.acquire()
             try:
-                self.static_pub.publish(static.model_dump(), mmsi=static.mmsi)
+                self.static_pub.publish(static.model_dump(by_alias=True), mmsi=static.mmsi)
             except Exception as e:
                 self.stats["rejected"] += 1
                 if self.dlq_pub:

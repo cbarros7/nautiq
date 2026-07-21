@@ -13,6 +13,7 @@
     { "name": "beam_m", "type": ["null", "int"], "default": null, "doc": "Manga = Dimension C + D." },
     { "name": "draught_m", "type": ["null", "double"], "default": null, "doc": "Calado máximo estático." },
     { "name": "destination", "type": ["null", "string"], "default": null, "doc": "Destino AIS (texto libre)." },
-    { "name": "eta", "type": ["null", "string"], "default": null, "doc": "ETA AIS cruda (texto)." }
+    { "name": "eta", "type": ["null", "string"], "default": null, "doc": "ETA AIS cruda (texto)." },
+    { "name": "_ingested_at", "type": "string", "default": "", "doc": "Metadato interno (prefijo '_'): instante UTC ISO-8601 en que el pipeline de ingestion validó el mensaje. No forma parte del payload AIS original." }
   ]
 }

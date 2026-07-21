@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Tipos de buque de carga según el estándar AIS (70-79).
 CARGO_SHIP_TYPES = range(70, 80)
@@ -43,6 +43,8 @@ def _clean_ais_text(value: str | None) -> str | None:
 class AISPosition(BaseModel):
     """Contrato del topic `vessel.positions.raw` (ais_position_v1.avsc)."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     mmsi: int = Field(gt=0)
     timestamp: str
     lat: float = Field(ge=-90, le=90)
@@ -51,6 +53,11 @@ class AISPosition(BaseModel):
     cog: float | None = None
     heading: int | None = None
     nav_status: int | None = None
+    ingested_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        alias="_ingested_at",
+        description="Metadato de ingestion (momento de validación, no del reporte AIS).",
+    )
 
     @classmethod
     def from_message(cls, message: dict) -> "AISPosition":
@@ -76,6 +83,8 @@ class AISPosition(BaseModel):
 class AISStatic(BaseModel):
     """Contrato del topic `vessel.static.raw` (ais_static_v1.avsc)."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     mmsi: int = Field(gt=0)
     imo: int | None = None
     name: str | None = None
@@ -86,6 +95,11 @@ class AISStatic(BaseModel):
     draught_m: float | None = None
     destination: str | None = None
     eta: str | None = None
+    ingested_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        alias="_ingested_at",
+        description="Metadato de ingestion (momento de validación, no del reporte AIS).",
+    )
 
     @property
     def is_cargo(self) -> bool:
