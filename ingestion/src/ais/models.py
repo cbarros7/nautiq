@@ -10,10 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-# Tipos de buque de carga según el estándar AIS (70-79).
-CARGO_SHIP_TYPES = range(70, 80)
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ContractError(ValueError):
@@ -100,10 +97,6 @@ class AISStatic(BaseModel):
         alias="_ingested_at",
         description="Metadato de ingestion (momento de validación, no del reporte AIS).",
     )
-
-    @property
-    def is_cargo(self) -> bool:
-        return self.ship_type in CARGO_SHIP_TYPES if self.ship_type is not None else False
 
     @classmethod
     def from_message(cls, message: dict) -> "AISStatic":

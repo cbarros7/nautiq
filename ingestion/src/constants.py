@@ -1,44 +1,26 @@
-"""Constantes de dominio de Ingestion (puertos objetivo, tipos de buque)."""
+"""Constantes de dominio de Ingestion (área de cobertura AIS)."""
 
 import os
 
 # ==========================================
-# PUERTOS OBJETIVO (bounding boxes + destinos AIS)
+# ÁREA DE COBERTURA AIS
 # ==========================================
-# Formato AISStream: [[[lat1, lon1], [lat2, lon2]]].
-PORTS = {
-    "valencia": {
-        "locode": "ESVLC",
-        "bbox": [[[39.176027, -0.344696], [39.659786, 0.466919]]],
-        "dest_keywords": ["VAL", "VLC", "ESVLC"],
-    },
-    "algeciras": {
-        "locode": "ESALG",
-        "bbox": [[[35.997, -5.520], [36.180, -5.330]]],
-        "dest_keywords": ["ALG", "ESALG", "ALGECIRAS"],
-    },
-    "barcelona": {
-        "locode": "ESBCN",
-        "bbox": [[[41.300, 2.090], [41.400, 2.260]]],
-        "dest_keywords": ["BCN", "ESBCN", "BARCELONA"],
-    },
-}
-
-# Mediterráneo occidental: cobertura común de aproximación a los tres puertos.
+# Formato AISStream: lista de cajas, cada caja [[lat1, lon1], [lat2, lon2]].
 WESTERN_MED_BBOX = [[[35.0, -6.0], [44.0, 10.0]]]
 
-# Tipos de barco de carga según el estándar AIS (70-79).
-CARGO_SHIP_TYPES = set(range(70, 80))
+# Único criterio de selección del productor, y lo aplica AISStream en el servidor: se
+# entrega lo que cae dentro del área y nada más, así que un buque que sale deja de
+# llegar sin que el productor mantenga estado. Todo lo que entra se publica en crudo;
+# elegir qué buques interesan (carga, destino, atraque, cupo) es de Flink.
+# Para cubrir otras regiones se añaden cajas a la lista.
+AIS_COVERAGE_BBOX = WESTERN_MED_BBOX
 
 # ==========================================
 # OPERACIÓN
 # ==========================================
-# Conexiones AIS concurrentes (paralelismo del tracker). AISStream limita a 1 por
-# API key; >1 requiere keys/cuentas adicionales.
-AIS_MAX_CONNECTIONS = int(os.getenv("AIS_MAX_CONNECTIONS", "1"))
 # Rate limit defensivo de publicación a Kafka (mensajes/seg, 0 = sin límite).
 PUBLISH_RATE_LIMIT = int(os.getenv("PUBLISH_RATE_LIMIT", "0"))
 # Ráfaga tolerada por el rate limit tras un período ocioso (nº de mensajes, 1 = sin ráfaga).
 PUBLISH_RATE_BURST = int(os.getenv("PUBLISH_RATE_BURST", "1"))
-# Duración de la fase de scraping de objetivos (s).
-SCRAPER_DURATION_SECONDS = int(os.getenv("SCRAPER_DURATION_SECONDS", str(5 * 60)))
+# Cadencia del informe de estado del proceso perpetuo (s, 0 = sin informe).
+STATS_INTERVAL_SECONDS = int(os.getenv("STATS_INTERVAL_SECONDS", "60"))
