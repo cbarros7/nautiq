@@ -136,6 +136,11 @@ permiten a Flink reconstruir cualquier criterio de selección:
 | `nav_status` | posición | atracado (5), fondeado (1), en navegación… |
 | `lat`, `lon`, `speed`, `cog` | posición | geometría, cupo de atraques, congestión |
 
+`ship_type` y `nav_status` son códigos numéricos del estándar ITU-R M.1371 que el
+productor transporta sin traducir. Los catálogos completos, con la distribución medida
+sobre el flujo real y los valores centinela de "sin dato", están en
+[`docs/ais_catalogos.md`](../docs/ais_catalogos.md).
+
 #### DLQ de contrato
 
 `ContractError` se lanza cuando Pydantic rechaza el mensaje crudo. Dos causas:
