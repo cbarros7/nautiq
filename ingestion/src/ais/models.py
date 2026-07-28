@@ -8,9 +8,15 @@ un dict que cumple el esquema Avro de `contracts/` (`ais_position_v1.avsc`,
 
 from __future__ import annotations
 
+import json
+import re
 from datetime import datetime, timezone
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# Fracción de segundo del time_utc de AISStream. Emite NANOsegundos (9 dígitos) y
+# `%f` de strptime admite 6 como máximo, así que hay que truncarla.
+_FRACTION_RE = re.compile(r"\.(\d+)")
 
 
 class ContractError(ValueError):
@@ -18,15 +24,22 @@ class ContractError(ValueError):
 
 
 def _normalize_time(raw: str) -> str:
-    """time_utc de AISStream ('2026-06-22 18:22:32.3 +0000 UTC') -> ISO-8601."""
+    """
+    time_utc de AISStream ('2026-07-28 17:13:08.621081171 +0000 UTC') -> ISO-8601 UTC.
+
+    El contrato Avro promete ISO-8601, así que un timestamp que no se pueda convertir
+    es un incumplimiento y va a la DLQ. No se devuelve el crudo: eso publicaría un
+    formato que Flink no sabe parsear haciéndolo pasar por válido.
+    """
     if not raw:
         raise ContractError("timestamp ausente")
     cleaned = raw.replace(" UTC", "").strip()
+    cleaned = _FRACTION_RE.sub(lambda m: "." + m.group(1)[:6], cleaned, count=1)
     fmt = "%Y-%m-%d %H:%M:%S.%f %z" if "." in cleaned else "%Y-%m-%d %H:%M:%S %z"
     try:
         return datetime.strptime(cleaned, fmt).astimezone(timezone.utc).isoformat()
-    except ValueError:
-        return raw
+    except ValueError as e:
+        raise ContractError(f"timestamp no convertible a ISO-8601: {raw!r} ({e})") from e
 
 
 def _clean_ais_text(value: str | None) -> str | None:
@@ -120,7 +133,12 @@ class AISStatic(BaseModel):
                 beam_m=beam or None,
                 draught_m=round(raw_draught, 2) if isinstance(raw_draught, (int, float)) else None,
                 destination=_clean_ais_text(data.get("Destination")),
-                eta=str(eta) if eta else None,
+                # AISStream manda Eta como objeto {Month, Day, Hour, Minute}. `str()`
+                # daría repr de Python (comillas simples) y no sería JSON parseable;
+                # `sort_keys` fija el orden para no depender del dict de origen.
+                # Los centinelas de "no disponible" (Month/Day=0, Hour=24, Minute=60)
+                # se transportan tal cual: interpretarlos es de Flink.
+                eta=json.dumps(eta, sort_keys=True) if eta else None,
             )
         except Exception as e:
             raise ContractError(str(e)) from e

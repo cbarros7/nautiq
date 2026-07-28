@@ -38,12 +38,25 @@ conexión y el comportamiento es idéntico.
 ### Área de cobertura
 
 Ambas conexiones se suscriben a `constants.AIS_COVERAGE_BBOX`, por defecto
-`WESTERN_MED_BBOX` — un área que cubre los tres puertos objetivo y el trayecto de
-aproximación. Es el **único** filtro del productor:
+`MEDITERRANEAN_BBOX`. Es el **único** filtro del productor:
 
 - Un buque que entra en el área empieza a publicarse sin ninguna acción.
 - Un buque que sale deja de llegar, sin estado que mantener ni limpiar.
-- El caudal de mensajes es proporcional al área suscrita.
+- El caudal de mensajes crece con el área, pero no proporcionalmente: depende de la
+  densidad de tráfico. Ampliar de la cuenca occidental al Mediterráneo completo
+  multiplicó el área por 6,8 y el caudal solo por 2,6, porque buena parte de lo añadido
+  es Atlántico abierto.
+
+| | Cobertura |
+|---|---|
+| Latitud | 26,90°N a 45,89°N — de bajo Canarias al Adriático norte |
+| Longitud | -25,84°E a 25,40°E — de las Azores al Egeo |
+| Incluye | Los tres puertos objetivo, el Estrecho de Gibraltar, la aproximación atlántica, y el Mediterráneo hasta Creta |
+| **Excluye** | Mediterráneo oriental: Chipre, Levante, Alejandría, Suez y el Bósforo. Los buques que vienen de ahí aparecen al cruzar los 25,4°E |
+
+> **Al copiar coordenadas de un mapa**: AISStream ordena `[lat, lon]`, mientras que
+> bboxfinder y herramientas similares dan `minLon,minLat,maxLon,maxLat`. Hay que
+> invertir cada par.
 
 `AIS_COVERAGE_BBOX` es una **lista** de bounding boxes y AISStream acepta varias por
 suscripción: para cubrir otras regiones se añaden cajas a la lista.
@@ -52,8 +65,9 @@ suscripción: para cubrir otras regiones se añaden cajas a la lista.
 
 - **Una conexión por API key.** El número de conexiones lo fija el número de keys.
 - **La entrega es un muestreo**, no todos los reportes: ~1 posición por buque cada
-  90-120 s, ~3,5 msg/s en total sobre `WESTERN_MED_BBOX`. Suficiente para optimizar
-  RPM/ETA en travesías de horas; no sirve para maniobra fina ni anticolisión.
+  90-120 s, ~9 msg/s en total sobre `MEDITERRANEAN_BBOX` (medido: 680 mensajes en 75 s).
+  Suficiente para optimizar RPM/ETA en travesías de horas; no sirve para maniobra fina
+  ni anticolisión.
 
 ## Estructura
 
