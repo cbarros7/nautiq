@@ -6,8 +6,7 @@ import os
 # ÁREA DE COBERTURA AIS
 # ==========================================
 # Formato AISStream: lista de cajas, cada caja [[lat1, lon1], [lat2, lon2]].
-# OJO: AISStream ordena [lat, lon]; las herramientas de mapa (bboxfinder y similares)
-# dan minLon,minLat,maxLon,maxLat — hay que invertir cada par al copiarlas.
+#AISStream ordena [lat, lon]
 #
 # Mediterráneo completo hasta Creta + aproximación atlántica hasta las Azores:
 #   lat  26.90°N .. 45.89°N   (bajo Canarias hasta el Adriático norte)

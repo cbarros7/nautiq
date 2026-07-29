@@ -1,5 +1,5 @@
 -- =============================================================================
--- Tablas de REFERENCIA de Nautiq (cargas puntuales, consumidas por Flink).
+-- Tablas de REFERENCIA de Nautiq (cargas puntuales).
 -- Idempotente: se puede ejecutar tantas veces como haga falta.
 -- =============================================================================
 
@@ -20,16 +20,17 @@ COMMENT ON COLUMN ports.lat     IS 'Latitud en grados decimales (WGS84). Origen:
 COMMENT ON COLUMN ports.lon     IS 'Longitud en grados decimales (WGS84).';
 
 
+
 CREATE TABLE IF NOT EXISTS thetis_mrv (
     imo                 bigint PRIMARY KEY,
     name                text,
     ship_type           text,
-    dwt                 numeric,
-    gt                  numeric,
-    eexi                numeric,
-    annual_fuel_t       numeric,
-    annual_distance_nm  numeric,
-    annual_co2_t        numeric,
+    dwt                 numeric(12,2),
+    gt                  numeric(12,2),
+    eexi                numeric(10,3),
+    annual_fuel_t       numeric(14,3),
+    annual_distance_nm  numeric(14,2),
+    annual_co2_t        numeric(14,3),
     loaded_at           timestamptz DEFAULT now()
 );
 
@@ -39,12 +40,12 @@ CREATE TABLE IF NOT EXISTS thetis_mrv (
 ALTER TABLE thetis_mrv
     ADD COLUMN IF NOT EXISTS reporting_period             integer,
     ADD COLUMN IF NOT EXISTS technical_efficiency         text,
-    ADD COLUMN IF NOT EXISTS time_at_sea_h                numeric,
-    ADD COLUMN IF NOT EXISTS fuel_per_distance_kg_per_nm  numeric,
-    ADD COLUMN IF NOT EXISTS annual_co2eq_t               numeric,
-    ADD COLUMN IF NOT EXISTS co2_at_berth_t               numeric,
-    ADD COLUMN IF NOT EXISTS co2_in_port_t                numeric,
-    ADD COLUMN IF NOT EXISTS co2_per_distance_kg_per_nm   numeric;
+    ADD COLUMN IF NOT EXISTS time_at_sea_h                numeric(8,2),
+    ADD COLUMN IF NOT EXISTS fuel_per_distance_kg_per_nm  numeric(16,4),
+    ADD COLUMN IF NOT EXISTS annual_co2eq_t               numeric(14,3),
+    ADD COLUMN IF NOT EXISTS co2_at_berth_t               numeric(14,3),
+    ADD COLUMN IF NOT EXISTS co2_in_port_t                numeric(14,3),
+    ADD COLUMN IF NOT EXISTS co2_per_distance_kg_per_nm   numeric(16,4);
 
 COMMENT ON TABLE thetis_mrv IS
     'Ficha anual THETIS-MRV (EMSA) por buque, indexada por IMO. Declaración obligatoria de consumo y emisiones de los buques que tocan puertos de la UE. Es el único origen que distingue portacontenedores de otra carga: el ship_type de AIS agrupa toda la carga en 70-79. Unidades: "m tonnes" del fichero = toneladas métricas; nm = millas náuticas.';
@@ -103,3 +104,22 @@ ALTER TABLE thetis_mrv
     DROP COLUMN IF EXISTS fuel_per_time_t_per_h,
     DROP COLUMN IF EXISTS fuel_dynamic_positioning_t,
     DROP COLUMN IF EXISTS cargo_density_t_per_m3;
+
+-- Converge las instalaciones creadas antes de acotar los tipos: un `numeric` sin
+-- precisión no mapea de forma determinista al DECIMAL(p,s) de Flink. Redondea al
+-- vuelo, lo que además limpia el ruido de coma flotante de las columnas DERIVADAS
+-- (`dwt` traía 18 decimales y `annual_distance_nm` 15, artefactos de la división).
+-- Idempotente: si el tipo ya coincide, PostgreSQL no reescribe la tabla.
+ALTER TABLE thetis_mrv
+    ALTER COLUMN dwt                         TYPE numeric(12,2),
+    ALTER COLUMN gt                          TYPE numeric(12,2),
+    ALTER COLUMN eexi                        TYPE numeric(10,3),
+    ALTER COLUMN annual_fuel_t               TYPE numeric(14,3),
+    ALTER COLUMN annual_distance_nm          TYPE numeric(14,2),
+    ALTER COLUMN annual_co2_t                TYPE numeric(14,3),
+    ALTER COLUMN annual_co2eq_t              TYPE numeric(14,3),
+    ALTER COLUMN co2_at_berth_t              TYPE numeric(14,3),
+    ALTER COLUMN co2_in_port_t               TYPE numeric(14,3),
+    ALTER COLUMN time_at_sea_h               TYPE numeric(8,2),
+    ALTER COLUMN fuel_per_distance_kg_per_nm TYPE numeric(16,4),
+    ALTER COLUMN co2_per_distance_kg_per_nm  TYPE numeric(16,4);

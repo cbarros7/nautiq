@@ -152,11 +152,6 @@ El payload en la DLQ incluye la razón textual y el mensaje AIS original complet
 facilitar la depuración del contrato. La validación **semántica** (buque en tierra,
 salto imposible, spoofing) no ocurre aquí — es responsabilidad de Flink.
 
-Como no hay prefiltro, la DLQ recibe los fallos de contrato de **cualquier** buque del
-área. Conviene vigilar su volumen tras un despliegue.
-
-Si `KAFKA_TOPIC_DLQ` no está definida, el servicio corre sin DLQ y los mensajes que no
-cumplen el contrato simplemente no se publican.
 
 #### Trazas en operación
 

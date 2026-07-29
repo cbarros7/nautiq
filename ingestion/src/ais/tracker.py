@@ -126,6 +126,7 @@ class AISTracker:
         finally:
             for task in tasks:
                 task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
             self.pos_pub.flush()
             self.static_pub.flush()
             if self.dlq_pub:
