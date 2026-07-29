@@ -1,0 +1,45 @@
+services:
+  jobmanager:
+    build: .
+    image: nautiq-flink:latest
+    ports:
+      - "${FLINK_UI_PORT:-8081}:8081"
+    command: jobmanager
+    environment:
+      HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+        jobmanager.memory.process.size: 2048m
+    volumes:
+      - ./src:/opt/flink/usrlib/src
+      - ./flink-checkpoints:/opt/flink/checkpoints
+      - ../.certs:/opt/flink/certs:ro
+    env_file:
+      - ../.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/config > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  taskmanager:
+    build: .
+    image: nautiq-flink:latest
+    depends_on:
+      jobmanager:
+        condition: service_healthy
+    command: taskmanager
+    scale: 1
+    environment:
+      HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 4
+        taskmanager.memory.process.size: 4096m
+    volumes:
+      - ./src:/opt/flink/usrlib/src
+      - ./flink-checkpoints:/opt/flink/checkpoints
+      - ../.certs:/opt/flink/certs:ro
+    env_file:
+      - ../.env

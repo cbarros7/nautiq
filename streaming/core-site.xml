@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+    <!-- ============================================================ -->
+    <!-- FileSystem local — soluciona UnsupportedFileSystemException   -->
+    <!-- ============================================================ -->
+    <property>
+        <name>fs.file.impl</name>
+        <value>org.apache.hadoop.fs.LocalFileSystem</value>
+    </property>
+    <property>
+        <name>fs.AbstractFileSystem.file.impl</name>
+        <value>org.apache.hadoop.fs.local.LocalFs</value>
+    </property>
+
+    <!-- ============================================================ -->
+    <!-- Azure ABFS — autenticación SharedKey                         -->
+    <!-- El valor de la clave se inyecta via entrypoint.sh desde      -->
+    <!-- la variable de entorno AZURE_STORAGE_KEY                     -->
+    <!-- ============================================================ -->
+    <property>
+        <name>fs.azure.account.auth.type.STORAGE_ACCOUNT_PLACEHOLDER.dfs.core.windows.net</name>
+        <value>SharedKey</value>
+    </property>
+    <property>
+        <name>fs.azure.account.key.STORAGE_ACCOUNT_PLACEHOLDER.dfs.core.windows.net</name>
+        <value>STORAGE_KEY_PLACEHOLDER</value>
+    </property>
+
+</configuration>
