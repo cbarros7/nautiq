@@ -2,6 +2,8 @@
 name = "nautiq-streaming"
 version = "0.1.0"
 description = "Motor de Procesamiento Flink para Nautiq"
-# Deberá contener dependencias como:
-# - apache-flink
-# - kafka-python
+dependencies = [
+    "apache-flink==1.19.0",
+    "python-dotenv",
+    "requests"
+]
