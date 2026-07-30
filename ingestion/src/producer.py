@@ -1,23 +1,46 @@
 """
 Servicio de ingesta AIS (Facade) — production-ready.
 
-Responsabilidad ÚNICA: adquirir datos de AIS y publicarlos validados en Kafka.
-Sin lógica de negocio (eso es Flink), sin DLQ, sin enriquecimiento.
+Responsabilidad ÚNICA: adquirir AIS crudo y publicarlo validado en Kafka.
+Sin lógica de negocio (eso es Flink), sin selección de buques, sin enriquecimiento.
 
-  1. Scraper  -> descubre la flota objetivo hacia Valencia/Algeciras/Barcelona.
-  2. Tracker  -> consume los dos endpoints AIS y publica en dos topics Avro:
-                 PositionReport -> vessel.positions.raw
-                 ShipStaticData -> vessel.static.raw
+Un solo proceso con dos conexiones AIS perpetuas (AISStream limita a 1 por API key):
+
+  ShipStaticData -> validar contrato -> vessel.static.raw
+  PositionReport -> validar contrato -> vessel.positions.raw
+
+Se publica **todo** lo que entrega la suscripción. El único criterio de selección es la
+bounding box, que aplica AISStream: si un buque sale del área deja de llegar, sin estado
+en el productor. Sobre ese crudo, Flink deriva lo que necesite (flota con destino a los
+tres puertos, atraques, cupo, congestión) — y puede rehacer cualquier criterio a
+posteriori, algo imposible si se filtrase aquí.
 """
 
 import asyncio
 import sys
 
 from . import config, constants
-from .ais import scraper
 from .ais.client import AISStreamClient
 from .ais.publisher import build_dlq_publisher, build_publishers
 from .ais.tracker import AISTracker
+
+
+def _build_feeds() -> list[tuple[AISStreamClient, list[str]]]:
+    """
+    Reparte los dos tipos de mensaje entre las API keys disponibles.
+
+    AISStream admite UNA conexión por key: con dos keys se dedica una conexión a cada
+    tipo (aísla el caudal de posiciones del de estáticas, de modo que un backoff en uno
+    no ciega al otro); con una sola key, ambos tipos comparten conexión.
+    """
+    static_client = AISStreamClient(config.AISSTREAM_API_KEY)
+    if config.AISSTREAM_AUX_API_KEY:
+        return [
+            (static_client, ["ShipStaticData"]),
+            (AISStreamClient(config.AISSTREAM_AUX_API_KEY), ["PositionReport"]),
+        ]
+    print("[ADVERTENCIA] Sin AISSTREAM_AUX_API_KEY: ambos tipos por una sola conexión.")
+    return [(static_client, ["PositionReport", "ShipStaticData"])]
 
 
 async def run_ingestion_service():
@@ -27,23 +50,15 @@ async def run_ingestion_service():
         print("[ERROR] AISSTREAM_API_KEY no encontrada en la configuración.")
         sys.exit(1)
 
-    client = AISStreamClient(config.AISSTREAM_API_KEY)
+    tracker = AISTracker(
+        build_publishers(),
+        rate_limit=constants.PUBLISH_RATE_LIMIT,
+        rate_burst=constants.PUBLISH_RATE_BURST,
+        dlq_pub=build_dlq_publisher(),
+    )
 
-    # 1. Descubrimiento de la flota objetivo (3 puertos).
-    targets = await scraper.find_target_fleet(client, constants.SCRAPER_DURATION_SECONDS)
-
-    # 2. Publicación a Kafka (Avro + Schema Registry).
-    publishers = build_publishers()
-    dlq_pub = build_dlq_publisher()
-    tracker = AISTracker(client, publishers, rate_limit=constants.PUBLISH_RATE_LIMIT,
-                         rate_burst=constants.PUBLISH_RATE_BURST, dlq_pub=dlq_pub)
-
-    if constants.AIS_MAX_CONNECTIONS >= len(constants.PORTS):
-        bboxes = [p["bbox"] for p in constants.PORTS.values()]
-    else:
-        bboxes = [constants.WESTERN_MED_BBOX]
-
-    await tracker.run(bboxes, filter_mmsis=list(targets) or None)
+    await tracker.run(_build_feeds(), constants.AIS_COVERAGE_BBOX,
+                      stats_interval=constants.STATS_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":

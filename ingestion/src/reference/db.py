@@ -52,15 +52,32 @@ def upsert_thetis(conn: psycopg.Connection, rows: list[dict]) -> int:
     """Carga masiva de la ficha THETIS-MRV (UPSERT por IMO)."""
     sql = """
         INSERT INTO thetis_mrv (imo, name, ship_type, dwt, gt, eexi,
-                                annual_fuel_t, annual_distance_nm, annual_co2_t, loaded_at)
+                                annual_fuel_t, annual_distance_nm, annual_co2_t,
+                                technical_efficiency, time_at_sea_h,
+                                fuel_per_distance_kg_per_nm, reporting_period,
+                                annual_co2eq_t, co2_at_berth_t, co2_in_port_t,
+                                co2_per_distance_kg_per_nm, loaded_at)
         VALUES (%(imo)s, %(name)s, %(ship_type)s, %(dwt)s, %(gt)s, %(eexi)s,
-                %(annual_fuel_t)s, %(annual_distance_nm)s, %(annual_co2_t)s, now())
+                %(annual_fuel_t)s, %(annual_distance_nm)s, %(annual_co2_t)s,
+                %(technical_efficiency)s, %(time_at_sea_h)s,
+                %(fuel_per_distance_kg_per_nm)s, %(reporting_period)s,
+                %(annual_co2eq_t)s, %(co2_at_berth_t)s, %(co2_in_port_t)s,
+                %(co2_per_distance_kg_per_nm)s, now())
         ON CONFLICT (imo) DO UPDATE SET
             name = EXCLUDED.name, ship_type = EXCLUDED.ship_type,
             dwt = EXCLUDED.dwt, gt = EXCLUDED.gt, eexi = EXCLUDED.eexi,
             annual_fuel_t = EXCLUDED.annual_fuel_t,
             annual_distance_nm = EXCLUDED.annual_distance_nm,
-            annual_co2_t = EXCLUDED.annual_co2_t, loaded_at = now()
+            annual_co2_t = EXCLUDED.annual_co2_t,
+            technical_efficiency = EXCLUDED.technical_efficiency,
+            time_at_sea_h = EXCLUDED.time_at_sea_h,
+            fuel_per_distance_kg_per_nm = EXCLUDED.fuel_per_distance_kg_per_nm,
+            reporting_period = EXCLUDED.reporting_period,
+            annual_co2eq_t = EXCLUDED.annual_co2eq_t,
+            co2_at_berth_t = EXCLUDED.co2_at_berth_t,
+            co2_in_port_t = EXCLUDED.co2_in_port_t,
+            co2_per_distance_kg_per_nm = EXCLUDED.co2_per_distance_kg_per_nm,
+            loaded_at = now()
     """
     with conn.cursor() as cur:
         cur.executemany(sql, rows)
