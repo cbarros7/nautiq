@@ -6,10 +6,15 @@ requires-python = ">=3.11.9"
 dependencies = [
     "httpx>=0.27",
     "python-dotenv>=1.0",
+    "searoute>=1.6.0",
+    "geopy>=2.5.0",
+    "requests>=2.31",
+    "langgraph>=0.2",
+    "pydantic>=2.9",
     # Cliente Supabase REST vía httpx (PostgREST). El SDK supabase-py completo
     # (con realtime) fija websockets<14 y choca con el cliente AIS (websockets>=16);
     # se evita usando httpx directo. Añadir supabase-py solo si se requiere realtime.
     #
     # Futuro (capa cognitiva, aún no implementada):
-    # "fastapi", "uvicorn", "langgraph", "langchain-openai"
+    # "fastapi", "uvicorn", "langchain-openai"
 ]
