@@ -16,7 +16,11 @@ load_dotenv(find_dotenv())
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # --- AISStream ---
+# AISStream admite UNA conexión por key. La principal sirve `ShipStaticData`
+# (descubrimiento continuo); la auxiliar, opcional, dedica una conexión propia al
+# firehose de `PositionReport`. Sin la auxiliar ambos tipos comparten conexión.
 AISSTREAM_API_KEY = os.getenv("AISSTREAM_API_KEY")
+AISSTREAM_AUX_API_KEY = os.getenv("AISSTREAM_AUX_API_KEY")
 AISSTREAM_URL = "wss://stream.aisstream.io/v0/stream"
 
 # --- Kafka (Aiven, SSL) ---
