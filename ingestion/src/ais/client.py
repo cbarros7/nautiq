@@ -43,14 +43,8 @@ class AISStreamClient:
             try:
                 async with websockets.connect(self.url) as ws:
                     await ws.send(json.dumps(subscription))
+                    backoff = 1.0  # conexión sana -> resetea backoff
                     async for raw in ws:
-                        # El backoff se reinicia al recibir DATOS, nunca al conectar:
-                        # que el handshake funcione no prueba que el stream sirva.
-                        # Cuando AISStream acepta la conexión y la cierra en silencio
-                        # (cuota agotada, 503), reiniciarlo tras el `connect` dejaba el
-                        # backoff clavado en 1 s y el cliente reconectaba en bucle,
-                        # alimentando el 429 que decía haber superado el límite.
-                        backoff = 1.0
                         yield json.loads(raw)
             except asyncio.CancelledError:
                 raise
