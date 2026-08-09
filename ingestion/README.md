@@ -69,6 +69,26 @@ suscripción: para cubrir otras regiones se añaden cajas a la lista.
   Suficiente para optimizar RPM/ETA en travesías de horas; no sirve para maniobra fina
   ni anticolisión.
 
+### Modo sintético (temporal)
+
+AISStream dejó de servir datos el 5-ago-2026 (conexión sana, sin errores, cero
+mensajes; ver [aisstream/issues#257](https://github.com/aisstream/issues/issues/257),
+no es un problema de esta cuenta). Mientras se resuelve, `AIS_SYNTHETIC=true` sustituye
+la conexión real por `ais/synthetic.py`: un generador que simula buques moviéndose por
+rutas marítimas reales (`searoute`) entre puertos reales, con una parte respaldada por
+IMO real de `thetis_mrv` (para que el JOIN de Flink los resuelva de verdad) y las
+mismas rarezas del AIS real medidas en `docs/ais_catalogos.md`.
+
+Presenta la misma interfaz `.stream()` que `AISStreamClient`, así que `tracker.py`,
+`client.py`, `models.py` y `publisher.py` no cambian: el resto del pipeline no distingue
+el origen de los mensajes. El único marcador es el **MMSI 990xxxxxx** — ningún buque
+real usa ese prefijo — para poder identificar el tráfico sintético sin ambigüedad si
+algún día coincide en el tiempo con datos reales.
+
+Desactivar con `AIS_SYNTHETIC=false` en cuanto AISStream se recupere. Es un bloque
+autocontenido: quitar la variable y borrar `ais/synthetic.py` +
+`ais/synthetic_fixtures.json` deja el servicio exactamente como estaba.
+
 ## Estructura
 
 ```
@@ -78,6 +98,8 @@ ingestion/src/
     models.py           #   Contratos Pydantic (AISPosition, AISStatic) -> dict Avro
     publisher.py        #   Productor SSL + Avro/Schema Registry (MMSI key, ULID header)
     tracker.py          #   Enruta los 2 tipos de mensaje -> 2 topics; rate-limit; DLQ
+    synthetic.py        #   Generador sintético temporal (AIS_SYNTHETIC=true)
+    synthetic_fixtures.json  # Buques (IMO real de THETIS) y puertos para synthetic.py
   reference/            # Cargas puntuales de referencia -> PostgreSQL (Supabase)
     db.py               #   Conexión psycopg + DDL (ports, thetis_mrv) + UPSERTs
     locode.py           #   UN/LOCODE -> tabla ports
@@ -179,6 +201,14 @@ uv run python -m ingestion.src.reference.thetis   # THETIS-MRV -> thetis_mrv
 
 Flink consume estas tablas (LEFT JOIN por IMO / resolución de destino).
 
+> **Conexión directa a Supabase = solo IPv6.** `db.<ref>.supabase.co` no tiene registro
+> A, solo AAAA. Una VM sin IPv6 configurado (p.ej. una Azure VM con red por defecto,
+> solo IPv4) nunca podrá conectar aquí, aunque el proyecto esté activo: el error es
+> `Network is unreachable`, no un fallo de credenciales. Por eso estas cargas están
+> pensadas para ejecutarse desde un portátil, no desde la VM de ingesta — y por eso
+> `synthetic.py` lee `thetis_mrv.xlsx`/`un_locode.csv` en local para construir su
+> fixture (una vez, aquí) en lugar de consultar Postgres en cada arranque.
+
 ## Fuentes de datos (reales)
 
 | Fuente | Procedencia |
@@ -206,6 +236,9 @@ Flink consume estas tablas (LEFT JOIN por IMO / resolución de destino).
 | `PUBLISH_RATE_LIMIT` | no | `0` | Mensajes/seg publicados a Kafka; 0 = sin límite |
 | `PUBLISH_RATE_BURST` | no | `1` | Ráfaga tolerada tras un período ocioso |
 | `STATS_INTERVAL_SECONDS` | no | `60` | Cadencia del informe `[ESTADO]`; 0 = sin traza |
+| `AIS_SYNTHETIC` | no | `false` | Sustituye AISStream por el generador sintético temporal (ver arriba) |
+| `SYNTHETIC_POSITION_INTERVAL_SECONDS` | no | `100` | Intervalo medio de `PositionReport` por buque simulado |
+| `SYNTHETIC_STATIC_INTERVAL_SECONDS` | no | `360` | Intervalo medio de `ShipStaticData` por buque simulado |
 
 El área de cobertura no es una variable de entorno: vive en `constants.py`
 (`AIS_COVERAGE_BBOX`).
