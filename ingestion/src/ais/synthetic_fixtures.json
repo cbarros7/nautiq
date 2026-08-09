@@ -1,33 +1,5 @@
 {
  "ports": {
-  "ESALG": {
-   "locode": "ESALG",
-   "name": "Algeciras",
-   "country": "ES",
-   "lat": 36.131172,
-   "lon": -5.447399
-  },
-  "TNTUN": {
-   "locode": "TNTUN",
-   "name": "Tunis",
-   "country": "TN",
-   "lat": 36.800207,
-   "lon": 10.185776
-  },
-  "FRMRS": {
-   "locode": "FRMRS",
-   "name": "Marseille",
-   "country": "FR",
-   "lat": 43.3,
-   "lon": 5.4
-  },
-  "MACAS": {
-   "locode": "MACAS",
-   "name": "Casablanca",
-   "country": "MA",
-   "lat": 33.58333,
-   "lon": -7.6
-  },
   "PTSIE": {
    "locode": "PTSIE",
    "name": "Sines",
@@ -35,12 +7,12 @@
    "lat": 37.95,
    "lon": -8.86667
   },
-  "ESBCN": {
-   "locode": "ESBCN",
-   "name": "Barcelona",
-   "country": "ES",
-   "lat": 41.38258,
-   "lon": 2.177073
+  "MTMLA": {
+   "locode": "MTMLA",
+   "name": "Valletta",
+   "country": "MT",
+   "lat": 35.88333,
+   "lon": 14.5
   },
   "ITNAP": {
    "locode": "ITNAP",
@@ -49,33 +21,12 @@
    "lat": 40.83333,
    "lon": 14.25
   },
-  "ESCAR": {
-   "locode": "ESCAR",
-   "name": "Cartagena",
+  "ESALG": {
+   "locode": "ESALG",
+   "name": "Algeciras",
    "country": "ES",
-   "lat": 37.6,
-   "lon": -0.98333
-  },
-  "ITGOA": {
-   "locode": "ITGOA",
-   "name": "Genova",
-   "country": "IT",
-   "lat": 44.41667,
-   "lon": 8.95
-  },
-  "ESLPA": {
-   "locode": "ESLPA",
-   "name": "Las Palmas de Gran Canaria",
-   "country": "ES",
-   "lat": 28.1,
-   "lon": -15.41667
-  },
-  "MTMLA": {
-   "locode": "MTMLA",
-   "name": "Valletta",
-   "country": "MT",
-   "lat": 35.88333,
-   "lon": 14.5
+   "lat": 36.131172,
+   "lon": -5.447399
   },
   "PTPDL": {
    "locode": "PTPDL",
@@ -91,6 +42,20 @@
    "lat": 38.41667,
    "lon": 15.9
   },
+  "ESALC": {
+   "locode": "ESALC",
+   "name": "Alicante",
+   "country": "ES",
+   "lat": 38.343637,
+   "lon": -0.488171
+  },
+  "TNTUN": {
+   "locode": "TNTUN",
+   "name": "Tunis",
+   "country": "TN",
+   "lat": 36.800207,
+   "lon": 10.185776
+  },
   "ESVLC": {
    "locode": "ESVLC",
    "name": "Valencia",
@@ -98,19 +63,19 @@
    "lat": 39.469707,
    "lon": -0.376335
   },
-  "ITLIV": {
-   "locode": "ITLIV",
-   "name": "Livorno",
-   "country": "IT",
-   "lat": 43.55,
-   "lon": 10.31667
-  },
-  "ESALC": {
-   "locode": "ESALC",
-   "name": "Alicante",
+  "ESPMI": {
+   "locode": "ESPMI",
+   "name": "Palma de Mallorca",
    "country": "ES",
-   "lat": 38.343637,
-   "lon": -0.488171
+   "lat": 39.56667,
+   "lon": 2.63333
+  },
+  "ESCAR": {
+   "locode": "ESCAR",
+   "name": "Cartagena",
+   "country": "ES",
+   "lat": 37.6,
+   "lon": -0.98333
   },
   "FRFOS": {
    "locode": "FRFOS",
@@ -119,6 +84,20 @@
    "lat": 43.43333,
    "lon": 4.93333
   },
+  "MATNG": {
+   "locode": "MATNG",
+   "name": "Tangier",
+   "country": "MA",
+   "lat": 35.78333,
+   "lon": -5.81667
+  },
+  "ITGOA": {
+   "locode": "ITGOA",
+   "name": "Genova",
+   "country": "IT",
+   "lat": 44.41667,
+   "lon": 8.95
+  },
   "GRPIR": {
    "locode": "GRPIR",
    "name": "Piraeus",
@@ -126,12 +105,19 @@
    "lat": 37.93333,
    "lon": 23.61667
   },
-  "MATNG": {
-   "locode": "MATNG",
-   "name": "Tangier",
+  "ESLPA": {
+   "locode": "ESLPA",
+   "name": "Las Palmas de Gran Canaria",
+   "country": "ES",
+   "lat": 28.1,
+   "lon": -15.41667
+  },
+  "MACAS": {
+   "locode": "MACAS",
+   "name": "Casablanca",
    "country": "MA",
-   "lat": 35.78333,
-   "lon": -5.81667
+   "lat": 33.58333,
+   "lon": -7.6
   },
   "PTLIS": {
    "locode": "PTLIS",
@@ -140,12 +126,26 @@
    "lat": 38.71667,
    "lon": -9.13333
   },
-  "ESPMI": {
-   "locode": "ESPMI",
-   "name": "Palma de Mallorca",
+  "ITLIV": {
+   "locode": "ITLIV",
+   "name": "Livorno",
+   "country": "IT",
+   "lat": 43.55,
+   "lon": 10.31667
+  },
+  "ESBCN": {
+   "locode": "ESBCN",
+   "name": "Barcelona",
    "country": "ES",
-   "lat": 39.56667,
-   "lon": 2.63333
+   "lat": 41.38258,
+   "lon": 2.177073
+  },
+  "FRMRS": {
+   "locode": "FRMRS",
+   "name": "Marseille",
+   "country": "FR",
+   "lat": 43.3,
+   "lon": 5.4
   }
  },
  "vessels": [
@@ -488,693 +488,1720 @@
    "callsign": "SYN0026"
   },
   {
-   "imo": 9550292,
-   "name": "MARITIME VICTORY",
-   "category": "bulk",
+   "imo": 9354387,
+   "name": "ANDANTE",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000027,
    "callsign": "SYN0027"
   },
   {
-   "imo": 9552331,
-   "name": "ARUNA CENGIZ",
-   "category": "bulk",
+   "imo": 9354428,
+   "name": "SARA BORCHARD",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000028,
    "callsign": "SYN0028"
   },
   {
-   "imo": 9663817,
-   "name": "FUAT BEY",
-   "category": "bulk",
+   "imo": 9484936,
+   "name": "EXPRESS ROME",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000029,
    "callsign": "SYN0029"
   },
   {
-   "imo": 9588354,
-   "name": "AMALIA",
-   "category": "bulk",
+   "imo": 9388338,
+   "name": "CONTSHIP RAY",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000030,
    "callsign": "SYN0030"
   },
   {
-   "imo": 9891866,
-   "name": "NING MAY",
-   "category": "bulk",
+   "imo": 9936642,
+   "name": "MSC CHINA",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000031,
    "callsign": "SYN0031"
   },
   {
-   "imo": 9951111,
-   "name": "AQUAJOY",
-   "category": "bulk",
+   "imo": 9979254,
+   "name": "OOCL BREMERHAVEN",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000032,
    "callsign": "SYN0032"
   },
   {
-   "imo": 9701011,
-   "name": "MONEGASQUE EPEE",
-   "category": "bulk",
+   "imo": 9619971,
+   "name": "MARSTAL MAERSK",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000033,
    "callsign": "SYN0033"
   },
   {
-   "imo": 9706322,
-   "name": "ZHE HAI 519",
-   "category": "bulk",
+   "imo": 9627904,
+   "name": "TRAIGUEN",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000034,
    "callsign": "SYN0034"
   },
   {
-   "imo": 9584310,
-   "name": "CARAVOS TRIUMPH",
-   "category": "bulk",
+   "imo": 9385532,
+   "name": "DIANE A",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000035,
    "callsign": "SYN0035"
   },
   {
-   "imo": 9958341,
-   "name": "NORVIC SINGAPORE",
-   "category": "bulk",
+   "imo": 9355343,
+   "name": "MAERSK BULAN",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000036,
    "callsign": "SYN0036"
   },
   {
-   "imo": 9554183,
-   "name": "PANOPI",
-   "category": "bulk",
+   "imo": 9246683,
+   "name": "CMA CGM PARANAGUA",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000037,
    "callsign": "SYN0037"
   },
   {
-   "imo": 9335886,
-   "name": "PORT ALBERNI",
-   "category": "bulk",
+   "imo": 9198587,
+   "name": "MSC CHIARA X",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000038,
    "callsign": "SYN0038"
   },
   {
-   "imo": 9244075,
-   "name": "AGIOS PORFYRIOS",
-   "category": "bulk",
+   "imo": 9265598,
+   "name": "MED TEKIRDAG",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000039,
    "callsign": "SYN0039"
   },
   {
-   "imo": 9370197,
-   "name": "CASTOR",
-   "category": "bulk",
+   "imo": 9000742,
+   "name": "MSC JENNY II",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000040,
    "callsign": "SYN0040"
   },
   {
-   "imo": 8110681,
-   "name": "BONTRUP AMSTERDAM",
-   "category": "bulk",
+   "imo": 9356660,
+   "name": "DIONYSSIS A",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000041,
    "callsign": "SYN0041"
   },
   {
-   "imo": 9563627,
-   "name": "HONG SHENG",
-   "category": "bulk",
+   "imo": 9244934,
+   "name": "ZIM AMERICA",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000042,
    "callsign": "SYN0042"
   },
   {
-   "imo": 9163685,
-   "name": "DINTELBORG",
-   "category": "general_cargo",
+   "imo": 9832729,
+   "name": "EVER GREET",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000043,
    "callsign": "SYN0043"
   },
   {
-   "imo": 9548835,
-   "name": "STAR DALMATIA",
-   "category": "general_cargo",
+   "imo": 9334820,
+   "name": "CMA CGM AQABA",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000044,
    "callsign": "SYN0044"
   },
   {
-   "imo": 9963982,
-   "name": "UGAH BREEZE",
-   "category": "general_cargo",
+   "imo": 9322542,
+   "name": "RANGER",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000045,
    "callsign": "SYN0045"
   },
   {
-   "imo": 9338149,
-   "name": "ICS SILVER SPIRIT",
-   "category": "general_cargo",
+   "imo": 9395159,
+   "name": "ONE HAMBURG",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000046,
    "callsign": "SYN0046"
   },
   {
-   "imo": 9310513,
-   "name": "STAR JAVA",
-   "category": "general_cargo",
+   "imo": 9397585,
+   "name": "ELENI T",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000047,
    "callsign": "SYN0047"
   },
   {
-   "imo": 9058995,
-   "name": "DALMACIJA",
-   "category": "ro_ro",
+   "imo": 9301988,
+   "name": "RITA",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000048,
    "callsign": "SYN0048"
   },
   {
-   "imo": 9287584,
-   "name": "FLORENCIA",
-   "category": "ro_ro",
+   "imo": 9936393,
+   "name": "ONE FUTURE",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000049,
    "callsign": "SYN0049"
   },
   {
-   "imo": 9378682,
-   "name": "SUPERSPEED 2",
-   "category": "ro_ro",
+   "imo": 9356127,
+   "name": "MAERSK NEWPORT",
+   "category": "container",
    "ais_types": [
     70,
+    71,
+    74,
     79
    ],
    "mmsi": 990000050,
    "callsign": "SYN0050"
   },
   {
-   "imo": 9837602,
-   "name": "UNIVERSAL WINNER",
-   "category": "tanker",
+   "imo": 9333060,
+   "name": "ZHONG GU SHAN DONG",
+   "category": "container",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    71,
+    74,
+    79
    ],
    "mmsi": 990000051,
    "callsign": "SYN0051"
   },
   {
-   "imo": 9407445,
-   "name": "SEAMUSIC",
-   "category": "tanker",
+   "imo": 9215907,
+   "name": "MAERSK NESTON",
+   "category": "container",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    71,
+    74,
+    79
    ],
    "mmsi": 990000052,
    "callsign": "SYN0052"
   },
   {
-   "imo": 9333125,
-   "name": "B. ATLANTIC",
-   "category": "tanker",
+   "imo": 9519212,
+   "name": "COREOCEAN OL",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000053,
    "callsign": "SYN0053"
   },
   {
-   "imo": 9941867,
-   "name": "BREST",
-   "category": "tanker",
+   "imo": 9402304,
+   "name": "DUKESHIP",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000054,
    "callsign": "SYN0054"
   },
   {
-   "imo": 9905318,
-   "name": "ASIA",
-   "category": "tanker",
+   "imo": 9591686,
+   "name": "DARYA GAYATRI",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000055,
    "callsign": "SYN0055"
   },
   {
-   "imo": 9633446,
-   "name": "NOVO",
-   "category": "tanker",
+   "imo": 9811907,
+   "name": "ULTRA PASSION",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000056,
    "callsign": "SYN0056"
   },
   {
-   "imo": 9778296,
-   "name": "CIELO BIANCO",
-   "category": "tanker",
+   "imo": 9312664,
+   "name": "BELL BAY",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000057,
    "callsign": "SYN0057"
   },
   {
-   "imo": 9391490,
-   "name": "VALVERDE",
-   "category": "tanker",
+   "imo": 9742417,
+   "name": "FRANBO LOGIC",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000058,
    "callsign": "SYN0058"
   },
   {
-   "imo": 9380063,
-   "name": "MINERVA EMILY",
-   "category": "tanker",
+   "imo": 9913676,
+   "name": "PAC ACHERNAR",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000059,
    "callsign": "SYN0059"
   },
   {
-   "imo": 9773935,
-   "name": "STAR ENERGY",
-   "category": "tanker",
+   "imo": 9591959,
+   "name": "STARDUST",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000060,
    "callsign": "SYN0060"
   },
   {
-   "imo": 9235696,
-   "name": "CAESAR",
-   "category": "tanker",
+   "imo": 9563419,
+   "name": "TOXOTIS",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000061,
    "callsign": "SYN0061"
   },
   {
-   "imo": 9875501,
-   "name": "TSURUGI GALAXY",
-   "category": "tanker",
+   "imo": 9541837,
+   "name": "ANTIGONI FORCE",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000062,
    "callsign": "SYN0062"
   },
   {
-   "imo": 9380518,
-   "name": "SEAWAYS MADELEINE",
-   "category": "tanker",
+   "imo": 9741293,
+   "name": "LEMESSOS NAPA",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000063,
    "callsign": "SYN0063"
   },
   {
-   "imo": 9307982,
-   "name": "IDI",
-   "category": "tanker",
+   "imo": 9571636,
+   "name": "AVELLANEDA",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000064,
    "callsign": "SYN0064"
   },
   {
-   "imo": 9416070,
-   "name": "DING HENG 39",
-   "category": "tanker",
+   "imo": 9657789,
+   "name": "KONYA",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000065,
    "callsign": "SYN0065"
   },
   {
-   "imo": 9705914,
-   "name": "ELKA ELEFSIS",
-   "category": "tanker",
+   "imo": 9475040,
+   "name": "OZGUR AKSOY",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000066,
    "callsign": "SYN0066"
   },
   {
-   "imo": 9272668,
-   "name": "STOLT ACER",
-   "category": "tanker",
+   "imo": 9780976,
+   "name": "KWAI KWAI",
+   "category": "bulk",
    "ais_types": [
-    80,
-    81,
-    89
+    70,
+    79
    ],
    "mmsi": 990000067,
    "callsign": "SYN0067"
   },
   {
-   "imo": 9654567,
-   "name": "ARDMORE ENDURANCE",
+   "imo": 9146118,
+   "name": "SUVARI KAPTAN",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000068,
+   "callsign": "SYN0068"
+  },
+  {
+   "imo": 9566564,
+   "name": "SV ARISTA",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000069,
+   "callsign": "SYN0069"
+  },
+  {
+   "imo": 9536791,
+   "name": "CAPE ENIGMA",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000070,
+   "callsign": "SYN0070"
+  },
+  {
+   "imo": 9646716,
+   "name": "VANTAGE ROSE",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000071,
+   "callsign": "SYN0071"
+  },
+  {
+   "imo": 9561992,
+   "name": "DE XIN SHENG XIANG",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000072,
+   "callsign": "SYN0072"
+  },
+  {
+   "imo": 9520675,
+   "name": "BULK VALOR",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000073,
+   "callsign": "SYN0073"
+  },
+  {
+   "imo": 9662370,
+   "name": "MAPLE STAR",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000074,
+   "callsign": "SYN0074"
+  },
+  {
+   "imo": 9659799,
+   "name": "WL LADOGA",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000075,
+   "callsign": "SYN0075"
+  },
+  {
+   "imo": 9223174,
+   "name": "PRETTY LADY",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000076,
+   "callsign": "SYN0076"
+  },
+  {
+   "imo": 9910351,
+   "name": "ROSTRUM AMERICA",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000077,
+   "callsign": "SYN0077"
+  },
+  {
+   "imo": 9588615,
+   "name": "KYDONIA",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000078,
+   "callsign": "SYN0078"
+  },
+  {
+   "imo": 9276169,
+   "name": "ASCANIOS",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000079,
+   "callsign": "SYN0079"
+  },
+  {
+   "imo": 9498274,
+   "name": "RODOPI",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000080,
+   "callsign": "SYN0080"
+  },
+  {
+   "imo": 9638927,
+   "name": "TERVEL",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000081,
+   "callsign": "SYN0081"
+  },
+  {
+   "imo": 9471630,
+   "name": "MINOAN PIONEER",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000082,
+   "callsign": "SYN0082"
+  },
+  {
+   "imo": 9243526,
+   "name": "GOKOVA-M",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000083,
+   "callsign": "SYN0083"
+  },
+  {
+   "imo": 9872975,
+   "name": "OSHIMA JAPAN",
+   "category": "bulk",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000084,
+   "callsign": "SYN0084"
+  },
+  {
+   "imo": 9502348,
+   "name": "SAGA FLORA",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000085,
+   "callsign": "SYN0085"
+  },
+  {
+   "imo": 9659189,
+   "name": "DEVBULK GULTEN",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000086,
+   "callsign": "SYN0086"
+  },
+  {
+   "imo": 9631371,
+   "name": "TRADE NAVIGATOR",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000087,
+   "callsign": "SYN0087"
+  },
+  {
+   "imo": 9498482,
+   "name": "BAHRI DIRIYAH",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000088,
+   "callsign": "SYN0088"
+  },
+  {
+   "imo": 9523926,
+   "name": "VICTORIA",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000089,
+   "callsign": "SYN0089"
+  },
+  {
+   "imo": 9758301,
+   "name": "DEVBULK DENIZ",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000090,
+   "callsign": "SYN0090"
+  },
+  {
+   "imo": 9357999,
+   "name": "NORDIC KYLIE",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000091,
+   "callsign": "SYN0091"
+  },
+  {
+   "imo": 9559092,
+   "name": "FULDABORG",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000092,
+   "callsign": "SYN0092"
+  },
+  {
+   "imo": 9384186,
+   "name": "EKMEN GLORY",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000093,
+   "callsign": "SYN0093"
+  },
+  {
+   "imo": 9551935,
+   "name": "HAPPY DELTA",
+   "category": "general_cargo",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000094,
+   "callsign": "SYN0094"
+  },
+  {
+   "imo": 9011014,
+   "name": "LAURANA",
+   "category": "ro_ro",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000095,
+   "callsign": "SYN0095"
+  },
+  {
+   "imo": 8922163,
+   "name": "ASTERION II",
+   "category": "ro_ro",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000096,
+   "callsign": "SYN0096"
+  },
+  {
+   "imo": 9151008,
+   "name": "CHAMPION JET 1",
+   "category": "ro_ro",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000097,
+   "callsign": "SYN0097"
+  },
+  {
+   "imo": 9088859,
+   "name": "GIROLATA",
+   "category": "ro_ro",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000098,
+   "callsign": "SYN0098"
+  },
+  {
+   "imo": 9886847,
+   "name": "SANTONA",
+   "category": "ro_ro",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000099,
+   "callsign": "SYN0099"
+  },
+  {
+   "imo": 7928160,
+   "name": "SAMPIYON TRABZONSPOR",
+   "category": "ro_ro",
+   "ais_types": [
+    70,
+    79
+   ],
+   "mmsi": 990000100,
+   "callsign": "SYN0100"
+  },
+  {
+   "imo": 9389978,
+   "name": "YINGHAO CONFIDENCE",
    "category": "tanker",
    "ais_types": [
     80,
     81,
     89
    ],
-   "mmsi": 990000068,
-   "callsign": "SYN0068"
+   "mmsi": 990000101,
+   "callsign": "SYN0101"
   },
   {
-   "imo": 9938535,
-   "name": "MERCATOR",
+   "imo": 9795139,
+   "name": "EAGLE SAN JOSE",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000102,
+   "callsign": "SYN0102"
+  },
+  {
+   "imo": 9834870,
+   "name": "SEA TIGER",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000103,
+   "callsign": "SYN0103"
+  },
+  {
+   "imo": 9730945,
+   "name": "KLEON",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000104,
+   "callsign": "SYN0104"
+  },
+  {
+   "imo": 9941726,
+   "name": "PENELOPE",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000105,
+   "callsign": "SYN0105"
+  },
+  {
+   "imo": 9843924,
+   "name": "CURRENT SPIRIT",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000106,
+   "callsign": "SYN0106"
+  },
+  {
+   "imo": 9789257,
+   "name": "ATLANTIC FALCON",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000107,
+   "callsign": "SYN0107"
+  },
+  {
+   "imo": 9411941,
+   "name": "MINERVA VERA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000108,
+   "callsign": "SYN0108"
+  },
+  {
+   "imo": 9706413,
+   "name": "NEW COMFORT",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000109,
+   "callsign": "SYN0109"
+  },
+  {
+   "imo": 9889954,
+   "name": "LORD BYRON 21",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000110,
+   "callsign": "SYN0110"
+  },
+  {
+   "imo": 9798088,
+   "name": "HELLAS CALAFIA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000111,
+   "callsign": "SYN0111"
+  },
+  {
+   "imo": 9809356,
+   "name": "BREEZE",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000112,
+   "callsign": "SYN0112"
+  },
+  {
+   "imo": 9945291,
+   "name": "ELANDRA SWALLOW",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000113,
+   "callsign": "SYN0113"
+  },
+  {
+   "imo": 9893761,
+   "name": "CLEAROCEAN MUSTANG",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000114,
+   "callsign": "SYN0114"
+  },
+  {
+   "imo": 9269075,
+   "name": "NEW DISCOVERY",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000115,
+   "callsign": "SYN0115"
+  },
+  {
+   "imo": 9299707,
+   "name": "GUANYIN",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000116,
+   "callsign": "SYN0116"
+  },
+  {
+   "imo": 9595010,
+   "name": "BNEIDER",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000117,
+   "callsign": "SYN0117"
+  },
+  {
+   "imo": 9816323,
+   "name": "ALMI ATLAS",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000118,
+   "callsign": "SYN0118"
+  },
+  {
+   "imo": 9813565,
+   "name": "GANJA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000119,
+   "callsign": "SYN0119"
+  },
+  {
+   "imo": 9457593,
+   "name": "ROSS SEA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000120,
+   "callsign": "SYN0120"
+  },
+  {
+   "imo": 9416408,
+   "name": "SEA VIBE",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000121,
+   "callsign": "SYN0121"
+  },
+  {
+   "imo": 9388704,
+   "name": "SONGA EAGLE",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000122,
+   "callsign": "SYN0122"
+  },
+  {
+   "imo": 9400708,
+   "name": "CHARLOTTE THERESA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000123,
+   "callsign": "SYN0123"
+  },
+  {
+   "imo": 9327504,
+   "name": "IVER ABILITY",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000124,
+   "callsign": "SYN0124"
+  },
+  {
+   "imo": 9580974,
+   "name": "ATLANTIC SPIRIT",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000125,
+   "callsign": "SYN0125"
+  },
+  {
+   "imo": 9384019,
+   "name": "RIVIERA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000126,
+   "callsign": "SYN0126"
+  },
+  {
+   "imo": 9732773,
+   "name": "MANDAL",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000127,
+   "callsign": "SYN0127"
+  },
+  {
+   "imo": 9830599,
+   "name": "MED TUNCER",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000128,
+   "callsign": "SYN0128"
+  },
+  {
+   "imo": 9809394,
+   "name": "FAIRCHEM ANGEL",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000129,
+   "callsign": "SYN0129"
+  },
+  {
+   "imo": 9315068,
+   "name": "STAR OSPREY",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000130,
+   "callsign": "SYN0130"
+  },
+  {
+   "imo": 9473107,
+   "name": "HARBOUR FOUNTAIN",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000131,
+   "callsign": "SYN0131"
+  },
+  {
+   "imo": 9669653,
+   "name": "CIELO DI GAETA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000132,
+   "callsign": "SYN0132"
+  },
+  {
+   "imo": 9888144,
+   "name": "EVA DIAMOND",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000133,
+   "callsign": "SYN0133"
+  },
+  {
+   "imo": 9877614,
+   "name": "SOLAR SHARNA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000134,
+   "callsign": "SYN0134"
+  },
+  {
+   "imo": 9417220,
+   "name": "KRITI CORAL",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000135,
+   "callsign": "SYN0135"
+  },
+  {
+   "imo": 9835044,
+   "name": "OPTIMUS",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    81,
+    89
+   ],
+   "mmsi": 990000136,
+   "callsign": "SYN0136"
+  },
+  {
+   "imo": 9251779,
+   "name": "PGC ARATOS",
    "category": "tanker",
    "ais_types": [
     80,
     89
    ],
-   "mmsi": 990000069,
-   "callsign": "SYN0069"
+   "mmsi": 990000137,
+   "callsign": "SYN0137"
   },
   {
-   "imo": 9806732,
-   "name": "GAS DIAMOND",
+   "imo": 9961207,
+   "name": "GASCHEM AMERICA",
    "category": "tanker",
    "ais_types": [
     80,
     89
    ],
-   "mmsi": 990000070,
-   "callsign": "SYN0070"
+   "mmsi": 990000138,
+   "callsign": "SYN0138"
   },
   {
-   "imo": 9771523,
-   "name": "INEOS INTUITION",
+   "imo": 9745512,
+   "name": "ARCTIC GAS",
    "category": "tanker",
    "ais_types": [
     80,
     89
    ],
-   "mmsi": 990000071,
-   "callsign": "SYN0071"
+   "mmsi": 990000139,
+   "callsign": "SYN0139"
   },
   {
-   "imo": 9655456,
-   "name": "CLEAN VISION",
+   "imo": 9933444,
+   "name": "LANTANA PLANET",
    "category": "tanker",
    "ais_types": [
     80,
     89
    ],
-   "mmsi": 990000072,
-   "callsign": "SYN0072"
+   "mmsi": 990000140,
+   "callsign": "SYN0140"
   },
   {
-   "imo": 9636735,
-   "name": "PALU LNG",
+   "imo": 9369760,
+   "name": "USKUDAR",
    "category": "tanker",
    "ais_types": [
     80,
     89
    ],
-   "mmsi": 990000073,
-   "callsign": "SYN0073"
+   "mmsi": 990000141,
+   "callsign": "SYN0141"
   },
   {
-   "imo": 9627966,
-   "name": "WILPRIDE",
+   "imo": 9506186,
+   "name": "TRISTAR DANA",
    "category": "tanker",
    "ais_types": [
     80,
     89
    ],
-   "mmsi": 990000074,
-   "callsign": "SYN0074"
+   "mmsi": 990000142,
+   "callsign": "SYN0142"
   },
   {
-   "imo": 9208617,
-   "name": "PRIDE OF ROTTERDAM",
+   "imo": 9854765,
+   "name": "TRAIANO KNUTSEN",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    89
+   ],
+   "mmsi": 990000143,
+   "callsign": "SYN0143"
+  },
+  {
+   "imo": 9266982,
+   "name": "LNG RIVER ORASHI",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    89
+   ],
+   "mmsi": 990000144,
+   "callsign": "SYN0144"
+  },
+  {
+   "imo": 9872949,
+   "name": "LNGSHIPS ATHENA",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    89
+   ],
+   "mmsi": 990000145,
+   "callsign": "SYN0145"
+  },
+  {
+   "imo": 9360829,
+   "name": "UMM AL AMAD",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    89
+   ],
+   "mmsi": 990000146,
+   "callsign": "SYN0146"
+  },
+  {
+   "imo": 9355379,
+   "name": "TANGGUH PALUNG",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    89
+   ],
+   "mmsi": 990000147,
+   "callsign": "SYN0147"
+  },
+  {
+   "imo": 9904170,
+   "name": "SANTANDER KNUTSEN",
+   "category": "tanker",
+   "ais_types": [
+    80,
+    89
+   ],
+   "mmsi": 990000148,
+   "callsign": "SYN0148"
+  },
+  {
+   "imo": 9227417,
+   "name": "SUPERFAST XI",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000075,
-   "callsign": "SYN0075"
+   "mmsi": 990000149,
+   "callsign": "SYN0149"
   },
   {
-   "imo": 9031703,
-   "name": "COPERNICUS",
+   "imo": 9007283,
+   "name": "BLUE WAVE HARMONY",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000076,
-   "callsign": "SYN0076"
+   "mmsi": 990000150,
+   "callsign": "SYN0150"
   },
   {
-   "imo": 9144419,
-   "name": "PRINS RICHARD",
+   "imo": 9185396,
+   "name": "CARTHAGE",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000077,
-   "callsign": "SYN0077"
+   "mmsi": 990000151,
+   "callsign": "SYN0151"
   },
   {
-   "imo": 8705395,
-   "name": "MEDITERRANEE",
+   "imo": 9170705,
+   "name": "BEN-MY-CHREE",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000078,
-   "callsign": "SYN0078"
+   "mmsi": 990000152,
+   "callsign": "SYN0152"
   },
   {
-   "imo": 9771420,
-   "name": "BASTØ IV",
+   "imo": 9263370,
+   "name": "CIUDAD DE IBIZA",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000079,
-   "callsign": "SYN0079"
+   "mmsi": 990000153,
+   "callsign": "SYN0153"
   },
   {
-   "imo": 9692806,
-   "name": "PRINSESSE ISABELLA",
+   "imo": 9080015,
+   "name": "CIUDAD DE MALAGA",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000080,
-   "callsign": "SYN0080"
+   "mmsi": 990000154,
+   "callsign": "SYN0154"
   },
   {
-   "imo": 9216030,
-   "name": "SUPERFAST IV",
+   "imo": 9168518,
+   "name": "OLIVER",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000081,
-   "callsign": "SYN0081"
+   "mmsi": 990000155,
+   "callsign": "SYN0155"
   },
   {
-   "imo": 9766841,
-   "name": "BIGROLL BEAUFORT",
+   "imo": 9893369,
+   "name": "GNV BRIDGE",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000082,
-   "callsign": "SYN0082"
+   "mmsi": 990000156,
+   "callsign": "SYN0156"
   },
   {
-   "imo": 7903029,
-   "name": "NEAMEH",
+   "imo": 9863637,
+   "name": "ELEANOR ROOSEVELT",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000083,
-   "callsign": "SYN0083"
+   "mmsi": 990000157,
+   "callsign": "SYN0157"
   },
   {
-   "imo": 9360788,
-   "name": "BAHIJAH",
+   "imo": 9081588,
+   "name": "VOLCAN DE TAUCE",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000084,
-   "callsign": "SYN0084"
+   "mmsi": 990000158,
+   "callsign": "SYN0158"
   },
   {
-   "imo": 9349459,
-   "name": "FEHN LIGHT",
+   "imo": 9143441,
+   "name": "EXCELLENT",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000085,
-   "callsign": "SYN0085"
+   "mmsi": 990000159,
+   "callsign": "SYN0159"
   },
   {
-   "imo": 9427081,
-   "name": "KAMILLA",
+   "imo": 9874301,
+   "name": "BANADEROS EXPRESS",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000086,
-   "callsign": "SYN0086"
+   "mmsi": 990000160,
+   "callsign": "SYN0160"
   },
   {
-   "imo": 9607825,
-   "name": "DA AN",
+   "imo": 9222534,
+   "name": "JANAS",
    "category": "passenger",
    "ais_types": [
     60,
     69
    ],
-   "mmsi": 990000087,
-   "callsign": "SYN0087"
+   "mmsi": 990000161,
+   "callsign": "SYN0161"
+  },
+  {
+   "imo": 9586605,
+   "name": "STAVANGERFJORD",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000162,
+   "callsign": "SYN0162"
+  },
+  {
+   "imo": 9403384,
+   "name": "KIARA",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000163,
+   "callsign": "SYN0163"
+  },
+  {
+   "imo": 9504645,
+   "name": "MARMED",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000164,
+   "callsign": "SYN0164"
+  },
+  {
+   "imo": 9501681,
+   "name": "MILA",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000165,
+   "callsign": "SYN0165"
+  },
+  {
+   "imo": 9464883,
+   "name": "PACIFIC GREBE",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000166,
+   "callsign": "SYN0166"
+  },
+  {
+   "imo": 9802970,
+   "name": "CY INTEROCEAN I",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000167,
+   "callsign": "SYN0167"
+  },
+  {
+   "imo": 9812016,
+   "name": "BBC KHERSON",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000168,
+   "callsign": "SYN0168"
+  },
+  {
+   "imo": 9231133,
+   "name": "CSTAR VOYAGER",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000169,
+   "callsign": "SYN0169"
+  },
+  {
+   "imo": 9146120,
+   "name": "MUMBAI",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000170,
+   "callsign": "SYN0170"
+  },
+  {
+   "imo": 9789685,
+   "name": "UHL FRONTIER",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000171,
+   "callsign": "SYN0171"
+  },
+  {
+   "imo": 9620669,
+   "name": "SLOMAN DISCOVERER",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000172,
+   "callsign": "SYN0172"
+  },
+  {
+   "imo": 9243849,
+   "name": "FAIRPARTNER",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000173,
+   "callsign": "SYN0173"
+  },
+  {
+   "imo": 9484194,
+   "name": "UNISCOUT",
+   "category": "passenger",
+   "ais_types": [
+    60,
+    69
+   ],
+   "mmsi": 990000174,
+   "callsign": "SYN0174"
   },
   {
    "imo": null,
@@ -1183,8 +2210,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000088,
-   "callsign": "SYN0088"
+   "mmsi": 990000175,
+   "callsign": "SYN0175"
   },
   {
    "imo": null,
@@ -1193,8 +2220,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000089,
-   "callsign": "SYN0089"
+   "mmsi": 990000176,
+   "callsign": "SYN0176"
   },
   {
    "imo": null,
@@ -1203,8 +2230,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000090,
-   "callsign": "SYN0090"
+   "mmsi": 990000177,
+   "callsign": "SYN0177"
   },
   {
    "imo": null,
@@ -1213,8 +2240,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000091,
-   "callsign": "SYN0091"
+   "mmsi": 990000178,
+   "callsign": "SYN0178"
   },
   {
    "imo": null,
@@ -1223,8 +2250,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000092,
-   "callsign": "SYN0092"
+   "mmsi": 990000179,
+   "callsign": "SYN0179"
   },
   {
    "imo": null,
@@ -1233,8 +2260,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000093,
-   "callsign": "SYN0093"
+   "mmsi": 990000180,
+   "callsign": "SYN0180"
   },
   {
    "imo": null,
@@ -1243,8 +2270,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000094,
-   "callsign": "SYN0094"
+   "mmsi": 990000181,
+   "callsign": "SYN0181"
   },
   {
    "imo": null,
@@ -1253,8 +2280,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000095,
-   "callsign": "SYN0095"
+   "mmsi": 990000182,
+   "callsign": "SYN0182"
   },
   {
    "imo": null,
@@ -1263,8 +2290,8 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000096,
-   "callsign": "SYN0096"
+   "mmsi": 990000183,
+   "callsign": "SYN0183"
   },
   {
    "imo": null,
@@ -1273,8 +2300,108 @@
    "ais_types": [
     37
    ],
-   "mmsi": 990000097,
-   "callsign": "SYN0097"
+   "mmsi": 990000184,
+   "callsign": "SYN0184"
+  },
+  {
+   "imo": null,
+   "name": "HORIZONTE",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000185,
+   "callsign": "SYN0185"
+  },
+  {
+   "imo": null,
+   "name": "ILUSION",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000186,
+   "callsign": "SYN0186"
+  },
+  {
+   "imo": null,
+   "name": "AMANECER",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000187,
+   "callsign": "SYN0187"
+  },
+  {
+   "imo": null,
+   "name": "TRAMONTANA",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000188,
+   "callsign": "SYN0188"
+  },
+  {
+   "imo": null,
+   "name": "ALEGRIA II",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000189,
+   "callsign": "SYN0189"
+  },
+  {
+   "imo": null,
+   "name": "BRISA II",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000190,
+   "callsign": "SYN0190"
+  },
+  {
+   "imo": null,
+   "name": "SOL NACIENTE II",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000191,
+   "callsign": "SYN0191"
+  },
+  {
+   "imo": null,
+   "name": "MAR AZUL II",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000192,
+   "callsign": "SYN0192"
+  },
+  {
+   "imo": null,
+   "name": "LIBERTAD II",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000193,
+   "callsign": "SYN0193"
+  },
+  {
+   "imo": null,
+   "name": "ESTRELLA DEL SUR II",
+   "category": "recreational",
+   "ais_types": [
+    37
+   ],
+   "mmsi": 990000194,
+   "callsign": "SYN0194"
   },
   {
    "imo": null,
@@ -1283,8 +2410,8 @@
    "ais_types": [
     30
    ],
-   "mmsi": 990000098,
-   "callsign": "SYN0098"
+   "mmsi": 990000195,
+   "callsign": "SYN0195"
   },
   {
    "imo": null,
@@ -1293,8 +2420,8 @@
    "ais_types": [
     30
    ],
-   "mmsi": 990000099,
-   "callsign": "SYN0099"
+   "mmsi": 990000196,
+   "callsign": "SYN0196"
   },
   {
    "imo": null,
@@ -1303,8 +2430,8 @@
    "ais_types": [
     30
    ],
-   "mmsi": 990000100,
-   "callsign": "SYN0100"
+   "mmsi": 990000197,
+   "callsign": "SYN0197"
   },
   {
    "imo": null,
@@ -1313,8 +2440,8 @@
    "ais_types": [
     30
    ],
-   "mmsi": 990000101,
-   "callsign": "SYN0101"
+   "mmsi": 990000198,
+   "callsign": "SYN0198"
   },
   {
    "imo": null,
@@ -1323,8 +2450,8 @@
    "ais_types": [
     30
    ],
-   "mmsi": 990000102,
-   "callsign": "SYN0102"
+   "mmsi": 990000199,
+   "callsign": "SYN0199"
   },
   {
    "imo": null,
@@ -1333,8 +2460,8 @@
    "ais_types": [
     30
    ],
-   "mmsi": 990000103,
-   "callsign": "SYN0103"
+   "mmsi": 990000200,
+   "callsign": "SYN0200"
   },
   {
    "imo": null,
@@ -1343,32 +2470,90 @@
    "ais_types": [
     30
    ],
-   "mmsi": 990000104,
-   "callsign": "SYN0104"
+   "mmsi": 990000201,
+   "callsign": "SYN0201"
   },
   {
    "imo": null,
-   "name": "REMOLCADOR I",
+   "name": "NUEVA ESPERANZA II",
+   "category": "fishing",
+   "ais_types": [
+    30
+   ],
+   "mmsi": 990000202,
+   "callsign": "SYN0202"
+  },
+  {
+   "imo": null,
+   "name": "SAN PEDRO II",
+   "category": "fishing",
+   "ais_types": [
+    30
+   ],
+   "mmsi": 990000203,
+   "callsign": "SYN0203"
+  },
+  {
+   "imo": null,
+   "name": "VIRGEN DEL MAR II",
+   "category": "fishing",
+   "ais_types": [
+    30
+   ],
+   "mmsi": 990000204,
+   "callsign": "SYN0204"
+  },
+  {
+   "imo": null,
+   "name": "DOS HERMANOS II",
+   "category": "fishing",
+   "ais_types": [
+    30
+   ],
+   "mmsi": 990000205,
+   "callsign": "SYN0205"
+  },
+  {
+   "imo": null,
+   "name": "PUNTA FARO II",
+   "category": "fishing",
+   "ais_types": [
+    30
+   ],
+   "mmsi": 990000206,
+   "callsign": "SYN0206"
+  },
+  {
+   "imo": null,
+   "name": "COSTA BRAVA II",
+   "category": "fishing",
+   "ais_types": [
+    30
+   ],
+   "mmsi": 990000207,
+   "callsign": "SYN0207"
+  },
+  {
+   "imo": null,
+   "name": "MARINERO FIEL II",
+   "category": "fishing",
+   "ais_types": [
+    30
+   ],
+   "mmsi": 990000208,
+   "callsign": "SYN0208"
+  },
+  {
+   "imo": null,
+   "name": "REMOLCADOR",
    "category": "tug",
    "ais_types": [
     31,
     32,
     52
    ],
-   "mmsi": 990000105,
-   "callsign": "SYN0105"
-  },
-  {
-   "imo": null,
-   "name": "REMOLCADOR II",
-   "category": "tug",
-   "ais_types": [
-    31,
-    32,
-    52
-   ],
-   "mmsi": 990000106,
-   "callsign": "SYN0106"
+   "mmsi": 990000209,
+   "callsign": "SYN0209"
   },
   {
    "imo": null,
@@ -1379,8 +2564,8 @@
     32,
     52
    ],
-   "mmsi": 990000107,
-   "callsign": "SYN0107"
+   "mmsi": 990000210,
+   "callsign": "SYN0210"
   },
   {
    "imo": null,
@@ -1391,8 +2576,8 @@
     32,
     52
    ],
-   "mmsi": 990000108,
-   "callsign": "SYN0108"
+   "mmsi": 990000211,
+   "callsign": "SYN0211"
   },
   {
    "imo": null,
@@ -1403,8 +2588,8 @@
     32,
     52
    ],
-   "mmsi": 990000109,
-   "callsign": "SYN0109"
+   "mmsi": 990000212,
+   "callsign": "SYN0212"
   },
   {
    "imo": null,
@@ -1415,8 +2600,8 @@
     32,
     52
    ],
-   "mmsi": 990000110,
-   "callsign": "SYN0110"
+   "mmsi": 990000213,
+   "callsign": "SYN0213"
   },
   {
    "imo": null,
@@ -1427,8 +2612,104 @@
     32,
     52
    ],
-   "mmsi": 990000111,
-   "callsign": "SYN0111"
+   "mmsi": 990000214,
+   "callsign": "SYN0214"
+  },
+  {
+   "imo": null,
+   "name": "TRITON",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000215,
+   "callsign": "SYN0215"
+  },
+  {
+   "imo": null,
+   "name": "REMOLCADOR II",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000216,
+   "callsign": "SYN0216"
+  },
+  {
+   "imo": null,
+   "name": "PUERTO NORTE II",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000217,
+   "callsign": "SYN0217"
+  },
+  {
+   "imo": null,
+   "name": "BAHIA TUG II",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000218,
+   "callsign": "SYN0218"
+  },
+  {
+   "imo": null,
+   "name": "ATLAS II",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000219,
+   "callsign": "SYN0219"
+  },
+  {
+   "imo": null,
+   "name": "HERCULES II",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000220,
+   "callsign": "SYN0220"
+  },
+  {
+   "imo": null,
+   "name": "NEPTUNO II",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000221,
+   "callsign": "SYN0221"
+  },
+  {
+   "imo": null,
+   "name": "TRITON II",
+   "category": "tug",
+   "ais_types": [
+    31,
+    32,
+    52
+   ],
+   "mmsi": 990000222,
+   "callsign": "SYN0222"
   },
   {
    "imo": null,
@@ -1437,8 +2718,8 @@
    "ais_types": [
     36
    ],
-   "mmsi": 990000112,
-   "callsign": "SYN0112"
+   "mmsi": 990000223,
+   "callsign": "SYN0223"
   },
   {
    "imo": null,
@@ -1447,8 +2728,8 @@
    "ais_types": [
     36
    ],
-   "mmsi": 990000113,
-   "callsign": "SYN0113"
+   "mmsi": 990000224,
+   "callsign": "SYN0224"
   },
   {
    "imo": null,
@@ -1457,8 +2738,8 @@
    "ais_types": [
     36
    ],
-   "mmsi": 990000114,
-   "callsign": "SYN0114"
+   "mmsi": 990000225,
+   "callsign": "SYN0225"
   },
   {
    "imo": null,
@@ -1467,8 +2748,8 @@
    "ais_types": [
     36
    ],
-   "mmsi": 990000115,
-   "callsign": "SYN0115"
+   "mmsi": 990000226,
+   "callsign": "SYN0226"
   },
   {
    "imo": null,
@@ -1477,8 +2758,58 @@
    "ais_types": [
     36
    ],
-   "mmsi": 990000116,
-   "callsign": "SYN0116"
+   "mmsi": 990000227,
+   "callsign": "SYN0227"
+  },
+  {
+   "imo": null,
+   "name": "ALBATROS II",
+   "category": "sailing",
+   "ais_types": [
+    36
+   ],
+   "mmsi": 990000228,
+   "callsign": "SYN0228"
+  },
+  {
+   "imo": null,
+   "name": "GAVIOTA II",
+   "category": "sailing",
+   "ais_types": [
+    36
+   ],
+   "mmsi": 990000229,
+   "callsign": "SYN0229"
+  },
+  {
+   "imo": null,
+   "name": "PONIENTE II",
+   "category": "sailing",
+   "ais_types": [
+    36
+   ],
+   "mmsi": 990000230,
+   "callsign": "SYN0230"
+  },
+  {
+   "imo": null,
+   "name": "MISTRAL II",
+   "category": "sailing",
+   "ais_types": [
+    36
+   ],
+   "mmsi": 990000231,
+   "callsign": "SYN0231"
+  },
+  {
+   "imo": null,
+   "name": "VELERO DEL SUR II",
+   "category": "sailing",
+   "ais_types": [
+    36
+   ],
+   "mmsi": 990000232,
+   "callsign": "SYN0232"
   },
   {
    "imo": null,
@@ -1487,18 +2818,18 @@
    "ais_types": [
     0
    ],
-   "mmsi": 990000117,
-   "callsign": "SYN0117"
+   "mmsi": 990000233,
+   "callsign": "SYN0233"
   },
   {
    "imo": null,
-   "name": "GUARDACOSTAS 3",
+   "name": "GUARDACOSTAS",
    "category": "other",
    "ais_types": [
     33
    ],
-   "mmsi": 990000118,
-   "callsign": "SYN0118"
+   "mmsi": 990000234,
+   "callsign": "SYN0234"
   },
   {
    "imo": null,
@@ -1507,8 +2838,8 @@
    "ais_types": [
     51
    ],
-   "mmsi": 990000119,
-   "callsign": "SYN0119"
+   "mmsi": 990000235,
+   "callsign": "SYN0235"
   },
   {
    "imo": null,
@@ -1517,8 +2848,8 @@
    "ais_types": [
     53
    ],
-   "mmsi": 990000120,
-   "callsign": "SYN0120"
+   "mmsi": 990000236,
+   "callsign": "SYN0236"
   },
   {
    "imo": null,
@@ -1527,8 +2858,58 @@
    "ais_types": [
     90
    ],
-   "mmsi": 990000121,
-   "callsign": "SYN0121"
+   "mmsi": 990000237,
+   "callsign": "SYN0237"
+  },
+  {
+   "imo": null,
+   "name": "PATRULLA COSTERA II",
+   "category": "other",
+   "ais_types": [
+    0
+   ],
+   "mmsi": 990000238,
+   "callsign": "SYN0238"
+  },
+  {
+   "imo": null,
+   "name": "GUARDACOSTAS II",
+   "category": "other",
+   "ais_types": [
+    33
+   ],
+   "mmsi": 990000239,
+   "callsign": "SYN0239"
+  },
+  {
+   "imo": null,
+   "name": "PRACTICO DE PUERTO II",
+   "category": "other",
+   "ais_types": [
+    51
+   ],
+   "mmsi": 990000240,
+   "callsign": "SYN0240"
+  },
+  {
+   "imo": null,
+   "name": "SUMINISTROS MAR II",
+   "category": "other",
+   "ais_types": [
+    53
+   ],
+   "mmsi": 990000241,
+   "callsign": "SYN0241"
+  },
+  {
+   "imo": null,
+   "name": "AUXILIAR PORTUARIO II",
+   "category": "other",
+   "ais_types": [
+    90
+   ],
+   "mmsi": 990000242,
+   "callsign": "SYN0242"
   }
  ]
 }

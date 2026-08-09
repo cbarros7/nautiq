@@ -89,6 +89,17 @@ Desactivar con `AIS_SYNTHETIC=false` en cuanto AISStream se recupere. Es un bloq
 autocontenido: quitar la variable y borrar `ais/synthetic.py` +
 `ais/synthetic_fixtures.json` deja el servicio exactamente como estaba.
 
+Con la flota de 242 buques y los intervalos por defecto, el caudal medido es de
+**~6,6-7,8 msg/s** — más rápido por buque que el muestreo real de AISStream (90-120s),
+pero sin llevar la flota ni los intervalos a un extremo implausible; se acerca a los
+~9 msg/s reales medidos sobre esta misma bbox sin igualarlos exactamente. Ajustable con
+`SYNTHETIC_POSITION_INTERVAL_SECONDS`/`SYNTHETIC_STATIC_INTERVAL_SECONDS`, o
+regenerando el fixture con otra flota:
+
+```bash
+uv run python -m ingestion.src.ais.build_synthetic_fixture
+```
+
 ## Estructura
 
 ```
@@ -100,6 +111,7 @@ ingestion/src/
     tracker.py          #   Enruta los 2 tipos de mensaje -> 2 topics; rate-limit; DLQ
     synthetic.py        #   Generador sintético temporal (AIS_SYNTHETIC=true)
     synthetic_fixtures.json  # Buques (IMO real de THETIS) y puertos para synthetic.py
+    build_synthetic_fixture.py  # Herramienta: regenera synthetic_fixtures.json
   reference/            # Cargas puntuales de referencia -> PostgreSQL (Supabase)
     db.py               #   Conexión psycopg + DDL (ports, thetis_mrv) + UPSERTs
     locode.py           #   UN/LOCODE -> tabla ports
@@ -237,8 +249,8 @@ Flink consume estas tablas (LEFT JOIN por IMO / resolución de destino).
 | `PUBLISH_RATE_BURST` | no | `1` | Ráfaga tolerada tras un período ocioso |
 | `STATS_INTERVAL_SECONDS` | no | `60` | Cadencia del informe `[ESTADO]`; 0 = sin traza |
 | `AIS_SYNTHETIC` | no | `false` | Sustituye AISStream por el generador sintético temporal (ver arriba) |
-| `SYNTHETIC_POSITION_INTERVAL_SECONDS` | no | `100` | Intervalo medio de `PositionReport` por buque simulado |
-| `SYNTHETIC_STATIC_INTERVAL_SECONDS` | no | `360` | Intervalo medio de `ShipStaticData` por buque simulado |
+| `SYNTHETIC_POSITION_INTERVAL_SECONDS` | no | `45` | Intervalo medio de `PositionReport` por buque simulado |
+| `SYNTHETIC_STATIC_INTERVAL_SECONDS` | no | `200` | Intervalo medio de `ShipStaticData` por buque simulado |
 
 El área de cobertura no es una variable de entorno: vive en `constants.py`
 (`AIS_COVERAGE_BBOX`).
