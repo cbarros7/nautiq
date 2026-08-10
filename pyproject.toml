@@ -11,7 +11,11 @@ dependencies = [
 ]
 
 [tool.uv.workspace]
-members = ["ingestion", "streaming", "api"]
+members = [
+    "ingestion",
+    "api",
+    "databricks",
+]
 
 [tool.uv.sources]
 nautiq-ingestion = { workspace = true }
