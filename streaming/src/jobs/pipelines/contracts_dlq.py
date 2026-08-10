@@ -1,3 +1,11 @@
+"""
+Módulo: contracts_dlq.py
+Propósito: Construye el pipeline para mover los mensajes con esquemas Avro/JSON inválidos hacia una Dead Letter Queue (DLQ).
+Patrón: Dead Letter Queue (DLQ) / Raw Byte Ingestion.
+Decisión de diseño: Se leen los datos usando formato 'raw' para evitar que Flink crashee intentando
+                     parsear JSONs rotos. Esto permite investigar mensajes malformados posteriormente en el Data Lake.
+Datos consumidos: Lee del topic de DLQ de Kafka y escribe en 'ContractsDlqBronze'.
+"""
 import os
 import config
 import schema_utils
@@ -25,6 +33,6 @@ def build_contracts_dlq_pipeline(t_env: StreamTableEnvironment, stmt_set: Statem
     
     # 3. Pipeline hacia Bronze
     sql_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sql")
-    contracts_dlq_insert_sql = schema_utils.read_sql_file(os.path.join(sql_dir, "insert_contracts_dlq.sql"))
+    contracts_dlq_insert_sql = schema_utils.read_sql_file(os.path.join(sql_dir, "dlq", "insert_contracts_dlq.sql"))
     
     stmt_set.add_insert_sql(contracts_dlq_insert_sql)
