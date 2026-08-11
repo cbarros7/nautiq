@@ -48,7 +48,7 @@ def build_telemetry_pipeline(t_env: StreamTableEnvironment, stmt_set: StatementS
     )
     t_env.execute_sql(spoofing_dlq_ddl)
 
-    # 4. Vista enriquecida: State Pattern con LAG + fórmula de Haversine
+    # 4. Vista enriquecida: State Pattern con LAG + ley esférica de los cosenos
     enriched_positions_sql = schema_utils.read_sql_file(os.path.join(sql_dir, "telemetry", "enriched_positions.sql"))
     t_env.execute_sql(enriched_positions_sql)
 

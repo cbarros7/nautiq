@@ -60,5 +60,9 @@ SELECT payload_json FROM (
     INNER JOIN port_inventory_summary pis 
         ON c.destination_port = pis.port_name 
         AND c.window_start = pis.window_start
-    WHERE pis.congested_count >= {congestion_threshold}
+    -- Solo recibiremos l alerta si 
+    -- (1) el puerto al que se dirige el buque ya muestra indicios de ocupación Y
+    --(2) el buque está a punto de llegar (en menos de X horas). 
+    WHERE pis.congested_count >= {congestion_threshold} -- Verifica el estado actual del puerto de destino
+      AND c._eta_dynamic_hours <= {eta_alert_horizon} -- Evalúa la urgencia del barco que se está aproximando.
 )

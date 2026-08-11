@@ -28,31 +28,28 @@ def build_eta_alerts_pipeline(t_env: StreamTableEnvironment, stmt_set: Statement
     
     # a. resolver puertos de destino (desde StaticKafka)
     port_filter = schema_utils.build_port_filter_sql(config.TARGET_PORTS)
-    # Extraer variables para interpolación
-    valencia = next(p for p in config.TARGET_PORTS if p["name"] == "VALENCIA")
-    algeciras = next(p for p in config.TARGET_PORTS if p["name"] == "ALGECIRAS")
-    bcn = next(p for p in config.TARGET_PORTS if p["name"] == "BARCELONA")
     
-    valencia_filter = " OR ".join([f"UPPER(destination) LIKE '%{a}%'" for a in valencia["aliases"]])
-    algeciras_filter = " OR ".join([f"UPPER(destination) LIKE '%{a}%'" for a in algeciras["aliases"]])
-    bcn_filter = " OR ".join([f"UPPER(destination) LIKE '%{a}%'" for a in bcn["aliases"]])
+    # Construcción dinámica de los bloques CASE para SQL
+    resolved_port_cases = ""
+    port_lat_cases = ""
+    port_lon_cases = ""
+    port_radius_cases = ""
+    
+    for port in config.TARGET_PORTS:
+        filter_expr = " OR ".join([f"UPPER(destination) LIKE '%{a}%'" for a in port["aliases"]])
+        resolved_port_cases += f"        WHEN {filter_expr} THEN '{port['name']}'\n"
+        port_lat_cases += f"        WHEN {filter_expr} THEN {port['lat']}\n"
+        port_lon_cases += f"        WHEN {filter_expr} THEN {port['lon']}\n"
+        port_radius_cases += f"        WHEN {filter_expr} THEN {port['congestion_radius_nm']}\n"
 
     resolve_port_sql = schema_utils.read_sql_file(os.path.join(sql_dir, "eta", "resolve_destination_port.sql")).format(
         port_filter=port_filter,
         cargo_min=config.CARGO_SHIP_TYPE_MIN,
         cargo_max=config.CARGO_SHIP_TYPE_MAX,
-        valencia_filter=valencia_filter,
-        valencia_lat=valencia["lat"],
-        valencia_lon=valencia["lon"],
-        valencia_radius=valencia["congestion_radius_nm"],
-        algeciras_filter=algeciras_filter,
-        algeciras_lat=algeciras["lat"],
-        algeciras_lon=algeciras["lon"],
-        algeciras_radius=algeciras["congestion_radius_nm"],
-        bcn_filter=bcn_filter,
-        bcn_lat=bcn["lat"],
-        bcn_lon=bcn["lon"],
-        bcn_radius=bcn["congestion_radius_nm"],
+        resolved_port_cases=resolved_port_cases.rstrip(),
+        port_lat_cases=port_lat_cases.rstrip(),
+        port_lon_cases=port_lon_cases.rstrip(),
+        port_radius_cases=port_radius_cases.rstrip(),
         default_port='UNKNOWN'
     )
     t_env.execute_sql(resolve_port_sql)
@@ -105,5 +102,30 @@ def build_eta_alerts_pipeline(t_env: StreamTableEnvironment, stmt_set: Statement
     )
     t_env.execute_sql(sink_sql)
 
-    # --- 3. Añadir INSERT directo al statement set ---
+    # --- 3. Crear Sink de Salida Local (JSON Debug) ---
+    import logging
+    logger = logging.getLogger("nautiq_job")
+    logger.info("Inyectando Debug Sinks (JSON local) para port_inventory_summary...")
+    
+    debug_inventory_ddl = """
+    CREATE TABLE DebugInventorySummary (
+        port_name STRING,
+        window_start TIMESTAMP(3),
+        congested_count BIGINT,
+        atracados_json STRING,
+        fondeados_json STRING,
+        en_camino_json STRING
+    ) WITH (
+        'connector' = 'filesystem',
+        'path' = 'file:///opt/flink/usrlib/src/debug_output/inventory',
+        'format' = 'json'
+    )
+    """
+    t_env.execute_sql(debug_inventory_ddl)
+
+    # --- 4. Añadir INSERTs directos al statement set ---
+    # Añadimos la inserción del payload final al HTTP Sink
     stmt_set.add_insert_sql(payload_insert_sql)
+    
+    # Añadimos la inserción de la tabla intermedia al Local Sink
+    stmt_set.add_insert_sql("INSERT INTO DebugInventorySummary SELECT * FROM port_inventory_summary")

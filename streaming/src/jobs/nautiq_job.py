@@ -73,8 +73,8 @@ def main():
     # 4. Ensamblaje de Pipelines (Modular)
     build_telemetry_pipeline(t_env, stmt_set, config_dict)
     build_static_pipeline(t_env, stmt_set, config_dict)
+    build_contracts_dlq_pipeline(t_env, stmt_set, config_dict)
     build_eta_alerts_pipeline(t_env, stmt_set, config_dict)
-    # build_contracts_dlq_pipeline(t_env, stmt_set, config_dict)  # Pendiente: topic no creado aún
 
     logger.info("Enviando grafo de ejecucion al cluster de Flink...")
     table_result = stmt_set.execute()

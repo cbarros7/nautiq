@@ -86,10 +86,10 @@ TARGET_PORTS = [
 ]
 
 # ---- Reglas de Negocio ETA & Alertas ----
-ETA_ALERT_HORIZON_HOURS = 12        # Disparar alerta si ETA dinámico < N horas
-CONGESTION_VESSEL_THRESHOLD = 5     # Mínimo de buques en puerto para considerar "congestión"
-ALERT_DEDUP_WINDOW_MINUTES = 30     # Ventana de deduplicación por buque
-EN_CAMINO_MAX_ETA_HOURS = 48        # Filtro de distancia temporal para buques "en camino"
+ETA_ALERT_HORIZON_HOURS = 48        # Disparar alerta si ETA dinámico < N horas (Dev: 48 a 72 horas). (Prod: 12 a 24 horas)
+CONGESTION_VESSEL_THRESHOLD = 1     # Mínimo de buques en puerto para considerar "congestión" (Dev: 1 para pruebas). (Prod: 3 a 5 pruebas)
+ALERT_DEDUP_WINDOW_MINUTES = 1     # Ventana de deduplicación por buque (Dev: 1 a 5 para pruebas). (Prod: 30 a 60 minutos)
+EN_CAMINO_MAX_ETA_HOURS = 72        # Filtro de distancia temporal para buques "en camino" (Dev: 48 a 72 horas). (Prod: 48 a 72 horas)
 
 # ---- Configuración de Flink ----
 FLINK_PARALLELISM = 2               # Número de hilos paralelos (Task Slots)
