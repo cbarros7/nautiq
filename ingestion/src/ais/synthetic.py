@@ -37,7 +37,13 @@ from .. import constants
 
 _FIXTURES_PATH = Path(__file__).parent / "synthetic_fixtures.json"
 _TARGET_LOCODES = {"ESVLC", "ESALG", "ESBCN"}
-_PROB_DEST_OBJETIVO = 0.4  # fracción de buques con destino a los 3 puertos
+_PROB_DEST_OBJETIVO = 0.55  # fracción de buques (sin puerto base) con destino a los 3 puertos
+# Buques "residentes": alternan SIEMPRE entre su puerto base y otro cualquiera, en vez
+# de elegir destino al azar. Sin esto, la congestión (>=1 buque atracado/fondeado cerca
+# del puerto en la MISMA ventana de 1 min en que otro se aproxima) es una coincidencia
+# rara con 242 buques repartidos entre 21 puertos: el puerto objetivo casi nunca tiene
+# tráfico. Con 3 residentes por puerto, siempre hay alguien atracado o volviendo.
+_RESIDENTES_POR_PUERTO = 3
 
 # (rango_length_m, rango_beam_m, rango_draught_m) por categoría.
 _DIM_RANGES = {
@@ -141,6 +147,7 @@ class SyntheticVessel:
         self.route_nm = 0.0
         self.progress_nm = 0.0
         self.dest_locode: str | None = None
+        self.home_locode: str | None = None  # residente: siempre vuelve a este puerto
         self.eta_dt: datetime | None = None
         self.next_static_at = 0.0
         self.next_position_at = 0.0
@@ -176,13 +183,44 @@ class SyntheticVessel:
 
 
 def _choose_destination(vessel: SyntheticVessel, ports: dict) -> str:
-    """Con `_PROB_DEST_OBJETIVO` va a uno de los 3 puertos; si no, a cualquier otro."""
+    """
+    Residente (`home_locode` fijado): alterna sin excepción entre su puerto base y
+    cualquier otro — garantiza tráfico recurrente hacia los 3 puertos objetivo.
+
+    Resto de la flota: con `_PROB_DEST_OBJETIVO` va a uno de los 3 puertos; si no,
+    a cualquier otro. Aleatorio, sin garantía de converger en un puerto concreto.
+    """
+    if vessel.home_locode:
+        if vessel.dest_locode == vessel.home_locode:
+            candidates = [lc for lc in ports if lc != vessel.home_locode]
+            return random.choice(candidates)
+        return vessel.home_locode
+
     if random.random() < _PROB_DEST_OBJETIVO:
         pool = [lc for lc in _TARGET_LOCODES if lc in ports and lc != vessel.dest_locode]
         if pool:
             return random.choice(pool)
     candidates = [lc for lc in ports if lc != vessel.dest_locode]
     return random.choice(candidates)
+
+
+def _asignar_residentes(vessels: list[SyntheticVessel], ports: dict) -> None:
+    """
+    Fija `home_locode` en `_RESIDENTES_POR_PUERTO` portacontenedores por puerto
+    objetivo (categoría "container": su `ship_type` siempre cae en carga 70-79,
+    el rango que exige el filtro de destino de Flink). Sin residentes, un puerto
+    objetivo concreto puede pasar horas sin un solo buque real, porque la flota se
+    reparte al azar entre los 21 puertos del fixture.
+    """
+    candidatos = [v for v in vessels if v.category == "container"]
+    random.shuffle(candidatos)
+    i = 0
+    for locode in _TARGET_LOCODES:
+        if locode not in ports:
+            continue
+        for v in candidatos[i:i + _RESIDENTES_POR_PUERTO]:
+            v.home_locode = locode
+        i += _RESIDENTES_POR_PUERTO
 
 
 class SyntheticFleet:
@@ -199,6 +237,7 @@ class SyntheticFleet:
         data = json.loads(_FIXTURES_PATH.read_text(encoding="utf-8"))
         ports = data["ports"]
         vessels = [SyntheticVessel(tpl, ports) for tpl in data["vessels"]]
+        _asignar_residentes(vessels, ports)
         return cls(vessels, ports)
 
     async def start(self) -> None:
