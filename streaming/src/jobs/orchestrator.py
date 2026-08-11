@@ -47,26 +47,27 @@ def _lock_exists() -> bool:
     return result.returncode == 0
 
 def _acquire_lock():
-    """Adquiere el lock creando un archivo vacío en ADLS."""
+    """Adquiere el lock atómicamente creando un directorio en ADLS."""
     # Asegurar que el directorio de savepoints existe en ADLS
     subprocess.run(["hadoop", "fs", "-mkdir", "-p", SAVEPOINT_DIR], capture_output=True)
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-        f.write("lock")
-        tmp_name = f.name
-    try:
-        res = subprocess.run(["hadoop", "fs", "-put", "-f", tmp_name, LOCK_FILE], capture_output=True, text=True)
-        if res.returncode != 0:
-            logger.error(f"Error creando lock en ADLS: {res.stderr}")
-            raise subprocess.CalledProcessError(res.returncode, "hadoop fs -put", output=res.stdout, stderr=res.stderr)
-        logger.info(f"Lock adquirido - path={LOCK_FILE}")
-    finally:
-        os.remove(tmp_name)
+    
+    # Intentar crear el directorio de lock SIN -p (falla si ya existe, operación atómica)
+    res = subprocess.run(["hadoop", "fs", "-mkdir", LOCK_FILE], capture_output=True, text=True)
+    if res.returncode != 0:
+        if "File exists" in res.stderr or "already exists" in res.stderr:
+            logger.warning("Carrera detectada: Otra instancia adquirió el lock una fracción de segundo antes.")
+            sys.exit(0)
+        else:
+            logger.error(f"Error inesperado creando lock en ADLS: {res.stderr}")
+            raise subprocess.CalledProcessError(res.returncode, "hadoop fs -mkdir", output=res.stdout, stderr=res.stderr)
+            
+    logger.info(f"Lock adquirido atómicamente - path={LOCK_FILE}")
 
 def _release_lock():
-    """Libera el lock eliminando el archivo en ADLS."""
+    """Libera el lock eliminando el directorio en ADLS."""
     try:
         if _lock_exists():
-            subprocess.run(["hadoop", "fs", "-rm", LOCK_FILE], check=True, capture_output=True)
+            subprocess.run(["hadoop", "fs", "-rm", "-r", LOCK_FILE], check=True, capture_output=True)
             logger.info(f"Lock liberado - path={LOCK_FILE}")
     except Exception as e:
         logger.error(f"Fallo al liberar el lock - error={e}")
@@ -223,9 +224,10 @@ def _get_kafka_consumer_lag() -> int:
                 
         return total_lag
     except FileNotFoundError:
-        # Si no existe el binario en el contenedor, fallback a proxy simulado (o Flink REST metrics)
-        logger.warning("kafka-consumer-groups.sh no encontrado, usando proxy")
-        return 0
+        # Si no existe el binario en el contenedor, el lag no se puede calcular de forma nativa.
+        # Retornamos -1 para evitar que el orquestador asuma falsamente que el lag es 0 y detenga el job.
+        logger.error("kafka-consumer-groups.sh no encontrado. No se puede monitorear el idleness.")
+        return -1
     except Exception as e:
         logger.error(f"Error parseando lag de Kafka: {e}")
         return -1
@@ -278,6 +280,9 @@ def _stop_with_savepoint(job_id: str) -> str:
             # Fallback buscando el ultimo savepoint en el directorio
             time.sleep(2)
             sp_path = find_latest_savepoint()
+            
+        if not sp_path:
+            raise RuntimeError("Fallo crítico: No se pudo determinar la ruta del Savepoint tras detener el Job.")
             
         return str(sp_path)
     except subprocess.CalledProcessError as e:
