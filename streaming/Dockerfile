@@ -11,6 +11,10 @@ RUN ln -s /usr/bin/python3 /usr/bin/python || true
 # Habilitar plugin nativo de Azure ADLS Gen2 moviéndolo a la carpeta activa de Flink
 RUN cp /opt/flink/opt/flink-azure-fs-hadoop-*.jar /opt/flink/lib/
 
+# Habilitar plugin de Prometheus Metrics
+RUN mkdir -p /opt/flink/plugins/metrics-prometheus && \
+    cp /opt/flink/opt/flink-metrics-prometheus-*.jar /opt/flink/plugins/metrics-prometheus/
+
 # Descargar conectores y formatos necesarios para Flink 1.19
 RUN wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-kafka/3.2.0-1.19/flink-sql-connector-kafka-3.2.0-1.19.jar && \
     wget -P /opt/flink/lib/ https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-avro-confluent-registry/1.19.0/flink-sql-avro-confluent-registry-1.19.0.jar && \

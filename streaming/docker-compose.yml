@@ -10,6 +10,13 @@ services:
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: jobmanager
         jobmanager.memory.process.size: 2048m
+        metrics.reporter.prompush.class: org.apache.flink.metrics.prometheus.PrometheusPushGatewayReporter
+        metrics.reporter.prompush.host: pushgateway
+        metrics.reporter.prompush.port: 9091
+        metrics.reporter.prompush.jobName: nautiq-jobmanager
+        metrics.reporter.prompush.randomJobNameSuffix: true
+        metrics.reporter.prompush.deleteOnShutdown: false
+        metrics.system-resource: true
     volumes:
       - ./src:/opt/flink/usrlib/src
       - ./flink-checkpoints:/opt/flink/checkpoints
@@ -37,6 +44,14 @@ services:
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 4
         taskmanager.memory.process.size: 4096m
+        metrics.reporter.prompush.class: org.apache.flink.metrics.prometheus.PrometheusPushGatewayReporter
+        metrics.reporter.prompush.host: pushgateway
+        metrics.reporter.prompush.port: 9091
+        metrics.reporter.prompush.jobName: nautiq-taskmanager
+        metrics.reporter.prompush.randomJobNameSuffix: true
+        metrics.reporter.prompush.deleteOnShutdown: false
+        metrics.system-resource: true
+        table.exec.sink.num-records-out: true
     volumes:
       - ./src:/opt/flink/usrlib/src
       - ./flink-checkpoints:/opt/flink/checkpoints

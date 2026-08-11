@@ -1,0 +1,101 @@
+// 1. OBTENER VARIABLES DE ENTORNO
+// Metrics
+sys.env "GRAFANA_CLOUD_PROMETHEUS_URL" {}
+sys.env "GRAFANA_CLOUD_PROMETHEUS_USERNAME" {}
+sys.env "GRAFANA_CLOUD_PROMETHEUS_PASSWORD" {}
+// Logs
+sys.env "GRAFANA_CLOUD_LOKI_URL" {}
+sys.env "GRAFANA_CLOUD_LOKI_USERNAME" {}
+sys.env "GRAFANA_CLOUD_LOKI_PASSWORD" {}
+
+
+// ==========================================
+// MÓDULO DE MÉTRICAS (PROMETHEUS PUSHGATEWAY)
+// ==========================================
+
+// Raspar (Scrape) el Pushgateway cada 15 segundos
+prometheus.scrape "pushgateway" {
+  targets = [{"__address__" = "pushgateway:9091"}]
+  forward_to = [prometheus.remote_write.grafanacloud.receiver]
+  scrape_interval = "15s"
+}
+
+// Enviar las métricas a Grafana Cloud
+prometheus.remote_write "grafanacloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_PROMETHEUS_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_PROMETHEUS_USERNAME")
+      password = sys.env("GRAFANA_CLOUD_PROMETHEUS_PASSWORD")
+    }
+  }
+}
+
+// ==========================================
+// MÓDULO DE LOGS (DOCKER + LOKI)
+// ==========================================
+
+// Descubrimiento de todos los contenedores Docker locales
+discovery.docker "local_containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Relabelling para extraer nombres legibles de contenedores y servicios
+discovery.relabel "logs_relabel" {
+  targets = discovery.docker.local_containers.targets
+
+  // Ignorar los contenedores de monitoreo para no hacer bucles infinitos
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex = "/(grafana-alloy|pushgateway)"
+    action = "drop"
+  }
+
+  // Renombrar __meta_docker_container_name a "container"
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex = "/(.*)"
+    target_label = "container"
+  }
+}
+
+// Leer los logs de Docker
+loki.source.docker "docker_logs" {
+  host = "unix:///var/run/docker.sock"
+  targets = discovery.relabel.logs_relabel.output
+  forward_to = [loki.process.filter_and_format.receiver]
+}
+
+// Procesamiento quirúrgico de Logs
+loki.process "filter_and_format" {
+  forward_to = [loki.write.grafanacloud.receiver]
+
+  // Fase 1: Ignorar logs INFO de Flink (Ahorro de Tier Gratuito)
+  stage.drop {
+    source = "container"
+    expression = "(jobmanager|taskmanager).*"
+    // Descartamos todo lo que diga " INFO " en el log
+    drop_rule {
+      regex = "\\sINFO\\s"
+    }
+  }
+
+  // Fase 2: Multiline para Stack Traces de Java (Flink)
+  stage.multiline {
+    // Si la línea empieza por una fecha estándar (ej. 2026-08-11 12:00:00,123), es una nueva línea.
+    // Si no empieza así, asume que es la continuación del Stack Trace anterior.
+    firstline = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}"
+    max_wait_time = "3s"
+  }
+}
+
+// Enviar Logs a Grafana Cloud Loki
+loki.write "grafanacloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_LOKI_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_LOKI_USERNAME")
+      password = sys.env("GRAFANA_CLOUD_LOKI_PASSWORD")
+    }
+  }
+}

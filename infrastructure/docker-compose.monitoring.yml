@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: pushgateway
+    ports:
+      - "9091:9091"
+    networks:
+      - streaming_default
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: grafana-alloy
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./monitoring/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - GRAFANA_CLOUD_PROMETHEUS_URL=${GRAFANA_CLOUD_PROMETHEUS_URL:-""}
+      - GRAFANA_CLOUD_PROMETHEUS_USERNAME=${GRAFANA_CLOUD_PROMETHEUS_USERNAME:-""}
+      - GRAFANA_CLOUD_PROMETHEUS_PASSWORD=${GRAFANA_CLOUD_PROMETHEUS_PASSWORD:-""}
+      - GRAFANA_CLOUD_LOKI_URL=${GRAFANA_CLOUD_LOKI_URL:-""}
+      - GRAFANA_CLOUD_LOKI_USERNAME=${GRAFANA_CLOUD_LOKI_USERNAME:-""}
+      - GRAFANA_CLOUD_LOKI_PASSWORD=${GRAFANA_CLOUD_LOKI_PASSWORD:-""}
+    ports:
+      - "12345:12345"
+    networks:
+      - streaming_default
+    restart: unless-stopped
+    depends_on:
+      - pushgateway
+
+networks:
+  streaming_default:
+    external: true
