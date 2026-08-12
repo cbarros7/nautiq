@@ -11,6 +11,7 @@ Para cambiar el tamaño de la flota, edita las cantidades de `muestra(...)` más
 abajo (mantén la proporción entre categorías si quieres seguir siendo fiel a la
 distribución medida en `docs/ais_catalogos.md`) y vuelve a ejecutar.
 """
+import hashlib
 import json
 import random
 import warnings
@@ -115,8 +116,26 @@ def build(path: str = "ingestion/src/ais/synthetic_fixtures.json") -> None:
 
     # MMSI sintéticos: prefijo 990 (no es un MID real asignado a buques), marcador
     # explícito de tráfico simulado si algún día se mezcla con datos reales.
+    #
+    # Derivado de la IDENTIDAD del buque (IMO real, o categoría+nombre para las
+    # embarcaciones pequeñas sin IMO), nunca de su posición en la lista. Así, al
+    # regenerar el fixture con más buques o distinto muestreo, un buque que ya
+    # existía conserva el MISMO MMSI. Con posición (`990_000_000 + i`) un mismo
+    # MMSI pasaba a representar un IMO distinto entre una regeneración y la
+    # siguiente — cualquier estado con TTL largo en Flink (o una tabla de buques
+    # persistida) acumula ambos pares y ve "un MMSI con más de un IMO/buque".
+    usados: set[int] = set()
+
+    def _mmsi_estable(clave: str) -> int:
+        suf = int(hashlib.sha256(clave.encode()).hexdigest(), 16) % 1_000_000
+        while suf in usados:  # colisión de hash -> siguiente hueco, determinista
+            suf = (suf + 1) % 1_000_000
+        usados.add(suf)
+        return 990_000_000 + suf
+
     for i, v in enumerate(vessels):
-        v["mmsi"] = 990_000_000 + i + 1
+        clave = f"imo:{v['imo']}" if v["imo"] else f"synthetic:{v['category']}:{v['name']}"
+        v["mmsi"] = _mmsi_estable(clave)
         v["callsign"] = f"SYN{i + 1:04d}"
         v["imo"] = v["imo"] or None
 

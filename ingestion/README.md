@@ -83,7 +83,20 @@ Presenta la misma interfaz `.stream()` que `AISStreamClient`, así que `tracker.
 `client.py`, `models.py` y `publisher.py` no cambian: el resto del pipeline no distingue
 el origen de los mensajes. El único marcador es el **MMSI 990xxxxxx** — ningún buque
 real usa ese prefijo — para poder identificar el tráfico sintético sin ambigüedad si
-algún día coincide en el tiempo con datos reales.
+algún día coincide en el tiempo con datos reales. Es deliberado que el MMSI **no** sea
+el del buque real: usar el MMSI real emparejado con una posición inventada equivaldría
+a suplantar la identidad AIS de un buque que existe, lo cual es estrictamente peor que
+un dato claramente sintético.
+
+El MMSI se deriva de la **identidad** del buque (el IMO real si lo tiene; categoría +
+nombre si no) mediante hash estable, nunca de su posición en la lista de
+`build_synthetic_fixture.py`. Esto importa: con un esquema posicional, regenerar el
+fixture con más buques cambia el muestreo de THETIS y por tanto qué buque real cae en
+cada índice — el mismo MMSI pasa a representar un IMO distinto entre una regeneración y
+la siguiente. Cualquier estado con TTL largo en Flink (o una tabla de buques
+persistida) acumula ambos pares a lo largo del tiempo y lo ve como *"un MMSI con más de
+un IMO/buque"*. Con el hash de identidad, un buque que ya existía conserva su MMSI
+siempre, sin importar cuánto crezca o se remuestree la flota.
 
 Desactivar con `AIS_SYNTHETIC=false` en cuanto AISStream se recupere. Es un bloque
 autocontenido: quitar la variable y borrar `ais/synthetic.py` +
