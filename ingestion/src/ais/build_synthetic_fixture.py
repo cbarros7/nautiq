@@ -52,11 +52,23 @@ def _nombre_ciclico(base_list: list[str], idx: int) -> str:
     return f"{base} {_ROMANOS[vuelta]}".strip() if vuelta else base
 
 
-def _muestra(by_type: dict, tipo: str, n: int) -> list[dict]:
-    pool = by_type.get(tipo, [])
+def _muestra(by_type: dict, tipo: str, n: int, ya_usados: set[int]) -> list[dict]:
+    """
+    Muestrea `n` filas de THETIS del `tipo` dado, excluyendo IMOs ya elegidos por
+    OTRA llamada anterior. Necesario porque "Ro-pax ship" se pide dos veces (para
+    `ro_ro` y para `passenger`) con sorteos que si no se coordinan entre sí pueden
+    sacar el MISMO buque real dos veces -> dos objetos de buque simulados
+    independientes con el mismo IMO (y, tras el fix de MMSI estable, el mismo
+    MMSI) moviéndose a la vez. `ya_usados` es compartido entre todas las llamadas
+    de un `build()`, así que nunca se repite un IMO entre categorías.
+    """
+    pool = [r for r in by_type.get(tipo, []) if r["imo"] not in ya_usados]
     if len(pool) < n:
-        print(f"[!] {tipo!r}: solo {len(pool)} disponibles en THETIS, pedidas {n}")
-    return random.sample(pool, min(n, len(pool)))
+        print(f"[!] {tipo!r}: solo {len(pool)} disponibles en THETIS (tras excluir "
+              f"ya usados), pedidas {n}")
+    elegidos = random.sample(pool, min(n, len(pool)))
+    ya_usados.update(r["imo"] for r in elegidos)
+    return elegidos
 
 
 def build(path: str = "ingestion/src/ais/synthetic_fixtures.json") -> None:
@@ -70,8 +82,10 @@ def build(path: str = "ingestion/src/ais/synthetic_fixtures.json") -> None:
     for r in rows:
         by_type.setdefault(r["ship_type"], []).append(r)
 
+    ya_usados_thetis: set[int] = set()
+
     def add(tipo, n, categoria, ais_types):
-        for r in _muestra(by_type, tipo, n):
+        for r in _muestra(by_type, tipo, n, ya_usados_thetis):
             vessels.append({"imo": r["imo"], "name": r["name"], "category": categoria,
                             "ais_types": ais_types})
 
@@ -124,18 +138,28 @@ def build(path: str = "ingestion/src/ais/synthetic_fixtures.json") -> None:
     # MMSI pasaba a representar un IMO distinto entre una regeneración y la
     # siguiente — cualquier estado con TTL largo en Flink (o una tabla de buques
     # persistida) acumula ambos pares y ve "un MMSI con más de un IMO/buque".
-    usados: set[int] = set()
+    #
+    # La resolución de colisiones de hash (~3% de probabilidad de que exista
+    # alguna con ~250 buques en 1.000.000 de huecos) se decide por CONTENIDO
+    # (hash, luego clave en orden alfabético), no por el orden en que aparece
+    # cada buque en `vessels` — ese orden cambia entre regeneraciones si cambia
+    # cuántos buques se muestrean, y decidir el ganador por orden de lista
+    # reintroduciría la misma inestabilidad de MMSI que este esquema corrige.
+    claves = [f"imo:{v['imo']}" if v["imo"] else f"synthetic:{v['category']}:{v['name']}"
+             for v in vessels]
+    hash_de = {c: int(hashlib.sha256(c.encode()).hexdigest(), 16) % 1_000_000 for c in set(claves)}
 
-    def _mmsi_estable(clave: str) -> int:
-        suf = int(hashlib.sha256(clave.encode()).hexdigest(), 16) % 1_000_000
-        while suf in usados:  # colisión de hash -> siguiente hueco, determinista
+    mmsi_de: dict[str, int] = {}
+    usados: set[int] = set()
+    for clave in sorted(set(claves), key=lambda c: (hash_de[c], c)):
+        suf = hash_de[clave]
+        while suf in usados:  # colisión -> siguiente hueco libre, determinista
             suf = (suf + 1) % 1_000_000
         usados.add(suf)
-        return 990_000_000 + suf
+        mmsi_de[clave] = 990_000_000 + suf
 
-    for i, v in enumerate(vessels):
-        clave = f"imo:{v['imo']}" if v["imo"] else f"synthetic:{v['category']}:{v['name']}"
-        v["mmsi"] = _mmsi_estable(clave)
+    for i, (v, clave) in enumerate(zip(vessels, claves)):
+        v["mmsi"] = mmsi_de[clave]
         v["callsign"] = f"SYN{i + 1:04d}"
         v["imo"] = v["imo"] or None
 
