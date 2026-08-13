@@ -71,6 +71,15 @@ _UNDERWAY_STATUS = {"fishing": 7, "sailing": 8}
 _DWELL_HOURS = (2.0, 18.0)  # tiempo amarrado antes de zarpar a otro destino
 _NAME_FIELD_LEN, _CALLSIGN_FIELD_LEN = 20, 7
 
+# Fondeo por congestión: al llegar, un buque solo amarra si el puerto tiene hueco
+# libre (menos de `_BERTH_CAPACITY` buques ya amarrados). Si no, se queda fondeado
+# (nav_status=1) y lo reintenta cada tick hasta que se libere una plaza — el
+# "idle burn" que el JIT de Nautiq busca evitar. `_MAX_ANCHOR_WAIT_HOURS` es una
+# válvula de seguridad: pasado ese tiempo atraca igual, para no dejar un buque
+# fondeado indefinidamente si la carga de la flota supera la capacidad elegida.
+_BERTH_CAPACITY = 2
+_MAX_ANCHOR_WAIT_HOURS = 30.0
+
 
 def _haversine_nm(lat1, lon1, lat2, lon2):
     r_nm = 3440.065
@@ -148,6 +157,7 @@ class SyntheticVessel:
         self.progress_nm = 0.0
         self.dest_locode: str | None = None
         self.home_locode: str | None = None  # residente: siempre vuelve a este puerto
+        self.fondeado_desde: float | None = None  # time.monotonic() al empezar a esperar
         self.eta_dt: datetime | None = None
         self.next_static_at = 0.0
         self.next_position_at = 0.0
@@ -259,6 +269,16 @@ class SyntheticFleet:
             return
         self._last_tick = now
         dt_hours = dt / 3600.0
+
+        # Ocupación por puerto AL EMPEZAR el tick. Se mutará según se van resolviendo
+        # llegadas/zarpes DENTRO de este mismo tick, para no dar el mismo hueco libre
+        # a dos buques que llegan a la vez (el orden de `self.vessels` decide cuál de
+        # los dos lo gana — arbitrario pero determinista, es sintético).
+        ocupacion: dict[str, int] = {}
+        for v in self.vessels:
+            if v.phase == "moored":
+                ocupacion[v.dest_locode] = ocupacion.get(v.dest_locode, 0) + 1
+
         for v in self.vessels:
             if v.phase == "moored":
                 if now >= v.moored_until and id(v) not in self._rerouting:
@@ -267,10 +287,32 @@ class SyntheticFleet:
                 continue
             if v.phase == "transit":
                 v.advance(dt_hours)
+                if v.phase == "arriving":
+                    self._resolver_llegada(v, ocupacion, now)
                 continue
-            if v.phase == "arriving":
-                v.phase = "moored"
-                v.moored_until = now + random.uniform(*_DWELL_HOURS) * 3600
+            if v.phase == "arriving":  # por si una ruta de longitud ~0 llega en el mismo tick
+                self._resolver_llegada(v, ocupacion, now)
+                continue
+            if v.phase == "fondeado":
+                hay_hueco = ocupacion.get(v.dest_locode, 0) < _BERTH_CAPACITY
+                esperando_demasiado = (now - v.fondeado_desde) > _MAX_ANCHOR_WAIT_HOURS * 3600
+                if hay_hueco or esperando_demasiado:
+                    self._amarrar(v, ocupacion, now)
+
+    def _resolver_llegada(self, v: SyntheticVessel, ocupacion: dict[str, int], now: float) -> None:
+        """Al llegar: amarra si hay hueco en el puerto; si no, se queda fondeado."""
+        if ocupacion.get(v.dest_locode, 0) < _BERTH_CAPACITY:
+            self._amarrar(v, ocupacion, now)
+        else:
+            v.phase = "fondeado"
+            v.fondeado_desde = now
+
+    @staticmethod
+    def _amarrar(v: SyntheticVessel, ocupacion: dict[str, int], now: float) -> None:
+        v.phase = "moored"
+        v.fondeado_desde = None
+        v.moored_until = now + random.uniform(*_DWELL_HOURS) * 3600
+        ocupacion[v.dest_locode] = ocupacion.get(v.dest_locode, 0) + 1  # reserva el hueco
 
     async def _reroute(self, vessel: SyntheticVessel) -> None:
         try:
@@ -313,8 +355,10 @@ def build_static_message(vessel: SyntheticVessel, ports: dict) -> dict:
 def build_position_message(vessel: SyntheticVessel) -> dict:
     if vessel.phase == "moored":
         sog, nav = 0.0, 5
-    elif vessel.phase == "arriving":
-        sog, nav = round(max(0.0, vessel.speed_knots * 0.2), 1), 1
+    elif vessel.phase in ("fondeado", "arriving"):
+        # Fondeado de verdad: velocidad casi nula (deriva/garreo sobre el ancla),
+        # no la fracción de la velocidad de crucero que tendría navegando.
+        sog, nav = round(random.uniform(0.0, 0.3), 1), 1
     else:
         sog = max(0.0, vessel.speed_knots + random.uniform(-1.5, 1.5))
         nav = _UNDERWAY_STATUS.get(vessel.category, 0)

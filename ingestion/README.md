@@ -102,6 +102,16 @@ Desactivar con `AIS_SYNTHETIC=false` en cuanto AISStream se recupere. Es un bloq
 autocontenido: quitar la variable y borrar `ais/synthetic.py` +
 `ais/synthetic_fixtures.json` deja el servicio exactamente como estaba.
 
+**Fondeo por congestión real.** Cada puerto tiene `_BERTH_CAPACITY` plazas de
+atraque (2 por defecto). Al llegar, un buque solo amarra (`nav_status=5`) si hay
+plaza libre; si no, se queda fondeado (`nav_status=1`, velocidad casi nula) y lo
+reintenta en cada ciclo hasta que otro buque zarpa. No es un parpadeo de un tick:
+dura lo que tarde en liberarse una plaza, con una válvula de seguridad
+(`_MAX_ANCHOR_WAIT_HOURS`, 30 h) para que no se quede fondeado indefinidamente si la
+carga de la flota supera la capacidad elegida. Es la simulación directa del "idle
+burn" que el JIT de Nautiq busca evitar — antes, la fase de fondeo no dependía de
+cuántos buques hubiera ya en el puerto, así que nunca se prolongaba de verdad.
+
 Con la flota de 242 buques y los intervalos por defecto, el caudal medido es de
 **~6,6-7,8 msg/s** — más rápido por buque que el muestreo real de AISStream (90-120s),
 pero sin llevar la flota ni los intervalos a un extremo implausible; se acerca a los
