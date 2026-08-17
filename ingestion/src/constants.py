@@ -32,3 +32,17 @@ PUBLISH_RATE_LIMIT = int(os.getenv("PUBLISH_RATE_LIMIT", "0"))
 PUBLISH_RATE_BURST = int(os.getenv("PUBLISH_RATE_BURST", "1"))
 # Cadencia del informe de estado del proceso perpetuo (s, 0 = sin informe).
 STATS_INTERVAL_SECONDS = int(os.getenv("STATS_INTERVAL_SECONDS", "60"))
+
+# ==========================================
+# MODO SINTÉTICO (temporal — ver ais/synthetic.py y aisstream/issues#257)
+# ==========================================
+# AIS_SYNTHETIC=true sustituye la conexión real por datos simulados sin tocar el
+# resto del pipeline. Desactivar (o borrar este bloque + ais/synthetic.py) en cuanto
+# AISStream vuelva a servir datos.
+AIS_SYNTHETIC = os.getenv("AIS_SYNTHETIC", "false").lower() in ("1", "true", "yes")
+# Con la flota de 242 buques del fixture, estos intervalos dan ~6,5 msg/s combinado
+# (medido), frente a los ~9 msg/s reales medidos sobre esta misma bbox: más rápido
+# por buque que el muestreo real de AISStream (90-120s), pero sin llevar ni la flota
+# ni el intervalo a un extremo poco plausible.
+SYNTHETIC_POSITION_INTERVAL_SECONDS = int(os.getenv("SYNTHETIC_POSITION_INTERVAL_SECONDS", "45"))
+SYNTHETIC_STATIC_INTERVAL_SECONDS = int(os.getenv("SYNTHETIC_STATIC_INTERVAL_SECONDS", "200"))
