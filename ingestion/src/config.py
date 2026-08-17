@@ -18,11 +18,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 # --- Entorno (DEV / PRE / PRO) ---
 # Determina el prefijo de los topics de Kafka cuando no se fija uno explícito con
 # KAFKA_TOPIC_* (ver más abajo). Los topics reales en Aiven siguen el patrón
-# "<entorno>-vessel-*-raw" (p.ej. "dev-vessel-positions-raw"); cambiar NAUTIQ_ENV
+# "<prefijo>-vessel-*-raw" (p.ej. "dev-vessel-positions-raw"); cambiar NAUTIQ_ENV
 # cambia a qué entorno apunta el servicio sin tocar ninguna otra variable.
+# PRO es la única excepción al patrón NAUTIQ_ENV.lower(): los topics ya existentes en
+# Aiven usan "prod-", no "pro-" (verificado contra el cluster, no es un typo).
 NAUTIQ_ENV = os.getenv("NAUTIQ_ENV", "DEV").upper()
 if NAUTIQ_ENV not in ("DEV", "PRE", "PRO"):
     raise ValueError(f"NAUTIQ_ENV={NAUTIQ_ENV!r} inválido; debe ser DEV, PRE o PRO.")
+_TOPIC_ENV_PREFIX = {"DEV": "dev", "PRE": "pre", "PRO": "prod"}
 
 # --- AISStream ---
 # AISStream admite UNA conexión por key. La principal sirve `ShipStaticData`
@@ -45,7 +48,7 @@ KAFKA_CERTS = {
 # La DLQ NO deriva por defecto: es intencionalmente opcional (sin ella, el servicio
 # corre sin DLQ en vez de fallar) — derivar un nombre siempre convertiría ese "sin
 # configurar" en "apunta a un topic que quizá no existe todavía en ese entorno".
-_env_prefix = NAUTIQ_ENV.lower()
+_env_prefix = _TOPIC_ENV_PREFIX[NAUTIQ_ENV]
 TOPIC_POSITIONS = os.getenv("KAFKA_TOPIC_POSITIONS") or f"{_env_prefix}-vessel-positions-raw"
 TOPIC_STATIC = os.getenv("KAFKA_TOPIC_STATIC") or f"{_env_prefix}-vessel-static-raw"
 TOPIC_DLQ = os.getenv("KAFKA_TOPIC_DLQ")
