@@ -255,24 +255,26 @@ Flink consume estas tablas (LEFT JOIN por IMO / resolución de destino).
 ## Configuración (entorno)
 
 `NAUTIQ_ENV` (`DEV`/`PRE`/`PRO`) determina a qué entorno apunta el servicio: los
-topics de posiciones y estáticas se derivan como `<nautiq_env-en-minúsculas>-vessel-
-positions-raw` / `-static-raw` — cambiar `NAUTIQ_ENV` a `PRE` mueve todo el tráfico a
-`pre-vessel-positions-raw`/`pre-vessel-static-raw` sin tocar ninguna otra variable.
+topics de posiciones y estáticas se derivan como `<prefijo>-vessel-positions-raw` /
+`-static-raw`, con `DEV`->`dev`, `PRE`->`pre`, `PRO`->`prod` — cambiar `NAUTIQ_ENV` a
+`PRO` mueve todo el tráfico a `prod-vessel-positions-raw`/`prod-vessel-static-raw` sin
+tocar ninguna otra variable. `PRO` es la única excepción al nombre del entorno en
+minúsculas: los topics ya existentes en Aiven usan `prod-`, no `pro-`.
 `KAFKA_TOPIC_POSITIONS`/`KAFKA_TOPIC_STATIC` siguen existiendo como vía de escape si
 algún entorno necesita un nombre que no siga ese patrón. La DLQ es la excepción: no se
 deriva, porque es opcional a propósito (ver tabla).
 
 | Variable | Oblig. | Por defecto | Función |
 |----------|--------|-------------|---------|
-| `NAUTIQ_ENV` | no | `DEV` | `DEV`/`PRE`/`PRO`; prefija los topics derivados (ver abajo). Valor inválido -> `ValueError` al arrancar |
+| `NAUTIQ_ENV` | no | `DEV` | `DEV`/`PRE`/`PRO`; prefija los topics derivados como `dev`/`pre`/`prod` (ver abajo). Valor inválido -> `ValueError` al arrancar |
 | `AISSTREAM_API_KEY` | sí | — | Key de la conexión de estáticas |
 | `AISSTREAM_AUX_API_KEY` | no | — | Key de la conexión de posiciones; sin ella, ambos tipos comparten conexión |
 | `KAFKA_BROKER_URL` | sí | — | `<host>:<puerto>` del broker |
 | `KAFKA_SSL_CA_LOCATION` | no | `./.certs/ca.pem` | Certificado CA |
 | `KAFKA_SSL_CERT_LOCATION` | no | `./.certs/service.cert` | Certificado de cliente |
 | `KAFKA_SSL_KEY_LOCATION` | no | `./.certs/service.key` | Clave de cliente |
-| `KAFKA_TOPIC_POSITIONS` | no | `<nautiq_env>-vessel-positions-raw` | Topic de `PositionReport`; fijarlo aquí sobreescribe la derivación |
-| `KAFKA_TOPIC_STATIC` | no | `<nautiq_env>-vessel-static-raw` | Topic de `ShipStaticData`; idem |
+| `KAFKA_TOPIC_POSITIONS` | no | `<prefijo>-vessel-positions-raw` | Topic de `PositionReport`; fijarlo aquí sobreescribe la derivación |
+| `KAFKA_TOPIC_STATIC` | no | `<prefijo>-vessel-static-raw` | Topic de `ShipStaticData`; idem |
 | `KAFKA_TOPIC_DLQ` | no | — | Topic de la DLQ; **no deriva** de `NAUTIQ_ENV` (opcional a propósito) — si falta, se corre sin DLQ |
 | `KAFKA_SCHEMA_REGISTRY_URL` | sí | — | Karapace de Aiven (puerto aparte del broker) |
 | `KAFKA_SCHEMA_REGISTRY_AUTH` | no | — | Auth básica `avnadmin:<password>` |
