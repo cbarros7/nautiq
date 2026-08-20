@@ -1,0 +1,3114 @@
+[
+  {
+    "event_id": "01M0G3STJXWDPRPWQKBB9Q0TP6",
+    "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+    "emitted_at": "2026-08-20T15:56:18+00:00",
+    "mmsi": "990763533",
+    "puerto": "VALENCIA",
+    "alerta_cii": true,
+    "payload": {
+      "event_id": "01M0G3STJXWDPRPWQKBB9Q0TP6",
+      "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+      "emitted_at": "2026-08-20T15:56:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990763533,
+        "imo": 9944742,
+        "name": null,
+        "lat": 37.2,
+        "lon": 0.9,
+        "speed_kn": 13.0,
+        "heading": 336.6,
+        "nav_status": 0,
+        "destination_raw": "VALENCIA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T15:56:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "VALENCIA",
+        "lat": 39.469707,
+        "lon": -0.376335,
+        "context_radius_nm": null,
+        "berthed_count": 2,
+        "anchored_count": 0,
+        "inbound_count": 3,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 39.481178613517926,
+            "lon": -0.3735734484671757
+          },
+          {
+            "mmsi": 538000001,
+            "name": null,
+            "lat": 39.481681805582824,
+            "lon": -0.37171113935248273
+          }
+        ],
+        "anchored": [],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 39.23501112148041,
+            "lon": -0.40059417001249475,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 39.070415143205686,
+            "lon": -0.07413256137913682,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 990763533,
+            "name": null,
+            "lat": 37.2,
+            "lon": 0.9,
+            "estimated_wait_hours": 21.9
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 373.7710995418227,
+        "duration_hours": 28.75162304167867,
+        "waypoints": [
+          [
+            0.9,
+            37.2
+          ],
+          [
+            1.331586,
+            36.517142
+          ],
+          [
+            -0.138702,
+            35.852327
+          ],
+          [
+            -0.6,
+            36.2
+          ],
+          [
+            -0.366667,
+            36.666667
+          ],
+          [
+            0.053548,
+            37.507095
+          ],
+          [
+            0.075557,
+            37.631275
+          ],
+          [
+            0.258592,
+            38.441352
+          ],
+          [
+            0.267518,
+            38.480858
+          ],
+          [
+            0.3373,
+            38.7897
+          ],
+          [
+            0.129546,
+            38.995264
+          ],
+          [
+            -0.309838,
+            39.430018
+          ],
+          [
+            -0.330276,
+            39.45107
+          ],
+          [
+            -0.376335,
+            39.469707
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 37.2,
+          "lon": 0.9,
+          "eta": "2026-08-20T15:56:15+00:00",
+          "wave_height": 1.3,
+          "wave_direction": 236.0,
+          "wave_period": 4.75,
+          "wind_speed_kn": 15.3,
+          "wind_direction": 255.0,
+          "wind_gusts_kn": 24.9
+        },
+        {
+          "lat": 36.517142,
+          "lon": 1.331586,
+          "eta": "2026-08-20T19:28:03.741075+00:00",
+          "wave_height": 0.86,
+          "wave_direction": 259.0,
+          "wave_period": 4.3,
+          "wind_speed_kn": 1.8,
+          "wind_direction": 13.0,
+          "wind_gusts_kn": 11.3
+        },
+        {
+          "lat": 35.852327,
+          "lon": -0.138702,
+          "eta": "2026-08-21T01:45:27.470126+00:00",
+          "wave_height": 0.7,
+          "wave_direction": 285.0,
+          "wave_period": 4.85,
+          "wind_speed_kn": 10.1,
+          "wind_direction": 210.0,
+          "wind_gusts_kn": 14.8
+        },
+        {
+          "lat": 36.2,
+          "lon": -0.6,
+          "eta": "2026-08-21T04:06:48.397058+00:00",
+          "wave_height": 1.5,
+          "wave_direction": 258.0,
+          "wave_period": 5.05,
+          "wind_speed_kn": 20.5,
+          "wind_direction": 240.0,
+          "wind_gusts_kn": 27.6
+        },
+        {
+          "lat": 36.666667,
+          "lon": -0.366667,
+          "eta": "2026-08-21T06:25:59.682046+00:00",
+          "wave_height": 1.62,
+          "wave_direction": 243.0,
+          "wave_period": 5.15,
+          "wind_speed_kn": 21.9,
+          "wind_direction": 240.0,
+          "wind_gusts_kn": 30.5
+        },
+        {
+          "lat": 37.507095,
+          "lon": 0.053548,
+          "eta": "2026-08-21T10:36:23.276155+00:00",
+          "wave_height": 1.4,
+          "wave_direction": 228.0,
+          "wave_period": 5.45,
+          "wind_speed_kn": 13.5,
+          "wind_direction": 252.0,
+          "wind_gusts_kn": 19.8
+        },
+        {
+          "lat": 37.631275,
+          "lon": 0.075557,
+          "eta": "2026-08-21T11:11:04.536342+00:00",
+          "wave_height": 1.36,
+          "wave_direction": 226.0,
+          "wave_period": 5.4,
+          "wind_speed_kn": 12.2,
+          "wind_direction": 261.0,
+          "wind_gusts_kn": 18.7
+        },
+        {
+          "lat": 38.441352,
+          "lon": 0.258592,
+          "eta": "2026-08-21T14:58:42.385746+00:00",
+          "wave_height": 0.86,
+          "wave_direction": 205.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 10.3,
+          "wind_direction": 122.0,
+          "wind_gusts_kn": 14.0
+        },
+        {
+          "lat": 38.480858,
+          "lon": 0.267518,
+          "eta": "2026-08-21T15:09:48.381896+00:00",
+          "wave_height": 0.86,
+          "wave_direction": 205.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 10.7,
+          "wind_direction": 122.0,
+          "wind_gusts_kn": 14.6
+        },
+        {
+          "lat": 38.7897,
+          "lon": 0.3373,
+          "eta": "2026-08-21T16:36:34.643172+00:00",
+          "wave_height": 0.74,
+          "wave_direction": 176.0,
+          "wave_period": 5.0,
+          "wind_speed_kn": 13.8,
+          "wind_direction": 161.0,
+          "wind_gusts_kn": 17.9
+        },
+        {
+          "lat": 38.995264,
+          "lon": 0.129546,
+          "eta": "2026-08-21T17:49:02.855291+00:00",
+          "wave_height": 0.48,
+          "wave_direction": 62.0,
+          "wave_period": 3.7,
+          "wind_speed_kn": 18.4,
+          "wind_direction": 162.0,
+          "wind_gusts_kn": 24.5
+        },
+        {
+          "lat": 39.430018,
+          "lon": -0.309838,
+          "eta": "2026-08-21T20:22:03.413823+00:00",
+          "wave_height": 0.56,
+          "wave_direction": 100.0,
+          "wave_period": 3.55,
+          "wind_speed_kn": 11.3,
+          "wind_direction": 86.0,
+          "wind_gusts_kn": 23.9
+        },
+        {
+          "lat": 39.45107,
+          "lon": -0.330276,
+          "eta": "2026-08-21T20:29:20.851826+00:00",
+          "wave_height": 0.56,
+          "wave_direction": 100.0,
+          "wave_period": 3.55,
+          "wind_speed_kn": 11.3,
+          "wind_direction": 86.0,
+          "wind_gusts_kn": 23.9
+        },
+        {
+          "lat": 39.469707,
+          "lon": -0.376335,
+          "eta": "2026-08-21T20:40:29.458357+00:00",
+          "wave_height": 0.52,
+          "wave_direction": 98.0,
+          "wave_period": 3.5,
+          "wind_speed_kn": 6.4,
+          "wind_direction": 61.0,
+          "wind_gusts_kn": 15.9
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 18.15,
+        "speed_delta_kn": 5.15,
+        "eta_current": "2026-08-21T03:22:55.920000+00:00",
+        "eta_optimized": "2026-08-21T13:49:03+00:00",
+        "idle_hours_avoided": 10.46,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 21.9 h. AVISO: el CII empeora un 94.9% con la velocidad recomendada (18.15 kn, actual: 13.0 kn) — la ventana de espera es demasiado ajustada para aplicar slow steaming; la velocidad recomendada evita perder el atraque, no ahorra combustible.",
+        "convergio": true,
+        "excede_v_diseno": false,
+        "alerta_cii": true,
+        "nota": null,
+        "cii": {
+          "inicial": 5.598,
+          "jit": 10.9119,
+          "metodo": "eexi",
+          "ahorro_pct": -94.9
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3STXPYXEJSDTB8CCERPEZ",
+    "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+    "emitted_at": "2026-08-20T16:26:18+00:00",
+    "mmsi": "990763533",
+    "puerto": "VALENCIA",
+    "alerta_cii": true,
+    "payload": {
+      "event_id": "01M0G3STXPYXEJSDTB8CCERPEZ",
+      "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+      "emitted_at": "2026-08-20T16:26:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990763533,
+        "imo": 9944742,
+        "name": null,
+        "lat": 37.29,
+        "lon": 0.84,
+        "speed_kn": 13.0,
+        "heading": 336.7,
+        "nav_status": 0,
+        "destination_raw": "VALENCIA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T16:26:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "VALENCIA",
+        "lat": 39.469707,
+        "lon": -0.376335,
+        "context_radius_nm": null,
+        "berthed_count": 2,
+        "anchored_count": 0,
+        "inbound_count": 3,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 39.481178613517926,
+            "lon": -0.3735734484671757
+          },
+          {
+            "mmsi": 538000001,
+            "name": null,
+            "lat": 39.481681805582824,
+            "lon": -0.37171113935248273
+          }
+        ],
+        "anchored": [],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 39.23501112148041,
+            "lon": -0.40059417001249475,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 39.070415143205686,
+            "lon": -0.07413256137913682,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 990763533,
+            "name": null,
+            "lat": 37.29,
+            "lon": 0.84,
+            "estimated_wait_hours": 21.9
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 379.8877667651834,
+        "duration_hours": 29.22213590501411,
+        "waypoints": [
+          [
+            0.84,
+            37.29
+          ],
+          [
+            1.331586,
+            36.517142
+          ],
+          [
+            -0.138702,
+            35.852327
+          ],
+          [
+            -0.6,
+            36.2
+          ],
+          [
+            -0.366667,
+            36.666667
+          ],
+          [
+            0.053548,
+            37.507095
+          ],
+          [
+            0.075557,
+            37.631275
+          ],
+          [
+            0.258592,
+            38.441352
+          ],
+          [
+            0.267518,
+            38.480858
+          ],
+          [
+            0.3373,
+            38.7897
+          ],
+          [
+            0.129546,
+            38.995264
+          ],
+          [
+            -0.309838,
+            39.430018
+          ],
+          [
+            -0.330276,
+            39.45107
+          ],
+          [
+            -0.376335,
+            39.469707
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 37.29,
+          "lon": 0.84,
+          "eta": "2026-08-20T16:26:15+00:00",
+          "wave_height": 1.32,
+          "wave_direction": 233.0,
+          "wave_period": 4.8,
+          "wind_speed_kn": 16.5,
+          "wind_direction": 246.0,
+          "wind_gusts_kn": 25.3
+        },
+        {
+          "lat": 36.517142,
+          "lon": 1.331586,
+          "eta": "2026-08-20T20:26:15.933701+00:00",
+          "wave_height": 0.86,
+          "wave_direction": 259.0,
+          "wave_period": 4.4,
+          "wind_speed_kn": 1.6,
+          "wind_direction": 60.0,
+          "wind_gusts_kn": 8.6
+        },
+        {
+          "lat": 35.852327,
+          "lon": -0.138702,
+          "eta": "2026-08-21T02:43:39.662752+00:00",
+          "wave_height": 0.74,
+          "wave_direction": 285.0,
+          "wave_period": 4.95,
+          "wind_speed_kn": 9.3,
+          "wind_direction": 211.0,
+          "wind_gusts_kn": 13.6
+        },
+        {
+          "lat": 36.2,
+          "lon": -0.6,
+          "eta": "2026-08-21T05:05:00.589684+00:00",
+          "wave_height": 1.52,
+          "wave_direction": 257.0,
+          "wave_period": 5.0,
+          "wind_speed_kn": 20.5,
+          "wind_direction": 243.0,
+          "wind_gusts_kn": 28.0
+        },
+        {
+          "lat": 36.666667,
+          "lon": -0.366667,
+          "eta": "2026-08-21T07:24:11.874672+00:00",
+          "wave_height": 1.6,
+          "wave_direction": 243.0,
+          "wave_period": 5.15,
+          "wind_speed_kn": 21.6,
+          "wind_direction": 242.0,
+          "wind_gusts_kn": 29.9
+        },
+        {
+          "lat": 37.507095,
+          "lon": 0.053548,
+          "eta": "2026-08-21T11:34:35.468782+00:00",
+          "wave_height": 1.36,
+          "wave_direction": 227.0,
+          "wave_period": 5.45,
+          "wind_speed_kn": 12.2,
+          "wind_direction": 241.0,
+          "wind_gusts_kn": 17.5
+        },
+        {
+          "lat": 37.631275,
+          "lon": 0.075557,
+          "eta": "2026-08-21T12:09:16.728968+00:00",
+          "wave_height": 1.32,
+          "wave_direction": 226.0,
+          "wave_period": 5.4,
+          "wind_speed_kn": 10.1,
+          "wind_direction": 251.0,
+          "wind_gusts_kn": 16.1
+        },
+        {
+          "lat": 38.441352,
+          "lon": 0.258592,
+          "eta": "2026-08-21T15:56:54.578372+00:00",
+          "wave_height": 0.84,
+          "wave_direction": 205.0,
+          "wave_period": 5.3,
+          "wind_speed_kn": 9.8,
+          "wind_direction": 139.0,
+          "wind_gusts_kn": 13.8
+        },
+        {
+          "lat": 38.480858,
+          "lon": 0.267518,
+          "eta": "2026-08-21T16:08:00.574522+00:00",
+          "wave_height": 0.84,
+          "wave_direction": 205.0,
+          "wave_period": 5.3,
+          "wind_speed_kn": 10.6,
+          "wind_direction": 136.0,
+          "wind_gusts_kn": 14.6
+        },
+        {
+          "lat": 38.7897,
+          "lon": 0.3373,
+          "eta": "2026-08-21T17:34:46.835798+00:00",
+          "wave_height": 0.72,
+          "wave_direction": 171.0,
+          "wave_period": 4.95,
+          "wind_speed_kn": 14.9,
+          "wind_direction": 168.0,
+          "wind_gusts_kn": 19.4
+        },
+        {
+          "lat": 38.995264,
+          "lon": 0.129546,
+          "eta": "2026-08-21T18:47:15.047917+00:00",
+          "wave_height": 0.46,
+          "wave_direction": 58.0,
+          "wave_period": 3.8,
+          "wind_speed_kn": 17.8,
+          "wind_direction": 164.0,
+          "wind_gusts_kn": 24.9
+        },
+        {
+          "lat": 39.430018,
+          "lon": -0.309838,
+          "eta": "2026-08-21T21:20:15.606449+00:00",
+          "wave_height": 0.52,
+          "wave_direction": 98.0,
+          "wave_period": 3.5,
+          "wind_speed_kn": 10.6,
+          "wind_direction": 82.0,
+          "wind_gusts_kn": 20.6
+        },
+        {
+          "lat": 39.45107,
+          "lon": -0.330276,
+          "eta": "2026-08-21T21:27:33.044452+00:00",
+          "wave_height": 0.52,
+          "wave_direction": 98.0,
+          "wave_period": 3.5,
+          "wind_speed_kn": 10.6,
+          "wind_direction": 82.0,
+          "wind_gusts_kn": 20.6
+        },
+        {
+          "lat": 39.469707,
+          "lon": -0.376335,
+          "eta": "2026-08-21T21:38:41.650983+00:00",
+          "wave_height": 0.48,
+          "wave_direction": 97.0,
+          "wave_period": 3.45,
+          "wind_speed_kn": 5.2,
+          "wind_direction": 63.0,
+          "wind_gusts_kn": 13.6
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 18.22,
+        "speed_delta_kn": 5.22,
+        "eta_current": "2026-08-21T03:24:48.960000+00:00",
+        "eta_optimized": "2026-08-21T14:20:51+00:00",
+        "idle_hours_avoided": 10.92,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 21.9 h. AVISO: el CII empeora un 96.4% con la velocidad recomendada (18.22 kn, actual: 13.0 kn) — la ventana de espera es demasiado ajustada para aplicar slow steaming; la velocidad recomendada evita perder el atraque, no ahorra combustible.",
+        "convergio": true,
+        "excede_v_diseno": false,
+        "alerta_cii": true,
+        "nota": null,
+        "cii": {
+          "inicial": 5.598,
+          "jit": 10.9963,
+          "metodo": "eexi",
+          "ahorro_pct": -96.4
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3ST54GMSP394Q17A5DR5W",
+    "session_id": "01M0G3ST54GMSP394Q17A5DR5X",
+    "emitted_at": "2026-08-20T16:31:18+00:00",
+    "mmsi": "990469861",
+    "puerto": "VALENCIA",
+    "alerta_cii": true,
+    "payload": {
+      "event_id": "01M0G3ST54GMSP394Q17A5DR5W",
+      "session_id": "01M0G3ST54GMSP394Q17A5DR5X",
+      "emitted_at": "2026-08-20T16:31:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990469861,
+        "imo": 9968918,
+        "name": null,
+        "lat": 36.4,
+        "lon": -1.2,
+        "speed_kn": 13.0,
+        "heading": 20.7,
+        "nav_status": 0,
+        "destination_raw": "VALENCIA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T16:31:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "VALENCIA",
+        "lat": 39.469707,
+        "lon": -0.376335,
+        "context_radius_nm": null,
+        "berthed_count": 2,
+        "anchored_count": 0,
+        "inbound_count": 3,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 39.481178613517926,
+            "lon": -0.3735734484671757
+          },
+          {
+            "mmsi": 538000001,
+            "name": null,
+            "lat": 39.481681805582824,
+            "lon": -0.37171113935248273
+          }
+        ],
+        "anchored": [],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 39.23501112148041,
+            "lon": -0.40059417001249475,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 39.070415143205686,
+            "lon": -0.07413256137913682,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 990469861,
+            "name": null,
+            "lat": 36.4,
+            "lon": -1.2,
+            "estimated_wait_hours": 21.9
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 293.61975181397264,
+        "duration_hours": 22.586134754920973,
+        "waypoints": [
+          [
+            -1.2,
+            36.4
+          ],
+          [
+            -0.65,
+            35.716667
+          ],
+          [
+            -0.650837,
+            35.735687
+          ],
+          [
+            -0.6,
+            36.2
+          ],
+          [
+            -0.366667,
+            36.666667
+          ],
+          [
+            0.053548,
+            37.507095
+          ],
+          [
+            0.075557,
+            37.631275
+          ],
+          [
+            0.258592,
+            38.441352
+          ],
+          [
+            0.267518,
+            38.480858
+          ],
+          [
+            0.3373,
+            38.7897
+          ],
+          [
+            0.129546,
+            38.995264
+          ],
+          [
+            -0.309838,
+            39.430018
+          ],
+          [
+            -0.330276,
+            39.45107
+          ],
+          [
+            -0.376335,
+            39.469707
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 36.4,
+          "lon": -1.2,
+          "eta": "2026-08-20T16:31:15+00:00",
+          "wave_height": 1.42,
+          "wave_direction": 262.0,
+          "wave_period": 5.2,
+          "wind_speed_kn": 18.8,
+          "wind_direction": 257.0,
+          "wind_gusts_kn": 25.7
+        },
+        {
+          "lat": 35.716667,
+          "lon": -0.65,
+          "eta": "2026-08-20T20:16:58.952915+00:00",
+          "wave_height": 0.82,
+          "wave_direction": 287.0,
+          "wave_period": 4.8,
+          "wind_speed_kn": 3.3,
+          "wind_direction": 234.0,
+          "wind_gusts_kn": 8.6
+        },
+        {
+          "lat": 35.735687,
+          "lon": -0.650837,
+          "eta": "2026-08-20T20:22:14.708331+00:00",
+          "wave_height": 0.82,
+          "wave_direction": 287.0,
+          "wave_period": 4.8,
+          "wind_speed_kn": 3.3,
+          "wind_direction": 234.0,
+          "wind_gusts_kn": 8.6
+        },
+        {
+          "lat": 36.2,
+          "lon": -0.6,
+          "eta": "2026-08-20T22:31:08.681371+00:00",
+          "wave_height": 1.36,
+          "wave_direction": 259.0,
+          "wave_period": 4.9,
+          "wind_speed_kn": 21.8,
+          "wind_direction": 238.0,
+          "wind_gusts_kn": 29.5
+        },
+        {
+          "lat": 36.666667,
+          "lon": -0.366667,
+          "eta": "2026-08-21T00:50:19.966358+00:00",
+          "wave_height": 1.68,
+          "wave_direction": 249.0,
+          "wave_period": 5.4,
+          "wind_speed_kn": 23.8,
+          "wind_direction": 236.0,
+          "wind_gusts_kn": 33.4
+        },
+        {
+          "lat": 37.507095,
+          "lon": 0.053548,
+          "eta": "2026-08-21T05:00:43.560468+00:00",
+          "wave_height": 1.74,
+          "wave_direction": 232.0,
+          "wave_period": 5.6,
+          "wind_speed_kn": 20.7,
+          "wind_direction": 238.0,
+          "wind_gusts_kn": 28.2
+        },
+        {
+          "lat": 37.631275,
+          "lon": 0.075557,
+          "eta": "2026-08-21T05:35:24.820655+00:00",
+          "wave_height": 1.64,
+          "wave_direction": 228.0,
+          "wave_period": 5.5,
+          "wind_speed_kn": 19.4,
+          "wind_direction": 239.0,
+          "wind_gusts_kn": 26.0
+        },
+        {
+          "lat": 38.441352,
+          "lon": 0.258592,
+          "eta": "2026-08-21T09:23:02.670059+00:00",
+          "wave_height": 1.16,
+          "wave_direction": 210.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 6.7,
+          "wind_direction": 262.0,
+          "wind_gusts_kn": 12.6
+        },
+        {
+          "lat": 38.480858,
+          "lon": 0.267518,
+          "eta": "2026-08-21T09:34:08.666209+00:00",
+          "wave_height": 1.1,
+          "wave_direction": 209.0,
+          "wave_period": 5.4,
+          "wind_speed_kn": 2.0,
+          "wind_direction": 191.0,
+          "wind_gusts_kn": 6.6
+        },
+        {
+          "lat": 38.7897,
+          "lon": 0.3373,
+          "eta": "2026-08-21T11:00:54.927485+00:00",
+          "wave_height": 0.86,
+          "wave_direction": 194.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 9.0,
+          "wind_direction": 19.0,
+          "wind_gusts_kn": 12.1
+        },
+        {
+          "lat": 38.995264,
+          "lon": 0.129546,
+          "eta": "2026-08-21T12:13:23.139604+00:00",
+          "wave_height": 0.24,
+          "wave_direction": 152.0,
+          "wave_period": 3.6,
+          "wind_speed_kn": 9.0,
+          "wind_direction": 66.0,
+          "wind_gusts_kn": 12.1
+        },
+        {
+          "lat": 39.430018,
+          "lon": -0.309838,
+          "eta": "2026-08-21T14:46:23.698136+00:00",
+          "wave_height": 0.66,
+          "wave_direction": 103.0,
+          "wave_period": 3.3,
+          "wind_speed_kn": 14.3,
+          "wind_direction": 136.0,
+          "wind_gusts_kn": 29.2
+        },
+        {
+          "lat": 39.45107,
+          "lon": -0.330276,
+          "eta": "2026-08-21T14:53:41.136139+00:00",
+          "wave_height": 0.66,
+          "wave_direction": 103.0,
+          "wave_period": 3.3,
+          "wind_speed_kn": 14.3,
+          "wind_direction": 136.0,
+          "wind_gusts_kn": 29.2
+        },
+        {
+          "lat": 39.469707,
+          "lon": -0.376335,
+          "eta": "2026-08-21T15:04:49.742670+00:00",
+          "wave_height": 0.66,
+          "wave_direction": 103.0,
+          "wave_period": 3.3,
+          "wind_speed_kn": 11.4,
+          "wind_direction": 136.0,
+          "wind_gusts_kn": 25.9
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 14.1,
+        "speed_delta_kn": 1.1,
+        "eta_current": "2026-08-21T06:59:19.080000+00:00",
+        "eta_optimized": "2026-08-21T14:27:03+00:00",
+        "idle_hours_avoided": 7.43,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 21.9 h. AVISO: el CII empeora un 17.6% con la velocidad recomendada (14.1 kn, actual: 13.0 kn) — la ventana de espera es demasiado ajustada para aplicar slow steaming; la velocidad recomendada evita perder el atraque, no ahorra combustible.",
+        "convergio": true,
+        "excede_v_diseno": false,
+        "alerta_cii": true,
+        "nota": null,
+        "cii": {
+          "inicial": 5.7063,
+          "jit": 6.7128,
+          "metodo": "eexi",
+          "ahorro_pct": -17.6
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SSTFKFSBKNFC0SBAJD4F",
+    "session_id": "01M0G3SSTFKFSBKNFC0SBAJD4G",
+    "emitted_at": "2026-08-20T16:42:18+00:00",
+    "mmsi": "990948770",
+    "puerto": "VALENCIA",
+    "alerta_cii": true,
+    "payload": {
+      "event_id": "01M0G3SSTFKFSBKNFC0SBAJD4F",
+      "session_id": "01M0G3SSTFKFSBKNFC0SBAJD4G",
+      "emitted_at": "2026-08-20T16:42:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990948770,
+        "imo": 9943865,
+        "name": null,
+        "lat": 38.1,
+        "lon": -0.1,
+        "speed_kn": 9.0,
+        "heading": 347.1,
+        "nav_status": 0,
+        "destination_raw": "VALENCIA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T16:42:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "VALENCIA",
+        "lat": 39.469707,
+        "lon": -0.376335,
+        "context_radius_nm": null,
+        "berthed_count": 0,
+        "anchored_count": 0,
+        "inbound_count": 2,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [],
+        "anchored": [],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 39.23501112148041,
+            "lon": -0.40059417001249475,
+            "estimated_wait_hours": 1.0
+          },
+          {
+            "mmsi": 990948770,
+            "name": null,
+            "lat": 38.1,
+            "lon": -0.1,
+            "estimated_wait_hours": 1.0
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 135.5627905048141,
+        "duration_hours": 15.062532278312679,
+        "waypoints": [
+          [
+            -0.1,
+            38.1
+          ],
+          [
+            -0.484707,
+            38.34195
+          ],
+          [
+            -0.488225,
+            38.330456
+          ],
+          [
+            -0.337749,
+            38.357105
+          ],
+          [
+            -0.221252,
+            38.490205
+          ],
+          [
+            0.267518,
+            38.480858
+          ],
+          [
+            0.3373,
+            38.7897
+          ],
+          [
+            0.129546,
+            38.995264
+          ],
+          [
+            -0.309838,
+            39.430018
+          ],
+          [
+            -0.330276,
+            39.45107
+          ],
+          [
+            -0.376335,
+            39.469707
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 38.1,
+          "lon": -0.1,
+          "eta": "2026-08-20T16:42:15+00:00",
+          "wave_height": 1.06,
+          "wave_direction": 197.0,
+          "wave_period": 4.5,
+          "wind_speed_kn": 21.1,
+          "wind_direction": 217.0,
+          "wind_gusts_kn": 29.9
+        },
+        {
+          "lat": 38.34195,
+          "lon": -0.484707,
+          "eta": "2026-08-20T19:17:20.222531+00:00",
+          "wave_height": 0.84,
+          "wave_direction": 180.0,
+          "wave_period": 4.55,
+          "wind_speed_kn": 3.0,
+          "wind_direction": 169.0,
+          "wind_gusts_kn": 7.2
+        },
+        {
+          "lat": 38.330456,
+          "lon": -0.488225,
+          "eta": "2026-08-20T19:22:03.682103+00:00",
+          "wave_height": 0.84,
+          "wave_direction": 180.0,
+          "wave_period": 4.55,
+          "wind_speed_kn": 3.0,
+          "wind_direction": 169.0,
+          "wind_gusts_kn": 7.2
+        },
+        {
+          "lat": 38.357105,
+          "lon": -0.337749,
+          "eta": "2026-08-20T20:10:35.827753+00:00",
+          "wave_height": 0.82,
+          "wave_direction": 186.0,
+          "wave_period": 4.7,
+          "wind_speed_kn": 13.5,
+          "wind_direction": 205.0,
+          "wind_gusts_kn": 17.7
+        },
+        {
+          "lat": 38.490205,
+          "lon": -0.221252,
+          "eta": "2026-08-20T21:15:10.193178+00:00",
+          "wave_height": 0.8,
+          "wave_direction": 183.0,
+          "wave_period": 4.8,
+          "wind_speed_kn": 5.5,
+          "wind_direction": 228.0,
+          "wind_gusts_kn": 10.5
+        },
+        {
+          "lat": 38.480858,
+          "lon": 0.267518,
+          "eta": "2026-08-20T23:48:43.553205+00:00",
+          "wave_height": 1.14,
+          "wave_direction": 199.0,
+          "wave_period": 5.0,
+          "wind_speed_kn": 10.2,
+          "wind_direction": 256.0,
+          "wind_gusts_kn": 15.7
+        },
+        {
+          "lat": 38.7897,
+          "lon": 0.3373,
+          "eta": "2026-08-21T01:54:03.708381+00:00",
+          "wave_height": 0.88,
+          "wave_direction": 187.0,
+          "wave_period": 5.05,
+          "wind_speed_kn": 8.4,
+          "wind_direction": 257.0,
+          "wind_gusts_kn": 11.3
+        },
+        {
+          "lat": 38.995264,
+          "lon": 0.129546,
+          "eta": "2026-08-21T03:38:44.459220+00:00",
+          "wave_height": 0.32,
+          "wave_direction": 195.0,
+          "wave_period": 2.8,
+          "wind_speed_kn": 14.3,
+          "wind_direction": 264.0,
+          "wind_gusts_kn": 19.8
+        },
+        {
+          "lat": 39.430018,
+          "lon": -0.309838,
+          "eta": "2026-08-21T07:19:45.265988+00:00",
+          "wave_height": 0.28,
+          "wave_direction": 170.0,
+          "wave_period": 3.3,
+          "wind_speed_kn": 7.7,
+          "wind_direction": 252.0,
+          "wind_gusts_kn": 14.2
+        },
+        {
+          "lat": 39.45107,
+          "lon": -0.330276,
+          "eta": "2026-08-21T07:30:17.120882+00:00",
+          "wave_height": 0.24,
+          "wave_direction": 166.0,
+          "wave_period": 3.4,
+          "wind_speed_kn": 9.2,
+          "wind_direction": 264.0,
+          "wind_gusts_kn": 17.3
+        },
+        {
+          "lat": 39.469707,
+          "lon": -0.376335,
+          "eta": "2026-08-21T07:46:22.885871+00:00",
+          "wave_height": 0.24,
+          "wave_direction": 166.0,
+          "wave_period": 3.4,
+          "wind_speed_kn": 6.4,
+          "wind_direction": 258.0,
+          "wind_gusts_kn": 14.2
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 32.35,
+        "speed_delta_kn": 23.35,
+        "eta_current": "2026-08-21T01:56:22.800000+00:00",
+        "eta_optimized": "2026-08-20T21:03:51+00:00",
+        "idle_hours_avoided": 0.0,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 1.0 h. AVISO: el CII empeora un 1191.9% con la velocidad recomendada (32.35 kn, actual: 9.0 kn) — la ventana de espera es demasiado ajustada para aplicar slow steaming; la velocidad recomendada evita perder el atraque, no ahorra combustible. Además, 32.35 kn supera la velocidad de diseño estimada del buque (26.96 kn).",
+        "convergio": false,
+        "excede_v_diseno": true,
+        "alerta_cii": true,
+        "nota": "Ventana JIT insuficiente incluso a v_max_kn: el buque llega justo o tarde yendo a máxima velocidad.",
+        "cii": {
+          "inicial": 0.5851,
+          "jit": 7.5591,
+          "metodo": "eexi",
+          "ahorro_pct": -1191.9
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SSE4NQFMW2DX70WVACK0",
+    "session_id": "01M0G3SSE4NQFMW2DX70WVACK1",
+    "emitted_at": "2026-08-20T16:53:18+00:00",
+    "mmsi": "990493141",
+    "puerto": "BARCELONA",
+    "alerta_cii": false,
+    "payload": {
+      "event_id": "01M0G3SSE4NQFMW2DX70WVACK0",
+      "session_id": "01M0G3SSE4NQFMW2DX70WVACK1",
+      "emitted_at": "2026-08-20T16:53:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990493141,
+        "imo": 9289180,
+        "name": null,
+        "lat": 41.05,
+        "lon": 3.4,
+        "speed_kn": 15.8,
+        "heading": 296.3,
+        "nav_status": 0,
+        "destination_raw": "BARCELONA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T16:53:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "BARCELONA",
+        "lat": 41.38258,
+        "lon": 2.177073,
+        "context_radius_nm": null,
+        "berthed_count": 1,
+        "anchored_count": 1,
+        "inbound_count": 3,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 41.394051613517924,
+            "lon": 2.1798345515328243
+          }
+        ],
+        "anchored": [
+          {
+            "mmsi": 271050000,
+            "name": null,
+            "lat": 41.42861813822763,
+            "lon": 2.1300667088249483,
+            "estimated_wait_hours": 1.0
+          }
+        ],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 41.14788412148041,
+            "lon": 2.1528138299875055,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 40.983288143205684,
+            "lon": 2.479275438620863,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 990493141,
+            "name": null,
+            "lat": 41.05,
+            "lon": 3.4,
+            "estimated_wait_hours": 37.0
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 124.53422220913905,
+        "duration_hours": 7.881912798046774,
+        "waypoints": [
+          [
+            3.4,
+            41.05
+          ],
+          [
+            3.02784,
+            41.774349
+          ],
+          [
+            3.3104,
+            41.7972
+          ],
+          [
+            2.5,
+            41.3
+          ],
+          [
+            2.209423,
+            41.312166
+          ],
+          [
+            2.166667,
+            41.35
+          ],
+          [
+            2.177073,
+            41.38258
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 41.05,
+          "lon": 3.4,
+          "eta": "2026-08-20T16:53:15+00:00",
+          "wave_height": 1.08,
+          "wave_direction": 217.0,
+          "wave_period": 4.85,
+          "wind_speed_kn": 16.5,
+          "wind_direction": 235.0,
+          "wind_gusts_kn": 23.1
+        },
+        {
+          "lat": 41.774349,
+          "lon": 3.02784,
+          "eta": "2026-08-20T19:50:06.819506+00:00",
+          "wave_height": 0.86,
+          "wave_direction": 197.0,
+          "wave_period": 5.3,
+          "wind_speed_kn": 5.8,
+          "wind_direction": 40.0,
+          "wind_gusts_kn": 28.6
+        },
+        {
+          "lat": 41.7972,
+          "lon": 3.3104,
+          "eta": "2026-08-20T20:38:33.405881+00:00",
+          "wave_height": 0.9,
+          "wave_direction": 195.0,
+          "wave_period": 5.1,
+          "wind_speed_kn": 14.8,
+          "wind_direction": 44.0,
+          "wind_gusts_kn": 32.9
+        },
+        {
+          "lat": 41.3,
+          "lon": 2.5,
+          "eta": "2026-08-20T23:37:33.561312+00:00",
+          "wave_height": 1.38,
+          "wave_direction": 200.0,
+          "wave_period": 5.65,
+          "wind_speed_kn": 2.1,
+          "wind_direction": 85.0,
+          "wind_gusts_kn": 24.9
+        },
+        {
+          "lat": 41.312166,
+          "lon": 2.209423,
+          "eta": "2026-08-21T00:27:31.974978+00:00",
+          "wave_height": 1.3,
+          "wave_direction": 194.0,
+          "wave_period": 5.6,
+          "wind_speed_kn": 8.0,
+          "wind_direction": 26.0,
+          "wind_gusts_kn": 17.7
+        },
+        {
+          "lat": 41.35,
+          "lon": 2.166667,
+          "eta": "2026-08-21T00:38:51.046013+00:00",
+          "wave_height": 1.28,
+          "wave_direction": 192.0,
+          "wave_period": 5.6,
+          "wind_speed_kn": 8.5,
+          "wind_direction": 63.0,
+          "wind_gusts_kn": 19.2
+        },
+        {
+          "lat": 41.38258,
+          "lon": 2.177073,
+          "eta": "2026-08-21T00:46:28.912451+00:00",
+          "wave_height": 1.28,
+          "wave_direction": 192.0,
+          "wave_period": 5.6,
+          "wind_speed_kn": 6.6,
+          "wind_direction": 88.0,
+          "wind_gusts_kn": 15.4
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 7.67,
+        "speed_delta_kn": -8.13,
+        "eta_current": null,
+        "eta_optimized": "2026-08-21T09:34:39+00:00",
+        "idle_hours_avoided": null,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 29.0 h. Velocidad recomendada: 7.67 kn (actual: 15.8 kn). Ahorro de CII estimado: 76.4%.",
+        "convergio": false,
+        "excede_v_diseno": false,
+        "alerta_cii": false,
+        "nota": "Sobra tiempo incluso a v_min_kn: slow steaming máximo, el buque llegaría antes de tiempo aun así.",
+        "cii": {
+          "inicial": 11.9559,
+          "jit": 2.8175,
+          "metodo": "eexi",
+          "ahorro_pct": 76.4
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SV869YZGKMHCZCN3FSHH",
+    "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+    "emitted_at": "2026-08-20T16:56:18+00:00",
+    "mmsi": "990763533",
+    "puerto": "VALENCIA",
+    "alerta_cii": true,
+    "payload": {
+      "event_id": "01M0G3SV869YZGKMHCZCN3FSHH",
+      "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+      "emitted_at": "2026-08-20T16:56:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990763533,
+        "imo": 9944742,
+        "name": null,
+        "lat": 37.38,
+        "lon": 0.78,
+        "speed_kn": 13.0,
+        "heading": 336.9,
+        "nav_status": 0,
+        "destination_raw": "VALENCIA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T16:56:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "VALENCIA",
+        "lat": 39.469707,
+        "lon": -0.376335,
+        "context_radius_nm": null,
+        "berthed_count": 2,
+        "anchored_count": 0,
+        "inbound_count": 3,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 39.481178613517926,
+            "lon": -0.3735734484671757
+          },
+          {
+            "mmsi": 538000001,
+            "name": null,
+            "lat": 39.481681805582824,
+            "lon": -0.37171113935248273
+          }
+        ],
+        "anchored": [],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 39.23501112148041,
+            "lon": -0.40059417001249475,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 39.070415143205686,
+            "lon": -0.07413256137913682,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 990763533,
+            "name": null,
+            "lat": 37.38,
+            "lon": 0.78,
+            "estimated_wait_hours": 21.9
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 386.0030843201877,
+        "duration_hours": 29.692544947706747,
+        "waypoints": [
+          [
+            0.78,
+            37.38
+          ],
+          [
+            1.331586,
+            36.517142
+          ],
+          [
+            -0.138702,
+            35.852327
+          ],
+          [
+            -0.6,
+            36.2
+          ],
+          [
+            -0.366667,
+            36.666667
+          ],
+          [
+            0.053548,
+            37.507095
+          ],
+          [
+            0.075557,
+            37.631275
+          ],
+          [
+            0.258592,
+            38.441352
+          ],
+          [
+            0.267518,
+            38.480858
+          ],
+          [
+            0.3373,
+            38.7897
+          ],
+          [
+            0.129546,
+            38.995264
+          ],
+          [
+            -0.309838,
+            39.430018
+          ],
+          [
+            -0.330276,
+            39.45107
+          ],
+          [
+            -0.376335,
+            39.469707
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 37.38,
+          "lon": 0.78,
+          "eta": "2026-08-20T16:56:15+00:00",
+          "wave_height": 1.34,
+          "wave_direction": 231.0,
+          "wave_period": 4.95,
+          "wind_speed_kn": 14.4,
+          "wind_direction": 254.0,
+          "wind_gusts_kn": 24.3
+        },
+        {
+          "lat": 36.517142,
+          "lon": 1.331586,
+          "eta": "2026-08-20T21:24:27.772298+00:00",
+          "wave_height": 0.84,
+          "wave_direction": 258.0,
+          "wave_period": 4.5,
+          "wind_speed_kn": 0.2,
+          "wind_direction": 90.0,
+          "wind_gusts_kn": 7.6
+        },
+        {
+          "lat": 35.852327,
+          "lon": -0.138702,
+          "eta": "2026-08-21T03:41:51.501349+00:00",
+          "wave_height": 0.76,
+          "wave_direction": 286.0,
+          "wave_period": 5.0,
+          "wind_speed_kn": 8.4,
+          "wind_direction": 214.0,
+          "wind_gusts_kn": 11.3
+        },
+        {
+          "lat": 36.2,
+          "lon": -0.6,
+          "eta": "2026-08-21T06:03:12.428281+00:00",
+          "wave_height": 1.52,
+          "wave_direction": 256.0,
+          "wave_period": 5.0,
+          "wind_speed_kn": 20.3,
+          "wind_direction": 250.0,
+          "wind_gusts_kn": 27.6
+        },
+        {
+          "lat": 36.666667,
+          "lon": -0.366667,
+          "eta": "2026-08-21T08:22:23.713268+00:00",
+          "wave_height": 1.6,
+          "wave_direction": 244.0,
+          "wave_period": 5.25,
+          "wind_speed_kn": 20.7,
+          "wind_direction": 241.0,
+          "wind_gusts_kn": 29.5
+        },
+        {
+          "lat": 37.507095,
+          "lon": 0.053548,
+          "eta": "2026-08-21T12:32:47.307378+00:00",
+          "wave_height": 1.34,
+          "wave_direction": 227.0,
+          "wave_period": 5.4,
+          "wind_speed_kn": 11.7,
+          "wind_direction": 230.0,
+          "wind_gusts_kn": 16.1
+        },
+        {
+          "lat": 37.631275,
+          "lon": 0.075557,
+          "eta": "2026-08-21T13:07:28.567565+00:00",
+          "wave_height": 1.32,
+          "wave_direction": 226.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 9.8,
+          "wind_direction": 232.0,
+          "wind_gusts_kn": 13.4
+        },
+        {
+          "lat": 38.441352,
+          "lon": 0.258592,
+          "eta": "2026-08-21T16:55:06.416969+00:00",
+          "wave_height": 0.82,
+          "wave_direction": 204.0,
+          "wave_period": 5.3,
+          "wind_speed_kn": 9.4,
+          "wind_direction": 153.0,
+          "wind_gusts_kn": 13.0
+        },
+        {
+          "lat": 38.480858,
+          "lon": 0.267518,
+          "eta": "2026-08-21T17:06:12.413119+00:00",
+          "wave_height": 0.82,
+          "wave_direction": 204.0,
+          "wave_period": 5.3,
+          "wind_speed_kn": 10.5,
+          "wind_direction": 152.0,
+          "wind_gusts_kn": 14.2
+        },
+        {
+          "lat": 38.7897,
+          "lon": 0.3373,
+          "eta": "2026-08-21T18:32:58.674395+00:00",
+          "wave_height": 0.72,
+          "wave_direction": 170.0,
+          "wave_period": 4.9,
+          "wind_speed_kn": 13.4,
+          "wind_direction": 178.0,
+          "wind_gusts_kn": 19.2
+        },
+        {
+          "lat": 38.995264,
+          "lon": 0.129546,
+          "eta": "2026-08-21T19:45:26.886514+00:00",
+          "wave_height": 0.44,
+          "wave_direction": 55.0,
+          "wave_period": 3.85,
+          "wind_speed_kn": 16.3,
+          "wind_direction": 151.0,
+          "wind_gusts_kn": 23.7
+        },
+        {
+          "lat": 39.430018,
+          "lon": -0.309838,
+          "eta": "2026-08-21T22:18:27.445046+00:00",
+          "wave_height": 0.48,
+          "wave_direction": 97.0,
+          "wave_period": 3.45,
+          "wind_speed_kn": 9.5,
+          "wind_direction": 86.0,
+          "wind_gusts_kn": 19.4
+        },
+        {
+          "lat": 39.45107,
+          "lon": -0.330276,
+          "eta": "2026-08-21T22:25:44.883049+00:00",
+          "wave_height": 0.48,
+          "wave_direction": 97.0,
+          "wave_period": 3.45,
+          "wind_speed_kn": 9.5,
+          "wind_direction": 86.0,
+          "wind_gusts_kn": 19.4
+        },
+        {
+          "lat": 39.469707,
+          "lon": -0.376335,
+          "eta": "2026-08-21T22:36:53.489580+00:00",
+          "wave_height": 0.46,
+          "wave_direction": 96.0,
+          "wave_period": 3.45,
+          "wind_speed_kn": 3.8,
+          "wind_direction": 69.0,
+          "wind_gusts_kn": 10.9
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 18.42,
+        "speed_delta_kn": 5.42,
+        "eta_current": "2026-08-21T03:26:43.080000+00:00",
+        "eta_optimized": "2026-08-21T14:50:51+00:00",
+        "idle_hours_avoided": 11.39,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 21.9 h. AVISO: el CII empeora un 100.8% con la velocidad recomendada (18.42 kn, actual: 13.0 kn) — la ventana de espera es demasiado ajustada para aplicar slow steaming; la velocidad recomendada evita perder el atraque, no ahorra combustible.",
+        "convergio": true,
+        "excede_v_diseno": false,
+        "alerta_cii": true,
+        "nota": null,
+        "cii": {
+          "inicial": 5.598,
+          "jit": 11.239,
+          "metodo": "eexi",
+          "ahorro_pct": -100.8
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SS36GENGYY754GKK04X9",
+    "session_id": "01M0G3SS36GENGYY754GKK04XA",
+    "emitted_at": "2026-08-20T17:01:18+00:00",
+    "mmsi": "990343497",
+    "puerto": "ALGECIRAS",
+    "alerta_cii": false,
+    "payload": {
+      "event_id": "01M0G3SS36GENGYY754GKK04X9",
+      "session_id": "01M0G3SS36GENGYY754GKK04XA",
+      "emitted_at": "2026-08-20T17:01:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990343497,
+        "imo": 9683491,
+        "name": null,
+        "lat": 36.55,
+        "lon": -6.1,
+        "speed_kn": 11.5,
+        "heading": null,
+        "nav_status": 0,
+        "destination_raw": "ALGECIRAS",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T17:01:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "ALGECIRAS",
+        "lat": 36.131172,
+        "lon": -5.447399,
+        "context_radius_nm": null,
+        "berthed_count": 2,
+        "anchored_count": 4,
+        "inbound_count": 2,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 36.142643613517926,
+            "lon": -5.444637448467176
+          },
+          {
+            "mmsi": 538000001,
+            "name": null,
+            "lat": 36.14314680558282,
+            "lon": -5.442775139352483
+          }
+        ],
+        "anchored": [
+          {
+            "mmsi": 271050000,
+            "name": null,
+            "lat": 36.17721013822763,
+            "lon": -5.494405291175052,
+            "estimated_wait_hours": 21.9
+          },
+          {
+            "mmsi": 271050001,
+            "name": null,
+            "lat": 36.128612713362116,
+            "lon": -5.416832409071024,
+            "estimated_wait_hours": 44.9
+          },
+          {
+            "mmsi": 271050002,
+            "name": null,
+            "lat": 36.16125202386143,
+            "lon": -5.490463740939588,
+            "estimated_wait_hours": 57.9
+          },
+          {
+            "mmsi": 271050003,
+            "name": null,
+            "lat": 36.14902478684039,
+            "lon": -5.483713301324336,
+            "estimated_wait_hours": 91.0
+          }
+        ],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 35.89647612148041,
+            "lon": -5.471658170012494,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 990343497,
+            "name": null,
+            "lat": 36.55,
+            "lon": -6.1,
+            "estimated_wait_hours": 93.9
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 120.05455739501012,
+        "duration_hours": 10.43952673000088,
+        "waypoints": [
+          [
+            -6.1,
+            36.55
+          ],
+          [
+            -6.281433,
+            36.522596
+          ],
+          [
+            -6.243668,
+            36.560394
+          ],
+          [
+            -6.6,
+            36.6
+          ],
+          [
+            -5.75,
+            35.95
+          ],
+          [
+            -5.354867,
+            35.968819
+          ],
+          [
+            -5.412677,
+            36.166941
+          ],
+          [
+            -5.43814,
+            36.141096
+          ],
+          [
+            -5.447399,
+            36.131172
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 36.55,
+          "lon": -6.1,
+          "eta": "2026-08-20T17:01:15+00:00",
+          "wave_height": 0.58,
+          "wave_direction": 239.0,
+          "wave_period": 4.1,
+          "wind_speed_kn": 10.3,
+          "wind_direction": 255.0,
+          "wind_gusts_kn": 19.4
+        },
+        {
+          "lat": 36.522596,
+          "lon": -6.281433,
+          "eta": "2026-08-20T17:47:48.952171+00:00",
+          "wave_height": 0.68,
+          "wave_direction": 240.0,
+          "wave_period": 4.3,
+          "wind_speed_kn": 10.5,
+          "wind_direction": 259.0,
+          "wind_gusts_kn": 16.3
+        },
+        {
+          "lat": 36.560394,
+          "lon": -6.243668,
+          "eta": "2026-08-20T18:02:59.650294+00:00",
+          "wave_height": 0.6,
+          "wave_direction": 240.0,
+          "wave_period": 4.15,
+          "wind_speed_kn": 9.3,
+          "wind_direction": 254.0,
+          "wind_gusts_kn": 16.7
+        },
+        {
+          "lat": 36.6,
+          "lon": -6.6,
+          "eta": "2026-08-20T19:33:41.169301+00:00",
+          "wave_height": 0.9,
+          "wave_direction": 249.0,
+          "wave_period": 4.35,
+          "wind_speed_kn": 16.4,
+          "wind_direction": 253.0,
+          "wind_gusts_kn": 21.8
+        },
+        {
+          "lat": 35.95,
+          "lon": -5.75,
+          "eta": "2026-08-21T00:29:37.172140+00:00",
+          "wave_height": 0.72,
+          "wave_direction": 268.0,
+          "wave_period": 4.75,
+          "wind_speed_kn": 11.3,
+          "wind_direction": 243.0,
+          "wind_gusts_kn": 15.0
+        },
+        {
+          "lat": 35.968819,
+          "lon": -5.354867,
+          "eta": "2026-08-21T02:10:12.552652+00:00",
+          "wave_height": 0.5,
+          "wave_direction": 271.0,
+          "wave_period": 4.05,
+          "wind_speed_kn": 16.5,
+          "wind_direction": 258.0,
+          "wind_gusts_kn": 21.8
+        },
+        {
+          "lat": 36.166941,
+          "lon": -5.412677,
+          "eta": "2026-08-21T03:13:51.297212+00:00",
+          "wave_height": 0.32,
+          "wave_direction": 236.0,
+          "wave_period": 3.7,
+          "wind_speed_kn": 3.4,
+          "wind_direction": 294.0,
+          "wind_gusts_kn": 8.9
+        },
+        {
+          "lat": 36.141096,
+          "lon": -5.43814,
+          "eta": "2026-08-21T03:24:11.770365+00:00",
+          "wave_height": 0.32,
+          "wave_direction": 236.0,
+          "wave_period": 3.7,
+          "wind_speed_kn": 3.4,
+          "wind_direction": 294.0,
+          "wind_gusts_kn": 8.9
+        },
+        {
+          "lat": 36.131172,
+          "lon": -5.447399,
+          "eta": "2026-08-21T03:28:05.199356+00:00",
+          "wave_height": 0.32,
+          "wave_direction": 236.0,
+          "wave_period": 3.7,
+          "wind_speed_kn": 3.4,
+          "wind_direction": 294.0,
+          "wind_gusts_kn": 8.9
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 7.35,
+        "speed_delta_kn": -4.15,
+        "eta_current": "2026-08-20T20:31:55.320000+00:00",
+        "eta_optimized": "2026-08-21T10:33:03+00:00",
+        "idle_hours_avoided": 74.39,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 77.9 h. Velocidad recomendada: 7.35 kn (actual: 11.5 kn). Ahorro de CII estimado: 59.2%.",
+        "convergio": false,
+        "excede_v_diseno": false,
+        "alerta_cii": false,
+        "nota": "Sobra tiempo incluso a v_min_kn: slow steaming máximo, el buque llegaría antes de tiempo aun así.",
+        "cii": {
+          "inicial": 8.6493,
+          "jit": 3.5331,
+          "metodo": "eexi",
+          "ahorro_pct": 59.2
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SRRS2ASXKJWQYCWTA3Z8",
+    "session_id": "01M0G3SRRS2ASXKJWQYCWTA3Z9",
+    "emitted_at": "2026-08-20T17:12:18+00:00",
+    "mmsi": "990906761",
+    "puerto": "VALENCIA",
+    "alerta_cii": false,
+    "payload": {
+      "event_id": "01M0G3SRRS2ASXKJWQYCWTA3Z8",
+      "session_id": "01M0G3SRRS2ASXKJWQYCWTA3Z9",
+      "emitted_at": "2026-08-20T17:12:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990906761,
+        "imo": null,
+        "name": null,
+        "lat": 39.05,
+        "lon": 0.55,
+        "speed_kn": 13.4,
+        "heading": 286.6,
+        "nav_status": 0,
+        "destination_raw": "VALENCIA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T17:12:15+00:00",
+        "is_container": false
+      },
+      "port": {
+        "locode": null,
+        "name": "VALENCIA",
+        "lat": 39.469707,
+        "lon": -0.376335,
+        "context_radius_nm": null,
+        "berthed_count": 1,
+        "anchored_count": 2,
+        "inbound_count": 5,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 39.481178613517926,
+            "lon": -0.3735734484671757
+          }
+        ],
+        "anchored": [
+          {
+            "mmsi": 271050000,
+            "name": null,
+            "lat": 39.51574513822763,
+            "lon": -0.4233412911750519,
+            "estimated_wait_hours": 1.0
+          },
+          {
+            "mmsi": 271050001,
+            "name": null,
+            "lat": 39.46714771336212,
+            "lon": -0.34576840907102346,
+            "estimated_wait_hours": 47.1
+          }
+        ],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 39.23501112148041,
+            "lon": -0.40059417001249475,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 39.070415143205686,
+            "lon": -0.07413256137913682,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 636010002,
+            "name": null,
+            "lat": 39.796482797869935,
+            "lon": 0.0734240057765696,
+            "estimated_wait_hours": 73.0
+          },
+          {
+            "mmsi": 636010003,
+            "name": null,
+            "lat": 39.92359699372761,
+            "lon": -0.05561975875007985,
+            "estimated_wait_hours": 139.2
+          },
+          {
+            "mmsi": 990906761,
+            "name": null,
+            "lat": 39.05,
+            "lon": 0.55,
+            "estimated_wait_hours": 185.3
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 82.8516627001047,
+        "duration_hours": 6.182959902992888,
+        "waypoints": [
+          [
+            0.55,
+            39.05
+          ],
+          [
+            0.183333,
+            38.8
+          ],
+          [
+            0.3373,
+            38.7897
+          ],
+          [
+            0.129546,
+            38.995264
+          ],
+          [
+            -0.309838,
+            39.430018
+          ],
+          [
+            -0.330276,
+            39.45107
+          ],
+          [
+            -0.376335,
+            39.469707
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 39.05,
+          "lon": 0.55,
+          "eta": "2026-08-20T17:12:15+00:00",
+          "wave_height": 1.08,
+          "wave_direction": 190.0,
+          "wave_period": 4.3,
+          "wind_speed_kn": 12.4,
+          "wind_direction": 219.0,
+          "wind_gusts_kn": 28.8
+        },
+        {
+          "lat": 38.8,
+          "lon": 0.183333,
+          "eta": "2026-08-20T18:54:17.401758+00:00",
+          "wave_height": 0.8,
+          "wave_direction": 194.0,
+          "wave_period": 4.3,
+          "wind_speed_kn": 5.3,
+          "wind_direction": 208.0,
+          "wind_gusts_kn": 26.8
+        },
+        {
+          "lat": 38.7897,
+          "lon": 0.3373,
+          "eta": "2026-08-20T19:26:44.846348+00:00",
+          "wave_height": 0.9,
+          "wave_direction": 191.0,
+          "wave_period": 4.15,
+          "wind_speed_kn": 15.4,
+          "wind_direction": 203.0,
+          "wind_gusts_kn": 29.5
+        },
+        {
+          "lat": 38.995264,
+          "lon": 0.129546,
+          "eta": "2026-08-20T20:37:03.261090+00:00",
+          "wave_height": 0.3,
+          "wave_direction": 147.0,
+          "wave_period": 3.25,
+          "wind_speed_kn": 10.5,
+          "wind_direction": 176.0,
+          "wind_gusts_kn": 14.0
+        },
+        {
+          "lat": 39.430018,
+          "lon": -0.309838,
+          "eta": "2026-08-20T23:05:29.773099+00:00",
+          "wave_height": 0.5,
+          "wave_direction": 147.0,
+          "wave_period": 3.6,
+          "wind_speed_kn": 6.5,
+          "wind_direction": 233.0,
+          "wind_gusts_kn": 12.4
+        },
+        {
+          "lat": 39.45107,
+          "lon": -0.330276,
+          "eta": "2026-08-20T23:12:34.153251+00:00",
+          "wave_height": 0.5,
+          "wave_direction": 147.0,
+          "wave_period": 3.6,
+          "wind_speed_kn": 6.5,
+          "wind_direction": 233.0,
+          "wind_gusts_kn": 12.4
+        },
+        {
+          "lat": 39.469707,
+          "lon": -0.376335,
+          "eta": "2026-08-20T23:23:22.801378+00:00",
+          "wave_height": 0.5,
+          "wave_direction": 147.0,
+          "wave_period": 3.6,
+          "wind_speed_kn": 3.9,
+          "wind_direction": 237.0,
+          "wind_gusts_kn": 8.0
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 6.95,
+        "speed_delta_kn": -6.45,
+        "eta_current": "2026-08-20T20:55:58.680000+00:00",
+        "eta_optimized": "2026-08-21T05:45:51+00:00",
+        "idle_hours_avoided": 181.57,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 185.3 h. Velocidad recomendada: 6.95 kn (actual: 13.4 kn). Ahorro de CII estimado: 73.1%.",
+        "convergio": false,
+        "excede_v_diseno": false,
+        "alerta_cii": false,
+        "nota": "Sobra tiempo incluso a v_min_kn: slow steaming máximo, el buque llegaría antes de tiempo aun así.",
+        "cii": {
+          "inicial": 1.1347,
+          "jit": 0.3052,
+          "metodo": "fallback_admiralty",
+          "ahorro_pct": 73.1
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SREP9JTE2M5970BR817K",
+    "session_id": "01M0G3SREP9JTE2M5970BR817M",
+    "emitted_at": "2026-08-20T17:20:18+00:00",
+    "mmsi": "990234543",
+    "puerto": "BARCELONA",
+    "alerta_cii": true,
+    "payload": {
+      "event_id": "01M0G3SREP9JTE2M5970BR817K",
+      "session_id": "01M0G3SREP9JTE2M5970BR817M",
+      "emitted_at": "2026-08-20T17:20:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990234543,
+        "imo": 9502348,
+        "name": null,
+        "lat": 40.62,
+        "lon": 2.95,
+        "speed_kn": 12.0,
+        "heading": 333.8,
+        "nav_status": 0,
+        "destination_raw": "BARCELONA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T17:20:15+00:00",
+        "is_container": false
+      },
+      "port": {
+        "locode": null,
+        "name": "BARCELONA",
+        "lat": 41.38258,
+        "lon": 2.177073,
+        "context_radius_nm": null,
+        "berthed_count": 2,
+        "anchored_count": 3,
+        "inbound_count": 3,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 41.394051613517924,
+            "lon": 2.1798345515328243
+          },
+          {
+            "mmsi": 538000001,
+            "name": null,
+            "lat": 41.39455480558282,
+            "lon": 2.1816968606475173
+          }
+        ],
+        "anchored": [
+          {
+            "mmsi": 271050000,
+            "name": null,
+            "lat": 41.42861813822763,
+            "lon": 2.1300667088249483,
+            "estimated_wait_hours": 21.9
+          },
+          {
+            "mmsi": 271050001,
+            "name": null,
+            "lat": 41.380020713362114,
+            "lon": 2.2076395909289763,
+            "estimated_wait_hours": 44.9
+          },
+          {
+            "mmsi": 271050002,
+            "name": null,
+            "lat": 41.41266002386143,
+            "lon": 2.134008259060412,
+            "estimated_wait_hours": 57.9
+          }
+        ],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 41.14788412148041,
+            "lon": 2.1528138299875055,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 40.983288143205684,
+            "lon": 2.479275438620863,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 990234543,
+            "name": null,
+            "lat": 40.62,
+            "lon": 2.95,
+            "estimated_wait_hours": 1.0
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 156.76603248685672,
+        "duration_hours": 13.063836040571394,
+        "waypoints": [
+          [
+            2.95,
+            40.62
+          ],
+          [
+            3.14844,
+            39.836498
+          ],
+          [
+            3.194798,
+            39.82258
+          ],
+          [
+            3.194798,
+            40.031034
+          ],
+          [
+            2.925892,
+            40.380652
+          ],
+          [
+            2.912236,
+            40.398406
+          ],
+          [
+            2.764258,
+            40.5908
+          ],
+          [
+            2.65283,
+            40.735672
+          ],
+          [
+            2.474432,
+            40.967615
+          ],
+          [
+            2.314102,
+            41.176068
+          ],
+          [
+            2.209423,
+            41.312166
+          ],
+          [
+            2.166667,
+            41.35
+          ],
+          [
+            2.177073,
+            41.38258
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 40.62,
+          "lon": 2.95,
+          "eta": "2026-08-20T17:20:15+00:00",
+          "wave_height": 1.54,
+          "wave_direction": 219.0,
+          "wave_period": 5.1,
+          "wind_speed_kn": 16.5,
+          "wind_direction": 223.0,
+          "wind_gusts_kn": 30.9
+        },
+        {
+          "lat": 39.836498,
+          "lon": 3.14844,
+          "eta": "2026-08-20T21:19:30.837852+00:00",
+          "wave_height": 0.4,
+          "wave_direction": 240.0,
+          "wave_period": 4.0,
+          "wind_speed_kn": 8.3,
+          "wind_direction": 207.0,
+          "wind_gusts_kn": 16.7
+        },
+        {
+          "lat": 39.82258,
+          "lon": 3.194798,
+          "eta": "2026-08-20T21:31:00.704212+00:00",
+          "wave_height": 0.34,
+          "wave_direction": 220.0,
+          "wave_period": 2.7,
+          "wind_speed_kn": 7.6,
+          "wind_direction": 199.0,
+          "wind_gusts_kn": 23.9
+        },
+        {
+          "lat": 40.031034,
+          "lon": 3.194798,
+          "eta": "2026-08-20T22:33:29.946147+00:00",
+          "wave_height": 0.64,
+          "wave_direction": 247.0,
+          "wave_period": 4.7,
+          "wind_speed_kn": 9.6,
+          "wind_direction": 185.0,
+          "wind_gusts_kn": 24.7
+        },
+        {
+          "lat": 40.380652,
+          "lon": 2.925892,
+          "eta": "2026-08-21T00:35:10.510997+00:00",
+          "wave_height": 1.4,
+          "wave_direction": 227.0,
+          "wave_period": 5.05,
+          "wind_speed_kn": 16.8,
+          "wind_direction": 196.0,
+          "wind_gusts_kn": 23.3
+        },
+        {
+          "lat": 40.398406,
+          "lon": 2.912236,
+          "eta": "2026-08-21T00:41:20.997328+00:00",
+          "wave_height": 1.44,
+          "wave_direction": 224.0,
+          "wave_period": 5.1,
+          "wind_speed_kn": 16.8,
+          "wind_direction": 196.0,
+          "wind_gusts_kn": 23.3
+        },
+        {
+          "lat": 40.5908,
+          "lon": 2.764258,
+          "eta": "2026-08-21T01:48:14.227473+00:00",
+          "wave_height": 1.44,
+          "wave_direction": 217.0,
+          "wave_period": 5.55,
+          "wind_speed_kn": 21.2,
+          "wind_direction": 244.0,
+          "wind_gusts_kn": 31.3
+        },
+        {
+          "lat": 40.735672,
+          "lon": 2.65283,
+          "eta": "2026-08-21T02:38:34.308248+00:00",
+          "wave_height": 1.46,
+          "wave_direction": 212.0,
+          "wave_period": 5.75,
+          "wind_speed_kn": 5.6,
+          "wind_direction": 234.0,
+          "wind_gusts_kn": 22.2
+        },
+        {
+          "lat": 40.967615,
+          "lon": 2.474432,
+          "eta": "2026-08-21T03:59:06.153299+00:00",
+          "wave_height": 1.46,
+          "wave_direction": 208.0,
+          "wave_period": 5.7,
+          "wind_speed_kn": 15.7,
+          "wind_direction": 37.0,
+          "wind_gusts_kn": 20.6
+        },
+        {
+          "lat": 41.176068,
+          "lon": 2.314102,
+          "eta": "2026-08-21T05:11:25.113143+00:00",
+          "wave_height": 1.3,
+          "wave_direction": 194.0,
+          "wave_period": 5.4,
+          "wind_speed_kn": 15.3,
+          "wind_direction": 34.0,
+          "wind_gusts_kn": 23.9
+        },
+        {
+          "lat": 41.312166,
+          "lon": 2.209423,
+          "eta": "2026-08-21T05:58:36.193441+00:00",
+          "wave_height": 1.14,
+          "wave_direction": 183.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 3.8,
+          "wind_direction": 345.0,
+          "wind_gusts_kn": 12.2
+        },
+        {
+          "lat": 41.35,
+          "lon": 2.166667,
+          "eta": "2026-08-21T06:13:30.303638+00:00",
+          "wave_height": 1.14,
+          "wave_direction": 183.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 3.8,
+          "wind_direction": 345.0,
+          "wind_gusts_kn": 12.2
+        },
+        {
+          "lat": 41.38258,
+          "lon": 2.177073,
+          "eta": "2026-08-21T06:23:33.161114+00:00",
+          "wave_height": 1.14,
+          "wave_direction": 183.0,
+          "wave_period": 5.35,
+          "wind_speed_kn": 3.6,
+          "wind_direction": 315.0,
+          "wind_gusts_kn": 8.4
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 17.03,
+        "speed_delta_kn": 5.03,
+        "eta_current": "2026-08-20T22:08:30.840000+00:00",
+        "eta_optimized": "2026-08-21T03:15:27+00:00",
+        "idle_hours_avoided": 0.0,
+        "fuel_saved_t": -5.428,
+        "rationale": "Atraque libre en 1.0 h. AVISO: el CII empeora un 101.4% con la velocidad recomendada (17.03 kn, actual: 12.0 kn) — la ventana de espera es demasiado ajustada para aplicar slow steaming; la velocidad recomendada evita perder el atraque, no ahorra combustible. Además, 17.03 kn supera la velocidad de diseño estimada del buque (14.19 kn).",
+        "convergio": false,
+        "excede_v_diseno": true,
+        "alerta_cii": true,
+        "nota": "Ventana JIT insuficiente incluso a v_max_kn: el buque llega justo o tarde yendo a máxima velocidad.",
+        "cii": {
+          "inicial": 3.6258,
+          "jit": 7.3025,
+          "metodo": "eexi",
+          "ahorro_pct": -101.4
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SVKN6VRDMF0HB5T3NK3H",
+    "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+    "emitted_at": "2026-08-20T17:26:18+00:00",
+    "mmsi": "990763533",
+    "puerto": "VALENCIA",
+    "alerta_cii": true,
+    "payload": {
+      "event_id": "01M0G3SVKN6VRDMF0HB5T3NK3H",
+      "session_id": "01M0G3STJXWDPRPWQKBB9Q0TP7",
+      "emitted_at": "2026-08-20T17:26:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990763533,
+        "imo": 9944742,
+        "name": null,
+        "lat": 37.47,
+        "lon": 0.72,
+        "speed_kn": 13.0,
+        "heading": 337.1,
+        "nav_status": 0,
+        "destination_raw": "VALENCIA",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T17:26:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "VALENCIA",
+        "lat": 39.469707,
+        "lon": -0.376335,
+        "context_radius_nm": null,
+        "berthed_count": 1,
+        "anchored_count": 0,
+        "inbound_count": 3,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 39.481178613517926,
+            "lon": -0.3735734484671757
+          }
+        ],
+        "anchored": [],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 39.23501112148041,
+            "lon": -0.40059417001249475,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 39.070415143205686,
+            "lon": -0.07413256137913682,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 990763533,
+            "name": null,
+            "lat": 37.47,
+            "lon": 0.72,
+            "estimated_wait_hours": 1.0
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 392.11697054055946,
+        "duration_hours": 30.16284388773534,
+        "waypoints": [
+          [
+            0.72,
+            37.47
+          ],
+          [
+            1.331586,
+            36.517142
+          ],
+          [
+            -0.138702,
+            35.852327
+          ],
+          [
+            -0.6,
+            36.2
+          ],
+          [
+            -0.366667,
+            36.666667
+          ],
+          [
+            0.053548,
+            37.507095
+          ],
+          [
+            0.075557,
+            37.631275
+          ],
+          [
+            0.258592,
+            38.441352
+          ],
+          [
+            0.267518,
+            38.480858
+          ],
+          [
+            0.3373,
+            38.7897
+          ],
+          [
+            0.129546,
+            38.995264
+          ],
+          [
+            -0.309838,
+            39.430018
+          ],
+          [
+            -0.330276,
+            39.45107
+          ],
+          [
+            -0.376335,
+            39.469707
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 37.47,
+          "lon": 0.72,
+          "eta": "2026-08-20T17:26:15+00:00",
+          "wave_height": 1.36,
+          "wave_direction": 228.0,
+          "wave_period": 5.05,
+          "wind_speed_kn": 13.9,
+          "wind_direction": 252.0,
+          "wind_gusts_kn": 27.0
+        },
+        {
+          "lat": 36.517142,
+          "lon": 1.331586,
+          "eta": "2026-08-20T22:22:39.234177+00:00",
+          "wave_height": 0.84,
+          "wave_direction": 255.0,
+          "wave_period": 4.55,
+          "wind_speed_kn": 2.9,
+          "wind_direction": 184.0,
+          "wind_gusts_kn": 8.7
+        },
+        {
+          "lat": 35.852327,
+          "lon": -0.138702,
+          "eta": "2026-08-21T04:40:02.963229+00:00",
+          "wave_height": 0.78,
+          "wave_direction": 287.0,
+          "wave_period": 5.05,
+          "wind_speed_kn": 7.7,
+          "wind_direction": 214.0,
+          "wind_gusts_kn": 10.3
+        },
+        {
+          "lat": 36.2,
+          "lon": -0.6,
+          "eta": "2026-08-21T07:01:23.890161+00:00",
+          "wave_height": 1.52,
+          "wave_direction": 257.0,
+          "wave_period": 5.1,
+          "wind_speed_kn": 20.4,
+          "wind_direction": 249.0,
+          "wind_gusts_kn": 28.0
+        },
+        {
+          "lat": 36.666667,
+          "lon": -0.366667,
+          "eta": "2026-08-21T09:20:35.175148+00:00",
+          "wave_height": 1.58,
+          "wave_direction": 244.0,
+          "wave_period": 5.3,
+          "wind_speed_kn": 20.1,
+          "wind_direction": 242.0,
+          "wind_gusts_kn": 28.0
+        },
+        {
+          "lat": 37.507095,
+          "lon": 0.053548,
+          "eta": "2026-08-21T13:30:58.769258+00:00",
+          "wave_height": 1.34,
+          "wave_direction": 227.0,
+          "wave_period": 5.4,
+          "wind_speed_kn": 12.4,
+          "wind_direction": 222.0,
+          "wind_gusts_kn": 16.1
+        },
+        {
+          "lat": 37.631275,
+          "lon": 0.075557,
+          "eta": "2026-08-21T14:05:40.029445+00:00",
+          "wave_height": 1.3,
+          "wave_direction": 226.0,
+          "wave_period": 5.3,
+          "wind_speed_kn": 10.9,
+          "wind_direction": 221.0,
+          "wind_gusts_kn": 14.4
+        },
+        {
+          "lat": 38.441352,
+          "lon": 0.258592,
+          "eta": "2026-08-21T17:53:17.878848+00:00",
+          "wave_height": 0.8,
+          "wave_direction": 204.0,
+          "wave_period": 5.25,
+          "wind_speed_kn": 8.0,
+          "wind_direction": 180.0,
+          "wind_gusts_kn": 12.4
+        },
+        {
+          "lat": 38.480858,
+          "lon": 0.267518,
+          "eta": "2026-08-21T18:04:23.874999+00:00",
+          "wave_height": 0.8,
+          "wave_direction": 204.0,
+          "wave_period": 5.25,
+          "wind_speed_kn": 9.5,
+          "wind_direction": 176.0,
+          "wind_gusts_kn": 14.0
+        },
+        {
+          "lat": 38.7897,
+          "lon": 0.3373,
+          "eta": "2026-08-21T19:31:10.136275+00:00",
+          "wave_height": 0.7,
+          "wave_direction": 169.0,
+          "wave_period": 4.9,
+          "wind_speed_kn": 13.0,
+          "wind_direction": 179.0,
+          "wind_gusts_kn": 17.5
+        },
+        {
+          "lat": 38.995264,
+          "lon": 0.129546,
+          "eta": "2026-08-21T20:43:38.348394+00:00",
+          "wave_height": 0.42,
+          "wave_direction": 51.0,
+          "wave_period": 3.85,
+          "wind_speed_kn": 13.4,
+          "wind_direction": 138.0,
+          "wind_gusts_kn": 21.2
+        },
+        {
+          "lat": 39.430018,
+          "lon": -0.309838,
+          "eta": "2026-08-21T23:16:38.906925+00:00",
+          "wave_height": 0.46,
+          "wave_direction": 96.0,
+          "wave_period": 3.45,
+          "wind_speed_kn": 9.0,
+          "wind_direction": 96.0,
+          "wind_gusts_kn": 17.3
+        },
+        {
+          "lat": 39.45107,
+          "lon": -0.330276,
+          "eta": "2026-08-21T23:23:56.344929+00:00",
+          "wave_height": 0.46,
+          "wave_direction": 96.0,
+          "wave_period": 3.45,
+          "wind_speed_kn": 9.0,
+          "wind_direction": 96.0,
+          "wind_gusts_kn": 17.3
+        },
+        {
+          "lat": 39.469707,
+          "lon": -0.376335,
+          "eta": "2026-08-21T23:35:04.951460+00:00",
+          "wave_height": 0.46,
+          "wave_direction": 96.0,
+          "wave_period": 3.45,
+          "wind_speed_kn": 3.8,
+          "wind_direction": 69.0,
+          "wind_gusts_kn": 10.9
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 25.54,
+        "speed_delta_kn": 12.54,
+        "eta_current": "2026-08-21T03:28:37.560000+00:00",
+        "eta_optimized": "2026-08-21T09:28:39+00:00",
+        "idle_hours_avoided": 0.0,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 1.0 h. AVISO: el CII empeora un 286.0% con la velocidad recomendada (25.54 kn, actual: 13.0 kn) — la ventana de espera es demasiado ajustada para aplicar slow steaming; la velocidad recomendada evita perder el atraque, no ahorra combustible. Además, 25.54 kn supera la velocidad de diseño estimada del buque (21.28 kn).",
+        "convergio": false,
+        "excede_v_diseno": true,
+        "alerta_cii": true,
+        "nota": "Ventana JIT insuficiente incluso a v_max_kn: el buque llega justo o tarde yendo a máxima velocidad.",
+        "cii": {
+          "inicial": 5.598,
+          "jit": 21.6068,
+          "metodo": "eexi",
+          "ahorro_pct": -286.0
+        }
+      }
+    }
+  },
+  {
+    "event_id": "01M0G3SR3ZJDWJGZQW9RW0RFWF",
+    "session_id": "01M0G3SR40JZ2FW9C6B79FMAV5",
+    "emitted_at": "2026-08-20T17:28:18+00:00",
+    "mmsi": "990420400",
+    "puerto": "ALGECIRAS",
+    "alerta_cii": false,
+    "payload": {
+      "event_id": "01M0G3SR3ZJDWJGZQW9RW0RFWF",
+      "session_id": "01M0G3SR40JZ2FW9C6B79FMAV5",
+      "emitted_at": "2026-08-20T17:28:18+00:00",
+      "schema_version": 1,
+      "vessel": {
+        "mmsi": 990420400,
+        "imo": 9280861,
+        "name": null,
+        "lat": 35.72,
+        "lon": -5.05,
+        "speed_kn": 14.2,
+        "heading": 315.1,
+        "nav_status": 0,
+        "destination_raw": "ALGECIRAS",
+        "eta_ais_raw": "2026-08-22 06:00:00",
+        "position_at": "2026-08-20T17:28:15+00:00",
+        "is_container": true
+      },
+      "port": {
+        "locode": null,
+        "name": "ALGECIRAS",
+        "lat": 36.131172,
+        "lon": -5.447399,
+        "context_radius_nm": null,
+        "berthed_count": 2,
+        "anchored_count": 5,
+        "inbound_count": 4,
+        "snapshot_at": null
+      },
+      "context_vessels": {
+        "berthed": [
+          {
+            "mmsi": 538000000,
+            "name": null,
+            "lat": 36.142643613517926,
+            "lon": -5.444637448467176
+          },
+          {
+            "mmsi": 538000001,
+            "name": null,
+            "lat": 36.14314680558282,
+            "lon": -5.442775139352483
+          }
+        ],
+        "anchored": [
+          {
+            "mmsi": 271050000,
+            "name": null,
+            "lat": 36.17721013822763,
+            "lon": -5.494405291175052,
+            "estimated_wait_hours": 21.9
+          },
+          {
+            "mmsi": 271050001,
+            "name": null,
+            "lat": 36.128612713362116,
+            "lon": -5.416832409071024,
+            "estimated_wait_hours": 44.9
+          },
+          {
+            "mmsi": 271050002,
+            "name": null,
+            "lat": 36.16125202386143,
+            "lon": -5.490463740939588,
+            "estimated_wait_hours": 57.9
+          },
+          {
+            "mmsi": 271050003,
+            "name": null,
+            "lat": 36.14902478684039,
+            "lon": -5.483713301324336,
+            "estimated_wait_hours": 91.0
+          },
+          {
+            "mmsi": 271050004,
+            "name": null,
+            "lat": 36.126537317315986,
+            "lon": -5.483624264096341,
+            "estimated_wait_hours": 114.0
+          }
+        ],
+        "inbound": [
+          {
+            "mmsi": 636010000,
+            "name": null,
+            "lat": 35.89647612148041,
+            "lon": -5.471658170012494,
+            "estimated_wait_hours": 27.7
+          },
+          {
+            "mmsi": 636010001,
+            "name": null,
+            "lat": 35.731880143205686,
+            "lon": -5.145196561379136,
+            "estimated_wait_hours": 50.8
+          },
+          {
+            "mmsi": 636010002,
+            "name": null,
+            "lat": 36.457947797869934,
+            "lon": -4.99763999422343,
+            "estimated_wait_hours": 111.9
+          },
+          {
+            "mmsi": 990420400,
+            "name": null,
+            "lat": 35.72,
+            "lon": -5.05,
+            "estimated_wait_hours": 73.8
+          }
+        ]
+      },
+      "route": {
+        "distance_nm": 36.71439538780488,
+        "duration_hours": 2.58552080195809,
+        "waypoints": [
+          [
+            -5.05,
+            35.72
+          ],
+          [
+            -5.321503,
+            35.893656
+          ],
+          [
+            -5.336225,
+            35.904932
+          ],
+          [
+            -5.354867,
+            35.968819
+          ],
+          [
+            -5.412677,
+            36.166941
+          ],
+          [
+            -5.43814,
+            36.141096
+          ],
+          [
+            -5.447399,
+            36.131172
+          ]
+        ]
+      },
+      "route_weather": [
+        {
+          "lat": 35.72,
+          "lon": -5.05,
+          "eta": "2026-08-20T17:28:15+00:00",
+          "wave_height": 0.64,
+          "wave_direction": 291.0,
+          "wave_period": 3.25,
+          "wind_speed_kn": 18.7,
+          "wind_direction": 283.0,
+          "wind_gusts_kn": 24.9
+        },
+        {
+          "lat": 35.893656,
+          "lon": -5.321503,
+          "eta": "2026-08-20T18:39:25.967017+00:00",
+          "wave_height": 0.54,
+          "wave_direction": 278.0,
+          "wave_period": 3.35,
+          "wind_speed_kn": 11.1,
+          "wind_direction": 272.0,
+          "wind_gusts_kn": 32.1
+        },
+        {
+          "lat": 35.904932,
+          "lon": -5.336225,
+          "eta": "2026-08-20T18:43:35.837078+00:00",
+          "wave_height": 0.64,
+          "wave_direction": 271.0,
+          "wave_period": 3.75,
+          "wind_speed_kn": 11.1,
+          "wind_direction": 272.0,
+          "wind_gusts_kn": 32.1
+        },
+        {
+          "lat": 35.968819,
+          "lon": -5.354867,
+          "eta": "2026-08-20T19:00:13.168897+00:00",
+          "wave_height": 0.64,
+          "wave_direction": 271.0,
+          "wave_period": 3.75,
+          "wind_speed_kn": 17.2,
+          "wind_direction": 259.0,
+          "wind_gusts_kn": 22.4
+        },
+        {
+          "lat": 36.166941,
+          "lon": -5.412677,
+          "eta": "2026-08-20T19:51:45.814139+00:00",
+          "wave_height": 0.42,
+          "wave_direction": 234.0,
+          "wave_period": 3.5,
+          "wind_speed_kn": 5.5,
+          "wind_direction": 280.0,
+          "wind_gusts_kn": 15.7
+        },
+        {
+          "lat": 36.141096,
+          "lon": -5.43814,
+          "eta": "2026-08-20T20:00:08.310002+00:00",
+          "wave_height": 0.42,
+          "wave_direction": 234.0,
+          "wave_period": 3.5,
+          "wind_speed_kn": 5.5,
+          "wind_direction": 280.0,
+          "wind_gusts_kn": 15.7
+        },
+        {
+          "lat": 36.131172,
+          "lon": -5.447399,
+          "eta": "2026-08-20T20:03:17.354608+00:00",
+          "wave_height": 0.42,
+          "wave_direction": 234.0,
+          "wave_period": 3.5,
+          "wind_speed_kn": 5.5,
+          "wind_direction": 280.0,
+          "wind_gusts_kn": 15.7
+        }
+      ],
+      "recommendation": {
+        "recommended_speed_kn": 9.75,
+        "speed_delta_kn": -4.45,
+        "eta_current": "2026-08-20T19:40:39.120000+00:00",
+        "eta_optimized": "2026-08-20T21:30:39+00:00",
+        "idle_hours_avoided": 61.39,
+        "fuel_saved_t": null,
+        "rationale": "Atraque libre en 63.6 h. Velocidad recomendada: 9.75 kn (actual: 14.2 kn). Ahorro de CII estimado: 52.9%.",
+        "convergio": false,
+        "excede_v_diseno": false,
+        "alerta_cii": false,
+        "nota": "Sobra tiempo incluso a v_min_kn: slow steaming máximo, el buque llegaría antes de tiempo aun así.",
+        "cii": {
+          "inicial": 3.8705,
+          "jit": 1.8247,
+          "metodo": "eexi",
+          "ahorro_pct": 52.9
+        }
+      }
+    }
+  }
+]

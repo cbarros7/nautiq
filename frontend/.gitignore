@@ -1,0 +1,6 @@
+# El frontal es JS: su ciclo de vida es npm, fuera del workspace uv.
+node_modules/
+dist/
+tsconfig.tsbuildinfo
+.env
+.env.local
