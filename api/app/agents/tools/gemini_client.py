@@ -6,8 +6,7 @@ Aísla el SDK concreto (google-genai) del resto del pipeline, que sigue
 siendo agnóstico al proveedor: nadie fuera de este módulo importa
 `google.genai`. Se usa el SDK nuevo unificado (`google-genai`), no el
 antiguo `google-generativeai` (en vías de retirada por parte de
-Google) — ambos funcionan con una API key simple del nivel gratuito,
-sin necesitar modo Vertex AI.
+Google)
 """
 
 from __future__ import annotations
@@ -15,8 +14,11 @@ from __future__ import annotations
 from typing import Callable
 
 from google import genai
+from dotenv import load_dotenv
 
-MODELO_POR_DEFECTO = "gemini-2.0-flash"
+load_dotenv()
+
+MODELO_POR_DEFECTO = "gemini-3.5-flash-lite"
 
 
 def crear_generar_texto(
@@ -34,10 +36,7 @@ def crear_generar_texto(
             }},
         )
 
-    `modelo` es el nombre de modelo de la Gemini API (p.ej.
-    "gemini-2.0-flash"); comprobar en Google AI Studio qué modelos
-    están disponibles en el nivel gratuito de tu API key, ya que la
-    disponibilidad/nombres cambian con el tiempo.
+    `modelo` de Google AI Studio 
     """
     client = genai.Client(api_key=api_key)
 

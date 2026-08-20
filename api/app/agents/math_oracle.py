@@ -54,24 +54,39 @@ Secuencia
     min después, mismo mmsi+puerto) usará como contexto.
 
 Sobre oracle_recommendation_v1 (acordado con el equipo de frontend):
-  - Sin `vessel.name` ni `port.locode`: no los tenemos hoy (ni en
-    paquete_1/2 ni en thetis_mrv), van como null.
+  - `vessel.name`: viene de thetis_mrv (columna `name`, ya se trae con
+    el SELECT * de db_conn.get_thetis_mrv_record dentro de
+    cii_calculus.estimar_cii) — null sólo si no hay IMO o no se
+    encuentra en thetis_mrv. `port.locode` sigue sin resolverse (no
+    tenemos tabla nombre→locode conectada), va como null.
   - `eta_ais_raw` = paquete_1["ETA_static"] tal cual.
+  - `queue`: la posición/espera/segmento que ya calculaba
+    fetch_tiempo_espera (jit_calculus) — es la justificación misma de
+    la recomendación, así que se expone en el evento, no sólo en el
+    informe interno.
   - `context_vessels` usa nuestras propias estimaciones de cola
     (jit_calculus), con nombres de campo (`estimated_wait_hours`, no
     `wait_hours`/`anchored_since`) que dejan claro que es un valor
-    MODELADO, no observado por un tracker con estado.
+    MODELADO, no observado por un tracker con estado; cada elemento
+    lleva `es_objetivo` (comparación directa de mmsi, no sólo el
+    es_objetivo de jit_calculus, que no cubre atracados).
   - Sin `status`/`confidence` inventados: se exponen las señales
     nativas del cálculo (`convergio`, `excede_v_diseno`, `nota`,
-    `alerta_cii`) directamente en `recommendation`.
+    `alerta_cii`, `weather_speed_loss_pct`) directamente en
+    `recommendation`.
   - `fuel_saved_t` sólo se rellena cuando thetis_mrv da un DWT REAL
     para el IMO (CIIResult.dwt_real_t) — nunca a partir del DWT
     geométrico estimado, que tiene la misma incertidumbre que el
     método fallback_admiralty. Si no hay DWT real, va null.
+  - `publicar_recomendacion` no propaga fallos de Supabase: un fallo al
+    escribir se registra y se descarta (mismo criterio que la DLQ de
+    ingestion/src/ais/tracker.py), para no perder el cálculo entero
+    (incluida la llamada al LLM, ya pagada) por un problema de BBDD.
 """
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional, TypedDict
 
@@ -82,6 +97,8 @@ from langgraph.graph import END, START, StateGraph
 from app.agents.tools import cii_calculus, db_conn, informe_llm, jit_calculus, kwon_euler
 from app.agents.tools.open_meteo import marine_weather_at_eta, waypoints_with_eta, wind_at_eta
 from app.agents.tools.sea_route import Port, Route, route_to_port
+
+logger = logging.getLogger(__name__)
 
 
 class OracleState(TypedDict):
@@ -99,6 +116,7 @@ class OracleState(TypedDict):
     wind: list[dict]
     cii_inicial: cii_calculus.CIIResult
     estimacion_jit: dict
+    estimaciones_puerto: list[dict]
     tiempo_espera_h: float
     velocidad_jit: kwon_euler.VelocidadJIT
     cii_jit: cii_calculus.CIIResult
@@ -190,16 +208,22 @@ def fetch_cii_inicial(state: OracleState) -> dict:
 def fetch_tiempo_espera(state: OracleState) -> dict:
     """
     jit_calculus: fusiona el buque de paquete_1 dentro del contrato
-    agregado del puerto (paquete_2) y calcula su tiempo de espera hasta
-    disponer de atraque — la ventana de tiempo que kwon_euler tiene que
-    cumplir.
+    agregado del puerto (paquete_2) y calcula, en una sola pasada, su
+    tiempo de espera (la ventana que kwon_euler tiene que cumplir) Y la
+    del resto de la cola — se guarda la lista completa
+    (estimaciones_puerto) para que construir_evento_contrato la
+    reutilice en "context_vessels" sin recalcular ni repetir la
+    consulta a thetis_mrv sobre el mismo paquete_2.
     """
-    estimacion_jit = jit_calculus.eta_buque_objetivo(state["paquete_2"], state["paquete_1"])
+    estimacion_jit, estimaciones_puerto = jit_calculus.estimaciones_puerto_con_objetivo(
+        state["paquete_2"], state["paquete_1"]
+    )
     if estimacion_jit is None:
         raise ValueError("No se pudo estimar el tiempo de espera del buque objetivo")
     return {
         "estimacion_jit": estimacion_jit,
         "tiempo_espera_h": estimacion_jit["tiempo_espera_estimado_h"],
+        "estimaciones_puerto": estimaciones_puerto,
     }
 
 
@@ -378,23 +402,32 @@ def _conteos_puerto(paquete_2: dict) -> dict:
     }
 
 
-def _contexto_buques(paquete_2: dict) -> dict:
+def _contexto_buques(paquete_2: dict, target_mmsi: str, estimaciones_puerto: list[dict]) -> dict:
     """
     context_vessels del contrato, con nuestras propias estimaciones de
     cola (jit_calculus) en vez de estado observado por un tracker con
     estado (Flink) — de ahí "estimated_wait_hours" y no
     "wait_hours"/"anchored_since". Sin nombre de buque: paquete_2 no lo
-    trae para el resto de la flota (sólo el objetivo, vía paquete_1, y
-    ni eso lo tenemos hoy).
+    trae para el resto de la flota.
+
+    `estimaciones_puerto` viene de fetch_tiempo_espera
+    (estimaciones_puerto_con_objetivo) — es la MISMA pasada que ya
+    fusionó el buque objetivo y calculó su recomendación; no se vuelve
+    a llamar a jit_calculus aquí, para no recalcular ni repetir la
+    consulta a thetis_mrv sobre el mismo paquete_2.
+
+    `es_objetivo` se marca comparando mmsi directamente contra
+    `target_mmsi`, no con el es_objetivo que ya trae
+    estimaciones_puerto — ese sólo cubre fondeados/en_camino (la fusión
+    de jit_calculus), no atracados, y aquí hace falta para las tres
+    listas.
     """
     estados = paquete_2.get("estados", paquete_2)
     atracados_raw = estados.get("num_buques_atracados", [])
     fondeados_raw = estados.get("num_buques_fondeados", [])
     en_camino_raw = estados.get("num_buques_en_camino", [])
 
-    estimaciones = {
-        e["mmsi"]: e for e in jit_calculus.estimar_desde_contrato(paquete_2)
-    }
+    estimaciones = {e["mmsi"]: e for e in estimaciones_puerto}
 
     def _base(item: dict) -> dict:
         return {
@@ -402,6 +435,7 @@ def _contexto_buques(paquete_2: dict) -> dict:
             "name": None,
             "lat": item.get("latitud"),
             "lon": item.get("longitud"),
+            "es_objetivo": str(item.get("mmsi")) == str(target_mmsi),
         }
 
     def _con_estimacion(item: dict) -> dict:
@@ -464,7 +498,7 @@ def construir_evento_contrato(state: OracleState, event_id: str, session_id: str
         "vessel": {
             "mmsi": paquete_1.get("mmsi"),
             "imo": paquete_1.get("imo"),
-            "name": None,  # no disponible: ni paquete_1 ni thetis_mrv lo dan hoy
+            "name": cii_inicial.detalles.get("vessel_name"),  # thetis_mrv.name; null si no hay IMO/no está en thetis_mrv
             "lat": state["vessel_lat"],
             "lon": state["vessel_lon"],
             "speed_kn": paquete_1.get("velocidad_buque"),
@@ -484,13 +518,24 @@ def construir_evento_contrato(state: OracleState, event_id: str, session_id: str
             **_conteos_puerto(paquete_2),
             "snapshot_at": None,  # paquete_2 no trae timestamp propio hoy
         },
-        "context_vessels": _contexto_buques(paquete_2),
+        "context_vessels": _contexto_buques(
+            paquete_2, str(paquete_1.get("mmsi")), state["estimaciones_puerto"]
+        ),
         "route": {
             "distance_nm": state["distance_nm"],
             "duration_hours": state["route"].duration_hours,
             "waypoints": state["route"].waypoints,
         },
         "route_weather": route_weather,
+        # Justificación de la recomendación: posición/espera en la cola
+        # de ESTE buque — sin esto el frontal no puede explicar "por
+        # qué" frenar. Ya lo calculaba fetch_tiempo_espera, sólo
+        # faltaba copiarlo al evento.
+        "queue": {
+            "estimated_wait_hours": informe["cola_puerto"]["tiempo_espera_estimado_h"],
+            "queue_position": informe["cola_puerto"]["posicion_cola"],
+            "berth_segment": informe["cola_puerto"]["segmento_atraque"],
+        },
         "recommendation": {
             "recommended_speed_kn": velocidad_jit.v_motor_kn,
             "speed_delta_kn": round(
@@ -506,6 +551,7 @@ def construir_evento_contrato(state: OracleState, event_id: str, session_id: str
             "excede_v_diseno": velocidad_jit.excede_v_diseno,
             "alerta_cii": resumen["alerta_cii"],
             "nota": velocidad_jit.nota,
+            "weather_speed_loss_pct": velocidad_jit.perdida_media_pct,
             "cii": {
                 "inicial": cii_inicial.cii,
                 "jit": cii_jit.cii,
@@ -533,18 +579,41 @@ def publicar_recomendacion(state: OracleState) -> dict:
     mmsi = str(state["paquete_1"].get("mmsi"))
     puerto = state["port"].name
     event_id = state["paquete_1"].get("correlation_id") or str(ulid.ULID())
-    session_id = db_conn.buscar_session_id(mmsi, puerto) or str(ulid.ULID())
+
+    # Si Supabase no responde al buscar la sesión, se trata igual que
+    # "no hay sesión previa" (nueva sesión) — no vale la pena tumbar el
+    # cálculo entero por esto.
+    try:
+        session_id = db_conn.buscar_session_id(mmsi, puerto)
+    except Exception:
+        logger.exception(
+            "buscar_session_id falló para mmsi=%s puerto=%s; se abre sesión nueva", mmsi, puerto
+        )
+        session_id = None
+    session_id = session_id or str(ulid.ULID())
 
     evento = construir_evento_contrato(state, event_id, session_id)
 
-    db_conn.guardar_recomendacion(
-        event_id=event_id,
-        session_id=session_id,
-        mmsi=mmsi,
-        puerto=puerto,
-        alerta_cii=state["resumen"]["alerta_cii"],
-        payload=evento,
-    )
+    # Un fallo al publicar no debe tumbar el grafo: se pierde el cálculo
+    # entero (incluida la llamada al LLM, ya pagada) por un problema de
+    # BBDD ajeno al cálculo en sí. Mismo criterio que la DLQ de
+    # ingestion/src/ais/tracker.py: se registra y se descarta.
+    try:
+        db_conn.guardar_recomendacion(
+            event_id=event_id,
+            session_id=session_id,
+            mmsi=mmsi,
+            puerto=puerto,
+            alerta_cii=state["resumen"]["alerta_cii"],
+            payload=evento,
+        )
+    except Exception:
+        logger.exception(
+            "guardar_recomendacion falló para event_id=%s (mmsi=%s, puerto=%s); "
+            "se descarta la escritura, el resultado se devuelve igual",
+            event_id, mmsi, puerto,
+        )
+
     return {"evento_contrato": evento}
 
 

@@ -810,42 +810,32 @@ def fusionar_buque_objetivo(contrato_puerto: dict | str, mensaje_buque: dict) ->
     return {"puerto": contrato_puerto.get("puerto", "unknown"), "estados": listas}
 
 
-def eta_buque_objetivo(
+def estimaciones_puerto_con_objetivo(
     contrato_puerto: dict | str,
     mensaje_buque: dict,
     atraques_por_segmento: Optional[dict[str, int]] = None,
-) -> Optional[dict]:
+) -> tuple[Optional[dict], list[dict]]:
     """
-    Calcula la estimación de espera del buque objetivo (paquete 1),
-    fusionándolo primero en el contrato agregado del puerto (paquete 2)
-    vía `fusionar_buque_objetivo` y recuperando su resultado por la
-    marca "_es_objetivo" — no por posición ni por asumir que ya estaba
-    en el contrato.
+    Fusiona el buque objetivo (paquete 1) en el contrato agregado del
+    puerto (paquete 2) y calcula, en una SOLA pasada, tanto su propia
+    estimación como la del resto de la cola — para quien necesite las
+    dos cosas (p.ej. math_oracle: la del objetivo para kwon_euler, la
+    del resto para "context_vessels" del contrato con el frontal) sin
+    recalcular ni repetir la consulta a thetis_mrv sobre el mismo
+    paquete_2 dos veces.
+
+    Devuelve (estimacion_objetivo, estimaciones_resto_de_la_cola).
 
     Caso especial: si el "estado" del buque objetivo normaliza a
     "atracado", ya está en el muelle y no compite por la cola —
     estimar_desde_contrato no lo incluiría en sus resultados (los
-    atracados no forman parte de la cola), así que se devuelve
-    directamente una estimación con espera 0.
-
-    Parameters
-    ----------
-    contrato_puerto : dict | str
-        Contrato agregado del puerto (formato webhook de "estados").
-    mensaje_buque : dict
-        Mensaje individual del buque objetivo (con al menos "mmsi";
-        idealmente también "imo", "eslora" y "estado").
-    atraques_por_segmento : dict, optional
-        Nº total de atraques por segmento, si se conoce.
-
-    Returns
-    -------
-    dict | None
-        Estimación (mismo formato que `estimar_desde_contrato`) del
-        buque objetivo, o None si no se pudo localizar tras fusionarlo.
+    atracados no forman parte de la cola). En ese caso no se fusiona
+    (no hace falta) y estimacion_objetivo es un dict sintético con
+    espera 0; estimaciones_resto_de_la_cola sigue siendo el cálculo
+    real del resto de buques del puerto.
     """
     if _normalizar_estado_buque(mensaje_buque.get("estado")) == "atracado":
-        return {
+        estimacion_objetivo = {
             "mmsi": str(mensaje_buque.get("mmsi", "")),
             "eslora": mensaje_buque.get("eslora"),
             "tipo": _tipo_directo(mensaje_buque),
@@ -858,14 +848,36 @@ def eta_buque_objetivo(
             "componentes": {"nota": "buque ya atracado, sin espera de cola"},
             "es_objetivo": True,
         }
+        return estimacion_objetivo, estimar_desde_contrato(contrato_puerto, atraques_por_segmento)
 
     contrato_fusionado = fusionar_buque_objetivo(contrato_puerto, mensaje_buque)
     resultados = estimar_desde_contrato(contrato_fusionado, atraques_por_segmento)
+    estimacion_objetivo = next((r for r in resultados if r.get("es_objetivo")), None)
+    return estimacion_objetivo, resultados
 
-    for r in resultados:
-        if r.get("es_objetivo"):
-            return r
-    return None
+
+def eta_buque_objetivo(
+    contrato_puerto: dict | str,
+    mensaje_buque: dict,
+    atraques_por_segmento: Optional[dict[str, int]] = None,
+) -> Optional[dict]:
+    """
+    Calcula la estimación de espera del buque objetivo (paquete 1).
+    Azúcar sintáctico sobre `estimaciones_puerto_con_objetivo` para
+    quien sólo necesita la estimación del objetivo, no la del resto de
+    la cola (ver esa función para el porqué de fusionar y para el caso
+    especial "atracado").
+
+    Returns
+    -------
+    dict | None
+        Estimación (mismo formato que `estimar_desde_contrato`) del
+        buque objetivo, o None si no se pudo localizar tras fusionarlo.
+    """
+    estimacion_objetivo, _ = estimaciones_puerto_con_objetivo(
+        contrato_puerto, mensaje_buque, atraques_por_segmento
+    )
+    return estimacion_objetivo
 
 
 def construir_respuesta_eta(

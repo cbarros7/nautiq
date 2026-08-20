@@ -207,8 +207,10 @@ class TramoRuta:
     lat2: float
     lon2: float
     distancia_nm: float
-    wind_speed_kn: float
-    wind_direction_deg: float
+    # Optional: Open-Meteo devuelve null en celdas que el modelo no
+    # cubre (ver _perdida_pct_tramo para cómo se trata la ausencia).
+    wind_speed_kn: Optional[float]
+    wind_direction_deg: Optional[float]
 
 
 def construir_tramos(
@@ -250,6 +252,13 @@ def construir_tramos(
 
 
 def _perdida_pct_tramo(tramo: TramoRuta, cb: float) -> float:
+    if tramo.wind_speed_kn is None or tramo.wind_direction_deg is None:
+        # Open-Meteo no cubre esta celda (frecuente en tramos costeros,
+        # a veces la propia posición del buque) — sin dato de viento no
+        # se puede estimar Beaufort ni el ángulo relativo. Se trata
+        # como sin penalización en vez de adivinar un peor/mejor caso
+        # arbitrario a partir de un dato que no existe.
+        return 0.0
     rumbo = rumbo_inicial_deg(tramo.lat1, tramo.lon1, tramo.lat2, tramo.lon2)
     angulo_rel = angulo_relativo_deg(rumbo, tramo.wind_direction_deg)
     bn = beaufort_desde_viento(tramo.wind_speed_kn)

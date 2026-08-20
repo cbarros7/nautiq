@@ -7,9 +7,13 @@ import requests
 
 class _MarineHourly(BaseModel):
     time: list[str]
-    wave_height: list[float]
-    wave_direction: list[float]
-    wave_period: list[float]
+    # Open-Meteo devuelve null en celdas que el modelo de olas no cubre
+    # (típicamente costeras) — Optional aquí, no float, o Pydantic tumba
+    # la recomendación entera (incluida la llamada al LLM ya pagada)
+    # por un solo valor null en 168 horas × N waypoints.
+    wave_height: list[float | None]
+    wave_direction: list[float | None]
+    wave_period: list[float | None]
 
     @model_validator(mode="after")
     def _series_alineadas(self) -> "_MarineHourly":
@@ -25,9 +29,9 @@ class _MarineLocationResult(BaseModel):
 
 class _WindHourly(BaseModel):
     time: list[str]
-    wind_speed_10m: list[float]
-    wind_direction_10m: list[float]
-    wind_gusts_10m: list[float]
+    wind_speed_10m: list[float | None]
+    wind_direction_10m: list[float | None]
+    wind_gusts_10m: list[float | None]
 
     @model_validator(mode="after")
     def _series_alineadas(self) -> "_WindHourly":

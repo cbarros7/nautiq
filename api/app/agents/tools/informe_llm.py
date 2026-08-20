@@ -15,9 +15,8 @@ como una arista condicional real (add_conditional_edges), no escondida
 dentro de una función — así el grafo expresa de verdad una rama, en
 vez de ser una cadena fija que solo varía su texto de salida.
 
-Si no se inyecta ningún `generar_texto` (todavía no se ha decidido
-modelo), se usa un resumen determinista sin LLM, para que el grafo
-siga siendo ejecutable de punta a punta.
+Si no se inyecta ningún `generar_texto`, se usa un resumen determinista 
+sin LLM, para que el grafo siga siendo ejecutable de punta a punta.
 
 `historial` (opcional): últimas recomendaciones para el mismo
 mmsi+puerto (db_conn.get_historial_recomendaciones), para que el LLM

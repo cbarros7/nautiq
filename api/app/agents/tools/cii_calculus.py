@@ -394,6 +394,7 @@ def estimar_cii(webhook: dict,
                 "eexi_base": eexi,
                 "ratio_v": round(v_actual / v_diseno, 4),
                 "tipo_normalizado": _normalizar_tipo(tipo_raw),
+                "vessel_name": (db_record or {}).get("name"),
             },
         )
  
@@ -416,6 +417,7 @@ def estimar_cii(webhook: dict,
         detalles={
             "tipo_normalizado": _normalizar_tipo(tipo_raw),
             "nota": "CII estimado sin EEXI — basado en dimensiones y C_adm",
+            "vessel_name": (db_record or {}).get("name"),
         },
     )
     
