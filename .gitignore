@@ -235,3 +235,6 @@ data/reference/
 
 #claude
 .claude/
+
+#oraculo
+prueba.ipynb
