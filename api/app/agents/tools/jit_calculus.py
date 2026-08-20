@@ -109,6 +109,47 @@ SEGMENTOS_ATRAQUE: list[tuple[float, float, str]] = [
 
 
 # ──────────────────────────────────────────────────────────────────────
+#  CÓDIGO DE TIPO DE BUQUE AIS (ITU-R M.1371-5, tabla 53, "Type of
+#  ship and cargo type") — cuando no hay texto ni IMO para resolver el
+#  ship_type real (p.ej. los buques de la cola del puerto en paquete_2,
+#  que llegan con "tipo_buque" como código numérico 0-99 en vez de imo
+#  o un string tipo "Bulk carrier").
+# ──────────────────────────────────────────────────────────────────────
+# LIMITACIÓN DE FONDO (no es que falten códigos por mapear: el propio
+# estándar no los tiene): AIS no distingue la FORMA del buque dentro de
+# "Carga" (70-79) ni de "Tanque" (80-89) — un Ro-Ro, un granelero, un
+# portacontenedores y un general cargo son TODOS "70..79" (esas
+# subdivisiones son por categoría de PELIGROSIDAD de la carga, no por
+# forma del casco); un petrolero, un químico y un LNG carrier son
+# TODOS "80..89" por el mismo motivo. No existe ningún código AIS que
+# permita recuperar Ro-Ro/bulk/container/LNG/chemical por separado —
+# eso sólo se resuelve con precisión vía IMO contra thetis_mrv, por eso
+# esta función es el ÚLTIMO fallback en parse_contrato (después de
+# intentar la BBDD), nunca la primera opción.
+#
+# Tabla completa de rangos (0-99):
+#   20-29 WIG · 30 pesca · 31-32 remolque · 33 dragado/obras submarinas
+#   34 buceo · 35 militar · 36 vela · 37 recreo · 40-49 alta velocidad
+#   (HSC) · 50 práctico · 51 SAR · 52 remolcador · 53 tender de puerto
+#   54 antipolución · 55 fuerzas del orden · 58 transporte médico
+#   59 no combatiente · 60-69 Pasaje · 70-79 Carga · 80-89 Tanque
+#   90-99 Otro tipo
+
+def _tipo_desde_codigo_ais(codigo: int) -> TipoBuque:
+    if 60 <= codigo <= 69:
+        return TipoBuque.PASSENGER
+    if 70 <= codigo <= 79:
+        return TipoBuque.GENERAL_CARGO
+    if 80 <= codigo <= 89:
+        return TipoBuque.TANKER
+    if 40 <= codigo <= 49:
+        return TipoBuque.PASSENGER  # HSC: mayoritariamente ferries rápidos
+    if codigo in (31, 32, 33, 50, 51, 52, 53, 54):
+        return TipoBuque.OFFSHORE  # remolque, dragado, práctico, SAR, tender, antipolución
+    return TipoBuque.OTHER
+
+
+# ──────────────────────────────────────────────────────────────────────
 #  DATACLASSES
 # ──────────────────────────────────────────────────────────────────────
 
@@ -124,6 +165,10 @@ class Buque:
     def tipo_enum(self) -> TipoBuque:
         """Mapea el string de tipo a TipoBuque, con fallback a OTHER."""
         raw = self.tipo.strip().lower().replace(" ", "_")
+        if raw.isdigit():
+            # Código AIS numérico (p.ej. "70"), no texto — ver
+            # _tipo_desde_codigo_ais para la nota de precisión.
+            return _tipo_desde_codigo_ais(int(raw))
         try:
             return TipoBuque(raw)
         except ValueError:
@@ -423,14 +468,42 @@ class EstimadorTiempoEspera:
 #  PARSING DEL CONTRATO JSON
 # ──────────────────────────────────────────────────────────────────────
 
-def _tipo_directo(item: dict) -> Optional[str]:
-    """Tipo de buque explícito en el item, si lo trae (compat. legacy)."""
+def _valor_tipo_raw(item: dict):
     return (
         item.get("tipo_buque")
         or item.get("tipo")
         or item.get("ship_type")
         or item.get("type")
     )
+
+
+def _es_codigo_numerico(valor) -> bool:
+    return isinstance(valor, (int, float)) or (
+        isinstance(valor, str) and valor.strip().isdigit()
+    )
+
+
+def _tipo_directo(item: dict) -> Optional[str]:
+    """
+    Tipo de buque ya resuelto como texto (p.ej. "Bulk carrier"), si lo
+    trae — compatibilidad con contratos/tests antiguos. Un código AIS
+    numérico (p.ej. "tipo_buque": 70) NO cuenta como tipo "directo":
+    es una categoría basta (ver _tipo_desde_codigo_ais) que sólo debe
+    usarse si no hay IMO con el que resolver el tipo real contra
+    thetis_mrv — por eso no debe saltarse la resolución por IMO.
+    """
+    valor = _valor_tipo_raw(item)
+    if valor is None or _es_codigo_numerico(valor):
+        return None
+    return valor
+
+
+def _tipo_codigo_ais_item(item: dict) -> Optional[int]:
+    """Código AIS numérico de tipo de buque del item, si lo trae (último fallback)."""
+    valor = _valor_tipo_raw(item)
+    if valor is None or not _es_codigo_numerico(valor):
+        return None
+    return int(valor)
 
 
 def _extraer_estados(data: dict) -> dict:
@@ -474,19 +547,24 @@ def parse_contrato(data: dict | str) -> tuple[Puerto, list[Buque], list[Buque], 
     Las listas de buques pueden venir en la raíz del contrato o anidadas
     bajo "estados" (se acepta cualquiera de las dos formas).
 
-    El ship_type se resuelve cruzando con la tabla thetis_mrv de
-    Postgres (vía db_conn.get_ship_types), en una sola query batch para
-    todos los buques del contrato. Si un item sí trae el tipo
-    explícito (compatibilidad con contratos/tests antiguos), se usa
-    ese valor y no se consulta la BBDD para ese buque.
+    Resolución del tipo de buque, por prioridad:
+    1. Texto explícito ya resuelto ("tipo_buque": "Bulk carrier") —
+       compatibilidad con contratos/tests antiguos, no consulta BBDD.
+    2. IMO -> ship_type real de thetis_mrv (Postgres), en una sola
+       query batch para todos los buques del contrato que lo necesiten.
+    3. Código AIS numérico ("tipo_buque": 70, ITU-R M.1371) — fallback
+       cuando no hay IMO (típicamente los buques de la cola del puerto
+       en paquete_2) o el IMO no está en thetis_mrv. Mucho más basto
+       que el texto/IMO: no distingue bulk/container/general_cargo.
+    4. "other" si no hay nada de lo anterior.
 
     También acepta variantes de claves, tanto para las listas de buques:
     - "num_buques_atracados" / "n_atracados" / "atracados"
     - "num_buques_fondeados" / "n_fondeados" / "fondeados"
     - "num_buques_en_camino" / "n_en_camino" / "en_camino"
     como para los campos de cada buque:
-    - "tipo_buque", "tipo", "ship_type", "type" (tipo explícito)
-    - "imo" (para resolver el tipo vía Postgres si no viene explícito)
+    - "tipo_buque", "tipo", "ship_type", "type" (texto o código AIS)
+    - "imo"
     - "eslora", "loa", "length"
     """
     if isinstance(data, str):
@@ -522,9 +600,11 @@ def parse_contrato(data: dict | str) -> tuple[Puerto, list[Buque], list[Buque], 
                 or item.get("length")
                 or 150
             )
+            codigo_ais = _tipo_codigo_ais_item(item)
             tipo = (
                 _tipo_directo(item)
                 or (tipos_por_imo.get(str(imo)) if imo is not None else None)
+                or (str(codigo_ais) if codigo_ais is not None else None)
                 or "other"
             )
             buques.append(Buque(
@@ -615,16 +695,41 @@ ESTADO_A_CLAVE_CANONICA: dict[str, str] = {
 }
 
 
-def _normalizar_estado_buque(estado_raw: Optional[str]) -> str:
+# Estado AIS "Navigational Status" (ITU-R M.1371) del campo "estado" de
+# paquete_1 — código numérico, no texto. Sólo se listan los códigos
+# relevantes para el modelo de cola (atracado/fondeado/en_camino); el
+# resto (not under command, aground, fishing...) cae al fallback
+# "en_camino" por defecto, igual que cualquier código no reconocido.
+AIS_ESTADO_A_CLAVE: dict[int, str] = {
+    0: "en_camino",  # under way using engine
+    1: "fondeado",   # at anchor
+    5: "atracado",   # moored
+    8: "en_camino",  # under way sailing
+}
+
+
+def _normalizar_estado_buque(estado_raw) -> str:
     """
     Normaliza el campo "estado" del mensaje individual (paquete 1) a
-    una de las tres listas del contrato agregado del puerto. Por
-    defecto (valor ausente o no reconocido) asume "en_camino", que es
-    el caso de uso principal de jit_calculus: recomendar velocidad JIT
-    a un buque que todavía navega hacia el puerto.
+    una de las tres listas del contrato agregado del puerto. Acepta
+    tanto el código AIS numérico real (0=en camino, 1=fondeado,
+    5=atracado...) como texto (compatibilidad con contratos/tests
+    antiguos). Por defecto (valor ausente o no reconocido) asume
+    "en_camino", el caso de uso principal de jit_calculus: recomendar
+    velocidad JIT a un buque que todavía navega hacia el puerto.
     """
-    if not estado_raw:
+    if estado_raw is None:
         return "en_camino"
+
+    if isinstance(estado_raw, bool):
+        # bool es subclase de int en Python; no es un código AIS válido.
+        return "en_camino"
+
+    if isinstance(estado_raw, (int, float)) or (
+        isinstance(estado_raw, str) and estado_raw.strip().isdigit()
+    ):
+        return AIS_ESTADO_A_CLAVE.get(int(estado_raw), "en_camino")
+
     raw = str(estado_raw).strip().lower().replace(" ", "_")
     alias = {
         "atracado": "atracado",
@@ -694,9 +799,12 @@ def fusionar_buque_objetivo(contrato_puerto: dict | str, mensaje_buque: dict) ->
         "eslora": mensaje_buque.get("eslora"),
         "_es_objetivo": True,
     }
-    tipo = _tipo_directo(mensaje_buque)
-    if tipo:
-        item_objetivo["tipo_buque"] = tipo
+    tipo_raw = _valor_tipo_raw(mensaje_buque)
+    if tipo_raw is not None:
+        # Se copia tal cual (texto o código AIS numérico): la cadena de
+        # prioridad texto > IMO/thetis_mrv > código AIS de parse_contrato
+        # decide qué hacer con ello al parsear el contrato fusionado.
+        item_objetivo["tipo_buque"] = tipo_raw
     listas[clave_destino].append(item_objetivo)
 
     return {"puerto": contrato_puerto.get("puerto", "unknown"), "estados": listas}
@@ -774,7 +882,7 @@ def construir_respuesta_eta(
 
     El resto de campos del mensaje (mmsi, puerto, estado, longitud,
     latitud, direccion, velocidad_buque, eslora, manga,
-    calado_de_diseño, imo...) se devuelven sin modificar; sólo se
+    calado_de_diseno, imo...) se devuelven sin modificar; sólo se
     añade/sobrescribe "tiempo_espera_estimado_h" con la espera estimada
     en horas hasta disponer de atraque (0 si el buque ya está atracado).
 

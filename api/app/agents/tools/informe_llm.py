@@ -18,6 +18,12 @@ vez de ser una cadena fija que solo varía su texto de salida.
 Si no se inyecta ningún `generar_texto` (todavía no se ha decidido
 modelo), se usa un resumen determinista sin LLM, para que el grafo
 siga siendo ejecutable de punta a punta.
+
+`historial` (opcional): últimas recomendaciones para el mismo
+mmsi+puerto (db_conn.get_historial_recomendaciones), para que el LLM
+mantenga coherencia entre avisos sucesivos — la alerta se dispara cada
+30 min mientras el buque está a <12h del puerto, así que una misma
+aproximación genera varios resúmenes.
 """
 
 from __future__ import annotations
@@ -31,11 +37,50 @@ def _formato_horas(h: Optional[float]) -> str:
     return f"{h:.1f} h"
 
 
+def _formato_historial(historial: Optional[list[dict]]) -> str:
+    """
+    Compacta el historial de recomendaciones previas (mismo mmsi+puerto,
+    ventana reciente — ver db_conn.get_historial_recomendaciones) para
+    el prompt: sólo lo necesario para que el LLM mantenga coherencia
+    entre avisos sucesivos (se dispara cada 30 min para buques a <12h
+    del puerto), no el JSON completo de cada registro.
+    """
+    if not historial:
+        return ""
+
+    lineas = [
+        "\nHistorial de recomendaciones previas para este mismo buque y "
+        "puerto (más reciente primero — mantén coherencia con ellas; si "
+        "la nueva recomendación difiere mucho, explica brevemente por "
+        "qué, p.ej. cambió la cola del puerto o la meteo):"
+    ]
+    for r in historial:
+        recomendacion = r["payload"].get("recommendation", {})
+        cii = recomendacion.get("cii", {})
+        lineas.append(
+            f"  - {r['emitted_at']}: velocidad recomendada "
+            f"{recomendacion.get('recommended_speed_kn')} kn, ahorro CII "
+            f"{cii.get('ahorro_pct')}% — \"{recomendacion.get('rationale')}\""
+        )
+    return "\n".join(lineas)
+
+
 def _datos_comunes(informe: dict) -> str:
     buque = informe["buque"]
     cola = informe["cola_puerto"]
     velocidad = informe["velocidad"]
     cii = informe["cii"]
+    eta = informe.get("eta", {})
+
+    linea_eta = ""
+    if eta.get("inicial_sin_cola"):
+        linea_eta = (
+            f"\n- ETA inicial a la velocidad actual, sin colas (dato del webhook): "
+            f"{eta['inicial_sin_cola']}\n"
+            f"- ETA recomendada con velocidad JIT: {eta['recomendada_jit']} "
+            f"({'+' if (eta.get('diferencia_h') or 0) >= 0 else ''}{eta.get('diferencia_h')}h "
+            "respecto a la inicial)"
+        )
 
     return f"""- Buque: MMSI {buque.get('mmsi')}, IMO {buque.get('imo')}, destino {buque.get('puerto_destino')}
 - Tiempo de espera hasta atraque libre: {_formato_horas(cola.get('tiempo_espera_estimado_h'))} \
@@ -47,14 +92,14 @@ def _datos_comunes(informe: dict) -> str:
 pérdida por meteo {velocidad.get('perdida_kwon_media_pct')}%{", SUPERA la velocidad de diseño" if velocidad.get('excede_v_diseno') else ""})
 - CII inicial: {cii.get('inicial')} gCO2/(t·nm)
 - CII con velocidad JIT: {cii.get('jit')} gCO2/(t·nm)
-- Variación de CII: {cii.get('ahorro_pct')}%"""
+- Variación de CII: {cii.get('ahorro_pct')}%{linea_eta}"""
 
 
 # ──────────────────────────────────────────────────────────────────────
 #  Caso "ahorro": el CII mejora con la velocidad JIT
 # ──────────────────────────────────────────────────────────────────────
 
-def construir_prompt_ahorro(informe: dict) -> str:
+def construir_prompt_ahorro(informe: dict, historial: Optional[list[dict]] = None) -> str:
     """Prompt para el caso en que el CII mejora con la velocidad JIT."""
     return f"""Eres un asistente que resume para un oficial de operaciones
 portuarias el resultado de una recomendación de velocidad JIT (Just-In-Time)
@@ -66,6 +111,7 @@ para reducir emisiones. Con los datos de abajo, escribe un resumen breve
 
 Datos:
 {_datos_comunes(informe)}
+{_formato_historial(historial)}
 """
 
 
@@ -81,9 +127,13 @@ def _resumen_sin_llm_ahorro(informe: dict) -> str:
     )
 
 
-def resumen_ahorro(informe: dict, generar_texto: Optional[Callable[[str], str]] = None) -> dict:
+def resumen_ahorro(
+    informe: dict,
+    generar_texto: Optional[Callable[[str], str]] = None,
+    historial: Optional[list[dict]] = None,
+) -> dict:
     """Resumen para el caso en que el CII mejora con la velocidad JIT."""
-    prompt = construir_prompt_ahorro(informe)
+    prompt = construir_prompt_ahorro(informe, historial)
     texto = generar_texto(prompt) if generar_texto else _resumen_sin_llm_ahorro(informe)
     return {"texto": texto, "prompt": prompt, "alerta_cii": False}
 
@@ -96,7 +146,7 @@ def resumen_ahorro(informe: dict, generar_texto: Optional[Callable[[str], str]] 
 # respecto a su velocidad actual para llegar a tiempo, en vez de poder
 # reducir velocidad (slow steaming).
 
-def construir_prompt_alerta(informe: dict) -> str:
+def construir_prompt_alerta(informe: dict, historial: Optional[list[dict]] = None) -> str:
     """Prompt para el caso en que el CII empeora con la velocidad JIT."""
     return f"""Eres un asistente que resume para un oficial de operaciones
 portuarias el resultado de una recomendación de velocidad JIT (Just-In-Time).
@@ -115,6 +165,7 @@ No lo presentes como un ahorro ni como un éxito de la recomendación.
 
 Datos:
 {_datos_comunes(informe)}
+{_formato_historial(historial)}
 """
 
 
@@ -139,8 +190,12 @@ def _resumen_sin_llm_alerta(informe: dict) -> str:
     )
 
 
-def resumen_alerta(informe: dict, generar_texto: Optional[Callable[[str], str]] = None) -> dict:
+def resumen_alerta(
+    informe: dict,
+    generar_texto: Optional[Callable[[str], str]] = None,
+    historial: Optional[list[dict]] = None,
+) -> dict:
     """Resumen para el caso en que el CII empeora con la velocidad JIT."""
-    prompt = construir_prompt_alerta(informe)
+    prompt = construir_prompt_alerta(informe, historial)
     texto = generar_texto(prompt) if generar_texto else _resumen_sin_llm_alerta(informe)
     return {"texto": texto, "prompt": prompt, "alerta_cii": True}

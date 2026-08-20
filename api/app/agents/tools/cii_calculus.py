@@ -140,9 +140,34 @@ _ALIAS_TIPO: dict[str, str] = {
     "ferry": "ferry",
 }
 
-def _normalizar_tipo(raw: str) -> str:
-    """Normaliza el tipo de buque a una clave interna."""
-    key = raw.strip().lower()
+# Código AIS numérico (ITU-R M.1371-5, tabla 53) -> clave interna de
+# cii_calculus. Mismo caso y misma limitación de fondo que
+# jit_calculus._tipo_desde_codigo_ais (ver ese docstring): AIS no
+# distingue Ro-Ro/bulk/container dentro de "Carga" (70-79) ni oil/
+# chemical/LNG dentro de "Tanque" (80-89) — es un límite del propio
+# estándar, no de este mapeo. Fallback basto para cuando no hay
+# ship_type de texto (thetis_mrv) resuelto vía IMO.
+def _tipo_desde_codigo_ais(codigo: int) -> str:
+    if 60 <= codigo <= 69:
+        return "passenger"
+    if 70 <= codigo <= 79:
+        return "general_cargo"
+    if 80 <= codigo <= 89:
+        return "oil_tanker"
+    if 40 <= codigo <= 49:
+        return "ferry"  # HSC: mayoritariamente ferries rápidos
+    if codigo in (31, 32, 33, 50, 51, 52, 53, 54):
+        return "general_cargo"  # cii_calculus no tiene categoría "offshore"
+    return "general_cargo"
+
+
+def _normalizar_tipo(raw) -> str:
+    """Normaliza el tipo de buque a una clave interna. Acepta texto o
+    código AIS numérico (ver _tipo_desde_codigo_ais)."""
+    if isinstance(raw, (int, float)) or (isinstance(raw, str) and raw.strip().isdigit()):
+        return _tipo_desde_codigo_ais(int(raw))
+
+    key = str(raw).strip().lower()
     if key in _ALIAS_TIPO:
         return _ALIAS_TIPO[key]
     # Búsqueda parcial
@@ -162,8 +187,9 @@ class CIIResult:
     v_diseno_kn: float  # velocidad de diseño estimada (nudos)
     v_actual_kn: float  # velocidad actual (nudos)
     distancia_nm: float  # distancia restante al puerto
-    dwt_estimado: Optional[float] = None  # solo en fallback
-    co2_estimado_kg: Optional[float] = None  # solo en fallback
+    dwt_estimado: Optional[float] = None  # geométrico, solo en fallback_admiralty
+    dwt_real_t: Optional[float] = None  # de thetis_mrv (real, no geométrico); solo si el dato existe
+    co2_estimado_kg: Optional[float] = None  # ver dwt_estimado/dwt_real_t para saber su origen
     detalles: dict = field(default_factory=dict)
     
 # ---------------------------------------------------------------------------
@@ -288,7 +314,7 @@ def estimar_cii(webhook: dict,
         - velocidad_buque (float, nudos)
         - eslora (float, metros)
         - manga (float, metros)
-        - calado_de_diseño (float, metros)
+        - calado_de_diseno (float, metros)
         - imo — usado para recuperar ship_type/eexi/dwt de Postgres si
           no se pasa db_record explícitamente. El webhook ya no trae
           el tipo de buque directamente.
@@ -324,7 +350,7 @@ def estimar_cii(webhook: dict,
     v_actual = float(webhook.get("velocidad_buque", 0))
     eslora = float(webhook.get("eslora", 0))
     manga = float(webhook.get("manga", 0))
-    calado = float(webhook.get("calado_de_diseño", 0))
+    calado = float(webhook.get("calado_de_diseno", 0))
     tipo_raw = ((db_record or {}).get("ship_type")
                 or webhook.get("tipo_buque")
                 or "general_cargo")
@@ -343,12 +369,27 @@ def estimar_cii(webhook: dict,
  
     if eexi and eexi > 0 and v_actual > 0:
         cii = _cii_via_eexi(eexi, v_actual, v_diseno)
+
+        # CO2 absoluto (kg): sólo si thetis_mrv da un DWT REAL para este
+        # IMO (no el geométrico de estimar_dwt, que es la misma
+        # incertidumbre que fallback_admiralty). Sin DWT real no se
+        # rellena — así math_oracle sólo calcula fuel_saved_t cuando el
+        # dato de partida es de fiar, no lo estima "por si acaso".
+        dwt_real = (db_record or {}).get("dwt")
+        co2_kg = None
+        if dwt_real is not None and distancia_nm > 0:
+            # CII (gCO2/(t·nm)) × DWT (t) × distancia (nm) = CO2 total (g)
+            co2_g = cii * float(dwt_real) * distancia_nm
+            co2_kg = round(co2_g / 1000.0, 1)
+
         return CIIResult(
             cii=cii,
             metodo="eexi",
             v_diseno_kn=v_diseno,
             v_actual_kn=v_actual,
             distancia_nm=distancia_nm,
+            dwt_real_t=float(dwt_real) if dwt_real is not None else None,
+            co2_estimado_kg=co2_kg,
             detalles={
                 "eexi_base": eexi,
                 "ratio_v": round(v_actual / v_diseno, 4),
@@ -404,7 +445,7 @@ if __name__ == "__main__":
         "velocidad_buque": 11.5,
         "eslora": 190.0,
         "manga": 32.0,
-        "calado_de_diseño": 12.5,
+        "calado_de_diseno": 12.5,
     }
 
     # En producción esto lo entrega math_oracle vía

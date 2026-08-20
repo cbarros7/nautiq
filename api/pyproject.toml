@@ -12,10 +12,12 @@ dependencies = [
     "langgraph>=0.2",
     "pydantic>=2.9",
     "psycopg[binary]>=3.3.4",
+    "google-genai>=1.0",
+    "python-ulid>=2.0",  # mismo linaje ULID que ingestion/src/ais/publisher.py
     # Cliente Supabase REST vía httpx (PostgREST). El SDK supabase-py completo
     # (con realtime) fija websockets<14 y choca con el cliente AIS (websockets>=16);
     # se evita usando httpx directo. Añadir supabase-py solo si se requiere realtime.
     #
     # Futuro (capa cognitiva, aún no implementada):
-    # "fastapi", "uvicorn", "langchain-openai"
+    # "fastapi", "uvicorn"
 ]

@@ -4,6 +4,7 @@ import os
 from contextlib import contextmanager
 from typing import Optional
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -113,6 +114,95 @@ def get_port(locode) -> Optional[dict]:
         return cur.fetchone()
 
 
+# ──────────────────────────────────────────────────────────────────────
+#  oracle_recommendations: frontera de contrato con el frontal
+#  (oracle_recommendation_v1) y, a la vez, historial de recomendaciones
+#  JIT para dar contexto al LLM entre avisos sucesivos del mismo
+#  mmsi+puerto — la alerta se dispara cada 30 min mientras el buque
+#  está a <12h del puerto, así que una misma aproximación genera varios
+#  eventos con el mismo session_id.
+# ──────────────────────────────────────────────────────────────────────
+
+def buscar_session_id(mmsi: str, puerto: str, horas: int = 24) -> Optional[str]:
+    """
+    Devuelve el session_id de la recomendación más reciente para este
+    mismo mmsi+puerto dentro de las últimas `horas`, o None si no hay
+    ninguna (empieza una sesión nueva). El llamador (math_oracle)
+    genera un ULID nuevo cuando esto devuelve None — aquí sólo se
+    resuelve la lectura, no se decide el id.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT session_id
+            FROM public.oracle_recommendations
+            WHERE mmsi = %s AND puerto = %s
+              AND emitted_at >= now() - (%s || ' hours')::interval
+            ORDER BY emitted_at DESC
+            LIMIT 1
+            """,
+            (str(mmsi), str(puerto), horas),
+        )
+        row = cur.fetchone()
+    return row["session_id"] if row else None
+
+
+def guardar_recomendacion(
+    event_id: str,
+    session_id: str,
+    mmsi: str,
+    puerto: str,
+    alerta_cii: bool,
+    payload: dict,
+) -> None:
+    """
+    Inserta un evento en oracle_recommendations. `event_id` es la clave
+    de idempotencia (= correlation_id del webhook): un reintento del
+    mismo evento no duplica la fila (ON CONFLICT DO NOTHING), igual que
+    pedía el contrato del frontal con "resolution=ignore-duplicates" en
+    PostgREST — aquí se consigue igual sin salir de psycopg.
+    """
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO public.oracle_recommendations
+                (event_id, session_id, mmsi, puerto, alerta_cii, payload)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (event_id) DO NOTHING
+            """,
+            (event_id, session_id, str(mmsi), str(puerto), alerta_cii, Jsonb(payload)),
+        )
+
+
+def get_historial_recomendaciones(
+    mmsi: str,
+    puerto: str,
+    limite: int = 3,
+    horas: int = 24,
+) -> list[dict]:
+    """
+    Últimos `limite` eventos de oracle_recommendations para este mismo
+    mmsi+puerto, dentro de las últimas `horas` — acotar por tiempo (no
+    sólo por cantidad) evita traer historial de una visita anterior del
+    mismo buque al mismo puerto sin relación con la aproximación
+    actual (mmsi+puerto solo no distingue una visita de otra). Más
+    reciente primero.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT event_id, session_id, emitted_at, alerta_cii, payload
+            FROM public.oracle_recommendations
+            WHERE mmsi = %s AND puerto = %s
+              AND emitted_at >= now() - (%s || ' hours')::interval
+            ORDER BY emitted_at DESC
+            LIMIT %s
+            """,
+            (str(mmsi), str(puerto), horas, limite),
+        )
+        return cur.fetchall()
+
+
 def test_connection() -> None:
     """Prueba rápida de conectividad."""
     try:
@@ -134,10 +224,10 @@ if __name__ == "__main__":
         # cur.execute("SELECT * FROM public.ports limit 10;")
         # print('ports')        
         # print(cur.fetchall())
-        # query = """SELECT * FROM public.thetis_mrv where dwt>=0 limit 10"""
-        # cur.execute(query)
-        # print('thetis_mrv')
-        # print(cur.fetchall())
-        cur.execute("SELECT * FROM public.ports WHERE locode = 'ESBCN'")
-        print('Vessels type')
+        query = """SELECT * FROM public.thetis_mrv where dwt>=0 limit 10"""
+        cur.execute(query)
+        print('thetis_mrv')
         print(cur.fetchall())
+        # cur.execute("SELECT * FROM public.ports WHERE locode = 'ESBCN'")
+        # print('Vessels type')
+        # print(cur.fetchall())
