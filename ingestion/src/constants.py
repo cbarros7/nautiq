@@ -1,44 +1,48 @@
-"""Constantes de dominio de Ingestion (puertos objetivo, tipos de buque)."""
+"""Constantes de dominio de Ingestion (área de cobertura AIS)."""
 
 import os
 
 # ==========================================
-# PUERTOS OBJETIVO (bounding boxes + destinos AIS)
+# ÁREA DE COBERTURA AIS
 # ==========================================
-# Formato AISStream: [[[lat1, lon1], [lat2, lon2]]].
-PORTS = {
-    "valencia": {
-        "locode": "ESVLC",
-        "bbox": [[[39.176027, -0.344696], [39.659786, 0.466919]]],
-        "dest_keywords": ["VAL", "VLC", "ESVLC"],
-    },
-    "algeciras": {
-        "locode": "ESALG",
-        "bbox": [[[35.997, -5.520], [36.180, -5.330]]],
-        "dest_keywords": ["ALG", "ESALG", "ALGECIRAS"],
-    },
-    "barcelona": {
-        "locode": "ESBCN",
-        "bbox": [[[41.300, 2.090], [41.400, 2.260]]],
-        "dest_keywords": ["BCN", "ESBCN", "BARCELONA"],
-    },
-}
+# Formato AISStream: lista de cajas, cada caja [[lat1, lon1], [lat2, lon2]].
+#AISStream ordena [lat, lon]
+#
+# Mediterráneo completo hasta Creta + aproximación atlántica hasta las Azores:
+#   lat  26.90°N .. 45.89°N   (bajo Canarias hasta el Adriático norte)
+#   lon -25.84°E .. 25.40°E   (Azores hasta el Egeo)
+# Cubre los tres puertos objetivo, el Estrecho de Gibraltar y las rutas de entrada por
+# el Atlántico. Queda FUERA el Mediterráneo oriental: Chipre, Levante, Alejandría,
+# Suez y el Bósforo — los buques que vienen de ahí aparecen al cruzar los 25.4°E.
+MEDITERRANEAN_BBOX = [[[26.90248, -25.83984], [45.89001, 25.40039]]]
 
-# Mediterráneo occidental: cobertura común de aproximación a los tres puertos.
-WESTERN_MED_BBOX = [[[35.0, -6.0], [44.0, 10.0]]]
-
-# Tipos de barco de carga según el estándar AIS (70-79).
-CARGO_SHIP_TYPES = set(range(70, 80))
+# Único criterio de selección del productor, y lo aplica AISStream en el servidor: se
+# entrega lo que cae dentro del área y nada más, así que un buque que sale deja de
+# llegar sin que el productor mantenga estado. Todo lo que entra se publica en crudo;
+# elegir qué buques interesan (carga, destino, atraque, cupo) es de Flink.
+# Para cubrir otras regiones se añaden cajas a la lista.
+AIS_COVERAGE_BBOX = MEDITERRANEAN_BBOX
 
 # ==========================================
 # OPERACIÓN
 # ==========================================
-# Conexiones AIS concurrentes (paralelismo del tracker). AISStream limita a 1 por
-# API key; >1 requiere keys/cuentas adicionales.
-AIS_MAX_CONNECTIONS = int(os.getenv("AIS_MAX_CONNECTIONS", "1"))
 # Rate limit defensivo de publicación a Kafka (mensajes/seg, 0 = sin límite).
 PUBLISH_RATE_LIMIT = int(os.getenv("PUBLISH_RATE_LIMIT", "0"))
 # Ráfaga tolerada por el rate limit tras un período ocioso (nº de mensajes, 1 = sin ráfaga).
 PUBLISH_RATE_BURST = int(os.getenv("PUBLISH_RATE_BURST", "1"))
-# Duración de la fase de scraping de objetivos (s).
-SCRAPER_DURATION_SECONDS = int(os.getenv("SCRAPER_DURATION_SECONDS", str(5 * 60)))
+# Cadencia del informe de estado del proceso perpetuo (s, 0 = sin informe).
+STATS_INTERVAL_SECONDS = int(os.getenv("STATS_INTERVAL_SECONDS", "60"))
+
+# ==========================================
+# MODO SINTÉTICO (temporal — ver ais/synthetic.py y aisstream/issues#257)
+# ==========================================
+# AIS_SYNTHETIC=true sustituye la conexión real por datos simulados sin tocar el
+# resto del pipeline. Desactivar (o borrar este bloque + ais/synthetic.py) en cuanto
+# AISStream vuelva a servir datos.
+AIS_SYNTHETIC = os.getenv("AIS_SYNTHETIC", "false").lower() in ("1", "true", "yes")
+# Con la flota de 242 buques del fixture, estos intervalos dan ~6,5 msg/s combinado
+# (medido), frente a los ~9 msg/s reales medidos sobre esta misma bbox: más rápido
+# por buque que el muestreo real de AISStream (90-120s), pero sin llevar ni la flota
+# ni el intervalo a un extremo poco plausible.
+SYNTHETIC_POSITION_INTERVAL_SECONDS = int(os.getenv("SYNTHETIC_POSITION_INTERVAL_SECONDS", "45"))
+SYNTHETIC_STATIC_INTERVAL_SECONDS = int(os.getenv("SYNTHETIC_STATIC_INTERVAL_SECONDS", "200"))

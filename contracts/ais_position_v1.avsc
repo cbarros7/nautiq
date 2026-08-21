@@ -11,6 +11,7 @@
     { "name": "speed", "type": "double", "doc": "Speed Over Ground en nudos (>= 0)." },
     { "name": "cog", "type": ["null", "double"], "default": null, "doc": "Course Over Ground en grados." },
     { "name": "heading", "type": ["null", "int"], "default": null, "doc": "True heading en grados." },
-    { "name": "nav_status", "type": ["null", "int"], "default": null, "doc": "Navigational status AIS." }
+    { "name": "nav_status", "type": ["null", "int"], "default": null, "doc": "Navigational status AIS." },
+    { "name": "_ingested_at", "type": "string", "default": "", "doc": "Metadato interno (prefijo '_'): instante UTC ISO-8601 en que el pipeline de ingestion validó el mensaje. No forma parte del payload AIS original." }
   ]
 }
