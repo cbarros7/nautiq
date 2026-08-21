@@ -111,9 +111,10 @@ SEGMENTOS_ATRAQUE: list[tuple[float, float, str]] = [
 # ──────────────────────────────────────────────────────────────────────
 #  CÓDIGO DE TIPO DE BUQUE AIS (ITU-R M.1371-5, tabla 53, "Type of
 #  ship and cargo type") — cuando no hay texto ni IMO para resolver el
-#  ship_type real (p.ej. los buques de la cola del puerto en paquete_2,
-#  que llegan con "tipo_buque" como código numérico 0-99 en vez de imo
-#  o un string tipo "Bulk carrier").
+#  ship_type real (siempre viene "tipo_buque" como código numérico
+#  0-99; el imo suele venir también —confirmado contra fixture real—
+#  pero este fallback cubre los casos en que falte o no resuelva
+#  contra thetis_mrv).
 # ──────────────────────────────────────────────────────────────────────
 # LIMITACIÓN DE FONDO (no es que falten códigos por mapear: el propio
 # estándar no los tiene): AIS no distingue la FORMA del buque dentro de
@@ -553,9 +554,11 @@ def parse_contrato(data: dict | str) -> tuple[Puerto, list[Buque], list[Buque], 
     2. IMO -> ship_type real de thetis_mrv (Postgres), en una sola
        query batch para todos los buques del contrato que lo necesiten.
     3. Código AIS numérico ("tipo_buque": 70, ITU-R M.1371) — fallback
-       cuando no hay IMO (típicamente los buques de la cola del puerto
-       en paquete_2) o el IMO no está en thetis_mrv. Mucho más basto
-       que el texto/IMO: no distingue bulk/container/general_cargo.
+       para cuando falta el IMO o no resuelve contra thetis_mrv. En la
+       práctica los buques de paquete_2 sí suelen traer IMO (confirmado
+       contra fixture real: 100% de cobertura), así que este paso es
+       la excepción, no el caso típico. Mucho más basto que el
+       texto/IMO: no distingue bulk/container/general_cargo.
     4. "other" si no hay nada de lo anterior.
 
     También acepta variantes de claves, tanto para las listas de buques:

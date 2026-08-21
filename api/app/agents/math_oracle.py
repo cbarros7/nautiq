@@ -16,11 +16,17 @@ Entrada del grafo: los dos paquetes que llegan del webhook.
     dimensiones, tipo_buque (código AIS numérico, ITU-R M.1371),
     ETA_dynamic (horas a la velocidad actual hasta las inmediaciones
     del puerto, SIN contar colas — no se usa en el cálculo, sólo para
-    comparar en el informe final) y correlation_id (trazabilidad
-    Kafka/Flink, se propaga tal cual en el informe).
+    comparar en el informe final), ingest_timestamp (instante de
+    referencia del mensaje, confirmado contra fixture real — ver
+    fetch_datos_buque) y correlation_id (trazabilidad Kafka/Flink, se
+    propaga tal cual en el informe/evento).
   - paquete_2: contrato agregado del estado del puerto (atracados/
-    fondeados/en_camino) que consume jit_calculus. Los buques de estas
-    listas NO traen imo, sólo tipo_buque como código AIS numérico.
+    fondeados/en_camino) que consume jit_calculus. Confirmado contra
+    fixture real (284 alertas, 6341 buques): sus buques SÍ traen imo
+    (100% de cobertura en la muestra) — tipo_buque como código AIS
+    numérico queda como fallback de jit_calculus.parse_contrato para
+    cuando falte el imo o no resuelva contra thetis_mrv, no como el
+    caso típico.
 
 Secuencia
 ---------
@@ -158,12 +164,12 @@ def fetch_datos_buque(state: OracleState) -> dict:
         lon=float(paquete_1["lon_port"]),
     )
 
-    # event_timestamp: instante de referencia del mensaje del webhook,
+    # event_timestamp: instante de referencia del mensaje del webhook
+    # (paquete_1["ingest_timestamp"], confirmado contra fixture real),
     # para poder sumarle ETA_dynamic y comparar con nuestra propia ETA
-    # en build_informe. TODO: confirmar el nombre real de este campo en
-    # producción — no aparecía en la muestra de paquete_1 vista hasta
-    # ahora; si no llega, se usa "ahora" como aproximación.
-    event_timestamp = paquete_1.get("event_timestamp") or datetime.now(timezone.utc)
+    # en build_informe. Fallback a "ahora" sólo por si algún contrato
+    # antiguo/de test no lo trae.
+    event_timestamp = paquete_1.get("ingest_timestamp") or datetime.now(timezone.utc)
     if isinstance(event_timestamp, str):
         event_timestamp = datetime.fromisoformat(event_timestamp)
     if event_timestamp.tzinfo is None:
@@ -345,8 +351,7 @@ def _generar_texto_inyectado(config: RunnableConfig) -> Optional[Callable[[str],
             config={"configurable": {"generar_texto": mi_funcion}},
         )
 
-    Si no se pasa ningún "generar_texto" (todavía no se ha elegido
-    modelo), informe_llm usa un resumen determinista sin LLM.
+    Si no se pasa ningún "generar_texto", informe_llm usa un resumen determinista sin LLM.
     """
     return (config.get("configurable") or {}).get("generar_texto")
 
@@ -659,13 +664,16 @@ oracle_graph = build_graph()
 
 
 if __name__ == "__main__":
-    # Formato real del webhook (Algeciras) — "estado" y "tipo_buque" son
-    # códigos AIS numéricos, no texto; el buque objetivo no trae ship_type
-    # de texto, sólo imo (para resolverlo contra thetis_mrv) y tipo_buque
-    # como fallback. Nótese que el propio buque objetivo (mmsi 352986151)
-    # ya aparece dentro de "num_buques_en_camino" en paquete_2 — es el
-    # caso real que ejercita fusionar_buque_objetivo marcándolo in situ
-    # en vez de duplicarlo.
+    # Formato real del webhook (fixture de 284 alertas, Algeciras/Barcelona/
+    # Valencia) — "estado" y "tipo_buque" son códigos AIS numéricos, no
+    # texto; ingest_timestamp confirmado contra ese fixture. Los buques
+    # de paquete_2 SÍ traen imo (100% de cobertura en la muestra real:
+    # 6341/6341) — tipo_buque numérico es sólo el fallback de
+    # jit_calculus.parse_contrato para cuando falte el imo o no resuelva
+    # contra thetis_mrv, no el caso típico. Nótese que el propio buque
+    # objetivo (mmsi 352986151) ya aparece dentro de "num_buques_en_camino"
+    # en paquete_2 — es el caso real que ejercita fusionar_buque_objetivo
+    # marcándolo in situ en vez de duplicarlo.
     paquete_1_ejemplo = {
         "correlation_id": "01M08APDG115DX8X6KEKVXKHQE",
         "mmsi": 352986151,
@@ -684,24 +692,25 @@ if __name__ == "__main__":
         "tipo_buque": 70,  # AIS: Cargo
         "ETA_dynamic": 0.9396741460583867,
         "ETA_static": "2026-08-17 18:00:00",  # no se usa
+        "ingest_timestamp": "2026-08-21T09:00:00.000000+00:00",
     }
 
     paquete_2_ejemplo = {
         "puerto": "ALGECIRAS",
         "estados": {
             "num_buques_atracados": [
-                {"mmsi": 538009654, "eslora": 177, "latitud": 36.120945, "longitud": -5.418003333333333, "tipo_buque": 70},
-                {"mmsi": 636093171, "eslora": 368, "latitud": 36.141131666666666, "longitud": -5.435471666666667, "tipo_buque": 71},
+                {"mmsi": 538009654, "imo": 9210919, "eslora": 177, "latitud": 36.120945, "longitud": -5.418003333333333, "tipo_buque": 70},
+                {"mmsi": 636093171, "imo": 9010929, "eslora": 368, "latitud": 36.141131666666666, "longitud": -5.435471666666667, "tipo_buque": 71},
             ],
             "num_buques_fondeados": [
-                {"mmsi": 538006140, "eslora": 199, "latitud": 36.15668333333333, "longitud": -5.421004999999999, "tipo_buque": 70},
-                {"mmsi": 271052023, "eslora": 199, "latitud": 36.10551833333333, "longitud": -5.412706666666667, "tipo_buque": 70},
+                {"mmsi": 538006140, "imo": 1045045, "eslora": 199, "latitud": 36.15668333333333, "longitud": -5.421004999999999, "tipo_buque": 70},
+                {"mmsi": 271052023, "eslora": 199, "latitud": 36.10551833333333, "longitud": -5.412706666666667, "tipo_buque": 70},  # sin imo: ejercita el fallback por código AIS
             ],
             "num_buques_en_camino": [
-                {"mmsi": 636017075, "eslora": 180, "latitud": 36.260146666666664, "longitud": -4.951068333333334, "tipo_buque": 70},
+                {"mmsi": 636017075, "imo": 7043843, "eslora": 180, "latitud": 36.260146666666664, "longitud": -4.951068333333334, "tipo_buque": 70},
                 # el propio buque objetivo, ya presente en el snapshot del puerto:
                 {"mmsi": 352986151, "eslora": 190, "latitud": 36.002605, "longitud": -5.291625, "tipo_buque": 70},
-                {"mmsi": 636020192, "eslora": 186, "latitud": 36.050855, "longitud": -5.138205, "tipo_buque": 74},
+                {"mmsi": 636020192, "imo": 9145413, "eslora": 186, "latitud": 36.050855, "longitud": -5.138205, "tipo_buque": 74},
             ],
         },
     }

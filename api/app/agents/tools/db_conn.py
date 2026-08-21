@@ -227,7 +227,7 @@ if __name__ == "__main__":
         query = """SELECT * FROM public.thetis_mrv where dwt>=0 limit 10"""
         cur.execute(query)
         print('thetis_mrv')
-        print(cur.fetchall())
-        # cur.execute("SELECT * FROM public.ports WHERE locode = 'ESBCN'")
-        # print('Vessels type')
         # print(cur.fetchall())
+        cur.execute("SELECT * FROM public.oracle_recommendations")
+        print('Vessels type')
+        print(cur.fetchall())
