@@ -154,13 +154,22 @@ def guardar_recomendacion(
     puerto: str,
     alerta_cii: bool,
     payload: dict,
-) -> None:
+) -> bool:
     """
     Inserta un evento en oracle_recommendations. `event_id` es la clave
     de idempotencia (= correlation_id del webhook): un reintento del
     mismo evento no duplica la fila (ON CONFLICT DO NOTHING), igual que
     pedía el contrato del frontal con "resolution=ignore-duplicates" en
     PostgREST — aquí se consigue igual sin salir de psycopg.
+
+    Returns
+    -------
+    bool
+        True si la fila se insertó ahora; False si ya existía (reintento
+        del mismo event_id). Distinguirlo importa porque Supabase es la
+        fuente de verdad de la publicación a ADLS: el llamador
+        (math_oracle.publicar_recomendacion) usa esto para saber si está
+        ante un evento nuevo o un reintento, no para decidir si escribe.
     """
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -172,6 +181,8 @@ def guardar_recomendacion(
             """,
             (event_id, session_id, str(mmsi), str(puerto), alerta_cii, Jsonb(payload)),
         )
+        # ON CONFLICT DO NOTHING -> rowcount 0 cuando la fila ya estaba.
+        return cur.rowcount > 0
 
 
 def get_historial_recomendaciones(

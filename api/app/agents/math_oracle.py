@@ -55,9 +55,11 @@ Secuencia
     _generar_texto_inyectado; para Gemini, ver gemini_client.py).
 11. publicar_recomendacion — construye el evento con la forma de
     contracts/oracle_recommendation_v1 (construir_evento_contrato) y lo
-    persiste en oracle_recommendations: a la vez la frontera de
-    contrato con el frontal y el historial que la siguiente alerta (30
-    min después, mismo mmsi+puerto) usará como contexto.
+    publica en dos destinos, en orden: primero Supabase
+    (oracle_recommendations, FUENTE DE VERDAD: frontera de contrato con
+    el frontal + historial para la siguiente alerta), y sólo si esa
+    confirma, la copia analítica en ADLS Gen2 para Databricks
+    (adls_conn). Ninguno de los dos fallos tumba el grafo.
 
 Sobre oracle_recommendation_v1 (acordado con el equipo de frontend):
   - `vessel.name`: viene de thetis_mrv (columna `name`, ya se trae con
@@ -100,7 +102,7 @@ import ulid
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 
-from app.agents.tools import cii_calculus, db_conn, informe_llm, jit_calculus, kwon_euler
+from app.agents.tools import adls_conn, cii_calculus, db_conn, informe_llm, jit_calculus, kwon_euler
 from app.agents.tools.open_meteo import marine_weather_at_eta, waypoints_with_eta, wind_at_eta
 from app.agents.tools.sea_route import Port, Route, route_to_port
 
@@ -569,13 +571,26 @@ def construir_evento_contrato(state: OracleState, event_id: str, session_id: str
 
 def publicar_recomendacion(state: OracleState) -> dict:
     """
-    Construye el evento (oracle_recommendation_v1) y lo persiste en
-    oracle_recommendations — a la vez la frontera de contrato con el
-    frontal y el historial que da contexto al LLM en la siguiente
-    alerta (30 min después, mismo mmsi+puerto).
+    Construye el evento (oracle_recommendation_v1) y lo publica en los
+    dos destinos, en este orden:
+
+    1. Supabase (oracle_recommendations) — FUENTE DE VERDAD: frontera de
+       contrato con el frontal y historial que da contexto al LLM en la
+       siguiente alerta (30 min después, mismo mmsi+puerto).
+    2. ADLS Gen2 (adls_conn) — copia analítica para Databricks. Sólo se
+       escribe si Supabase confirmó primero: si la fuente de verdad no
+       tiene el evento, la capa analítica tampoco debe tenerlo. No hace
+       falta await/async: psycopg es síncrono, así que al volver de
+       guardar_recomendacion sin excepción el commit ya está hecho.
+
+    Ninguno de los dos fallos tumba el grafo (se registra y se
+    descarta, mismo criterio que la DLQ de ingestion/src/ais/tracker.py):
+    perder el cálculo entero —incluida la llamada al LLM, ya pagada—
+    por un problema de persistencia sería peor que no publicarlo.
 
     event_id = correlation_id del webhook (clave de idempotencia: un
-    reintento no duplica fila, ver db_conn.guardar_recomendacion).
+    reintento no duplica fila en Supabase ni blob en ADLS, porque el
+    nombre del blob es el propio event_id).
     session_id = el de la recomendación más reciente para este mismo
     mmsi+puerto en las últimas 24h, o uno nuevo si no hay ninguna —
     agrupa una misma aproximación para que el frontal la trate como
@@ -599,12 +614,10 @@ def publicar_recomendacion(state: OracleState) -> dict:
 
     evento = construir_evento_contrato(state, event_id, session_id)
 
-    # Un fallo al publicar no debe tumbar el grafo: se pierde el cálculo
-    # entero (incluida la llamada al LLM, ya pagada) por un problema de
-    # BBDD ajeno al cálculo en sí. Mismo criterio que la DLQ de
-    # ingestion/src/ais/tracker.py: se registra y se descarta.
+    # --- 1. Supabase (fuente de verdad) ---
+    supabase_ok = False
     try:
-        db_conn.guardar_recomendacion(
+        insertado = db_conn.guardar_recomendacion(
             event_id=event_id,
             session_id=session_id,
             mmsi=mmsi,
@@ -612,12 +625,40 @@ def publicar_recomendacion(state: OracleState) -> dict:
             alerta_cii=state["resumen"]["alerta_cii"],
             payload=evento,
         )
+        supabase_ok = True
+        if not insertado:
+            # ON CONFLICT DO NOTHING: el event_id ya estaba. Se sigue
+            # publicando a ADLS igualmente (sobrescribe el mismo blob),
+            # porque el intento anterior pudo fallar justo ahí y así el
+            # reintento lo recupera.
+            logger.info(
+                "event_id=%s ya existía en oracle_recommendations (reintento); "
+                "se republica en ADLS de todos modos (idempotente)", event_id,
+            )
     except Exception:
         logger.exception(
             "guardar_recomendacion falló para event_id=%s (mmsi=%s, puerto=%s); "
             "se descarta la escritura, el resultado se devuelve igual",
             event_id, mmsi, puerto,
         )
+
+    # --- 2. ADLS (copia analítica; sólo tras confirmar la fuente de verdad) ---
+    if supabase_ok:
+        if not adls_conn.esta_configurado():
+            logger.info(
+                "ADLS sin SAS token configurado; se omite la copia analítica "
+                "de event_id=%s (Supabase sí tiene el evento)", event_id,
+            )
+        else:
+            try:
+                ruta = adls_conn.guardar_recomendacion(evento)
+                logger.info("event_id=%s publicado en ADLS: %s", event_id, ruta)
+            except Exception:
+                logger.exception(
+                    "Escritura en ADLS falló para event_id=%s; Supabase (fuente de "
+                    "verdad) sí lo tiene, así que el resultado se devuelve igual",
+                    event_id,
+                )
 
     return {"evento_contrato": evento}
 

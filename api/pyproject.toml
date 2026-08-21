@@ -20,4 +20,5 @@ dependencies = [
     #
     # Futuro (capa cognitiva, aún no implementada):
     # "fastapi", "uvicorn"
+    "azure-storage-blob>=12.30.0",
 ]
