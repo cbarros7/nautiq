@@ -15,12 +15,38 @@ import type { FilaRecomendacion } from './feed'
 import type { OracleRecommendationV1 } from './types'
 import {
   severidad, fiabilidad, saturacion,
-  ETIQUETA_SEVERIDAD, ETIQUETA_FIABILIDAD, ETIQUETA_SATURACION, COLOR_SEVERIDAD,
+  titular, fondearaIgual, ETIQUETA_FIABILIDAD, DETALLE_FIABILIDAD,
+  ETIQUETA_SATURACION, COLOR_SEVERIDAD, type Severidad,
 } from './status'
-import { num, pct, horaUtc, fechaHoraUtc, antiguedad, etiquetaBuque, rumbo, esperaEstimada, SIN_DATO } from './format'
+import { num, pct, horaUtc, fechaHoraUtc, antiguedad, etiquetaBuque, rumbo, esperaEstimada } from './format'
 import { nombreOleaje, colorOleaje } from './douglas'
 
 const ICONO_SEVERIDAD = { ok: '✓', alert: '!', critical: '×' } as const
+
+/**
+ * El glifo del chip sigue al TITULAR, no a la severidad cruda: un «✓» junto a «fondeará
+ * igual» se contradice, aunque la severidad sea `ok` porque la recomendación es buena.
+ */
+function iconoTitular(r: OracleRecommendationV1['recommendation'], sev: Severidad): string {
+  return fondearaIgual(r) ? '⚓' : ICONO_SEVERIDAD[sev]
+}
+
+/**
+ * El `rationale` lo escribe un LLM y viene con énfasis ligero de Markdown —- en las filas
+ * reales de la tabla aparece como `*large*` al citar el segmento de atraque. Sin tratarlo
+ * se leen los asteriscos en pantalla.
+ *
+ * Se resuelve SOLO `*cursiva*`, partiendo el texto y devolviendo nodos de React: ni
+ * `dangerouslySetInnerHTML` ni un parser de Markdown completo para tres asteriscos. Si el
+ * modelo empieza a emitir más sintaxis, aquí es donde se añade.
+ */
+function conEnfasis(texto: string) {
+  return texto.split(/(\*[^*\n]+\*)/g).map((trozo, i) =>
+    trozo.startsWith('*') && trozo.endsWith('*') && trozo.length > 2
+      ? <em key={i}>{trozo.slice(1, -1)}</em>
+      : trozo,
+  )
+}
 
 function Dato({ etiqueta, valor, apunte }: { etiqueta: string; valor: string; apunte?: string }) {
   return (
@@ -32,6 +58,16 @@ function Dato({ etiqueta, valor, apunte }: { etiqueta: string; valor: string; ap
       </dd>
     </div>
   )
+}
+
+/**
+ * Cuenta buques del contexto excluyendo al del evento. `port.inbound_count` incluye al
+ * propio buque, y enseñar ese numero obligaba a explicar por que la lista de abajo tenia
+ * uno menos. Se cuenta de la lista ya filtrada: el numero sale correcto y no hay nada
+ * que aclarar.
+ */
+function conteo(lista: { es_objetivo?: boolean | null }[]): number {
+  return lista.filter((b) => b.es_objetivo !== true).length
 }
 
 function distanciaAcumulada(ev: OracleRecommendationV1): number[] {
@@ -75,33 +111,34 @@ export function Panel({
 
   const combustibleExtra = r.fuel_saved_t !== null && r.fuel_saved_t !== undefined && r.fuel_saved_t < 0
 
+
   return (
     <aside className="panel" aria-label="Recomendación del oráculo">
       <header className="panel-cab">
         <div className="panel-cab-fila">
           <span className="chip" style={{ ['--c' as string]: COLOR_SEVERIDAD[sev] }}>
-            <span className="chip-icono" aria-hidden="true">{ICONO_SEVERIDAD[sev]}</span>
-            {ETIQUETA_SEVERIDAD[sev]}
+            <span className="chip-icono" aria-hidden="true">{iconoTitular(r, sev)}</span>
+            {titular(r)}
           </span>
           <button className="cerrar" onClick={alCerrar} aria-label="Cerrar panel">×</button>
         </div>
         <h2 className="panel-titulo">{etiquetaBuque(ev.vessel.mmsi, ev.vessel.name)}</h2>
+        {/*
+          Lo que no se sabe, no se rotula: sin IMO o sin tipo simplemente no hay segmento,
+          en vez de un «Sin IMO» o un «Tipo indeterminado» que solo dicen lo que falta.
+        */}
         <p className="panel-sub">
-          {ev.vessel.imo ? `IMO ${ev.vessel.imo}` : 'Sin IMO en el AIS'}
-          {' · '}
-          {ev.vessel.is_container === true ? 'Portacontenedores'
-            : ev.vessel.is_container === false ? 'Otra carga' : 'Tipo indeterminado'}
-          {' → '}{ev.port.name}
+          {[
+            ev.vessel.imo ? `IMO ${ev.vessel.imo}` : null,
+            ev.vessel.is_container === true ? 'Portacontenedores'
+              : ev.vessel.is_container === false ? 'Otra carga' : null,
+          ].filter(Boolean).join(' · ')}
+          {ev.vessel.imo || ev.vessel.is_container !== null ? ' → ' : ''}{ev.port.name}
         </p>
-        {!ev.vessel.name && (
-          <p className="panel-carencia">
-            El oráculo no envía todavía el nombre del buque, así que la identidad es el MMSI.
-          </p>
-        )}
       </header>
 
       <section className="bloque">
-        <h3 className="bloque-titulo">La recomendación</h3>
+        <h3 className="bloque-titulo">Llegada Just-In-Time</h3>
         <div className="velocidad">
           <span className="velocidad-de">{num(ev.vessel.speed_kn, 1)}</span>
           <span className="velocidad-flecha" aria-hidden="true">→</span>
@@ -113,31 +150,67 @@ export function Panel({
             {r.speed_delta_kn > 0 ? 'acelerar' : 'frenar'} {num(Math.abs(r.speed_delta_kn), 1, 'kn')}
           </span>
         </div>
-        <p className="etiqueta-saturacion">{ETIQUETA_SATURACION[sat]}</p>
+        {sat === 'ninguna' && (
+          <p className="etiqueta-saturacion" title={r.nota ?? undefined}>
+            {ETIQUETA_SATURACION[sat]}
+          </p>
+        )}
+
+        {/*
+          El nucleo del proyecto: no es ahorrar combustible navegando, es no quemarlo
+          fondeado esperando atraque.
+          .
+          OJO CON EL SIGNIFICADO DE `idle_hours_avoided`. El oraculo lo calcula como
+          `espera_hasta_atraque - ETA_dynamic`, o sea las horas que el buque pasaria
+          fondeado SI NO CAMBIA NADA. Eso coincide con las horas EVITADAS solo cuando
+          Kwon-Euler consigue estirar la travesia hasta la ventana de atraque, es decir
+          cuando `convergio` es true.
+          .
+          En el caso saturado al minimo -- el mas frecuente con datos reales: los 3 de la
+          tabla y 7 de los 14 del fixture -- el buque llega antes aunque vaya al minimo, asi
+          que fondea casi lo mismo: MSC PRATITI pasa de fondear 61,0 h a 59,8 h. Anunciar
+          "61 h menos fondeado" ahi es falso. Se enuncia como exposicion, no como ahorro.
+          .
+          Para dar la cifra REAL de horas evitadas en ese caso haria falta
+          `tiempo_transito_estimado_h` del oraculo, que hoy no se emite (ver §14.1).
+        */}
+        {r.idle_hours_avoided !== null && r.idle_hours_avoided !== undefined
+          && r.idle_hours_avoided > 0 && (
+          sat === 'frenando-al-minimo' ? (
+            <div className="jit-hero jit-hero-espera">
+              <span className="jit-cifra">{r.idle_hours_avoided.toFixed(0)}<i>h</i></span>
+              <span className="jit-texto">
+                fondeado esperando atraque, incluso frenando al mínimo.
+                Reducir la velocidad no lo evita: recorta el consumo de la travesía.
+              </span>
+            </div>
+          ) : (
+            <div className="jit-hero" style={{ borderLeftColor: COLOR_SEVERIDAD[sev] }}>
+              <span className="jit-cifra">{r.idle_hours_avoided.toFixed(0)}<i>h</i></span>
+              <span className="jit-texto">
+                menos fondeado quemando combustible, llegando cuando se libera el atraque
+              </span>
+            </div>
+          )
+        )}
 
         <dl className="datos">
-          <Dato etiqueta="ETA actual" valor={fechaHoraUtc(r.eta_current)}
-                apunte={r.eta_current ? undefined : 'el webhook no envió ETA_dynamic'} />
-          <Dato etiqueta="ETA optimizada" valor={fechaHoraUtc(r.eta_optimized)} />
-          <Dato etiqueta="Ralentí evitado" valor={num(r.idle_hours_avoided, 2, 'h')}
-                apunte={r.idle_hours_avoided === null ? 'requiere ETA_dynamic' : undefined} />
-          <Dato
-            etiqueta={combustibleExtra ? 'Combustible extra' : 'Combustible ahorrado'}
-            valor={num(r.fuel_saved_t === null || r.fuel_saved_t === undefined
-              ? null : Math.abs(r.fuel_saved_t), 3, 't')}
-            apunte={r.fuel_saved_t === null || r.fuel_saved_t === undefined
-              ? 'sin DWT real en THETIS-MRV para este IMO'
-              : combustibleExtra ? 'estimación · la recomendación CUESTA combustible'
-              : 'estimación sobre el DWT real de THETIS-MRV'}
-          />
+          <Dato etiqueta="Travesía" valor={num(ev.route.duration_hours, 0, 'h')}
+                apunte={`${num(ev.route.distance_nm, 0, 'nm')} a velocidad actual`} />
+          <Dato etiqueta="Atraque libre en" valor={num(ev.queue.estimated_wait_hours, 0, 'h')}
+                apunte={ev.queue.queue_position !== null && ev.queue.queue_position !== undefined
+                  ? `${ev.queue.queue_position}.º en cola${
+                      ev.queue.berth_segment ? ` · segmento ${ev.queue.berth_segment}` : ''}`
+                  : undefined} />
+          <Dato etiqueta="Llegada prevista" valor={fechaHoraUtc(r.eta_optimized)}
+                apunte={r.eta_current ? `sin ajustar: ${fechaHoraUtc(r.eta_current)}` : undefined} />
         </dl>
 
-        {r.nota && <p className="nota-kwon"><b>Nota del cálculo.</b> {r.nota}</p>}
       </section>
 
       <section className="bloque">
         <h3 className="bloque-titulo">
-          Intensidad de carbono (CII)
+          Emisiones por milla (CII)
           <span className="bloque-sub">gCO₂ por tonelada y milla náutica</span>
         </h3>
         <div className="cii">
@@ -155,24 +228,33 @@ export function Panel({
             <span className="cii-et">{r.alerta_cii ? 'empeora' : 'mejora'}</span>
           </div>
         </div>
-        <p className="procedencia">
-          <span className={`marca-fiabilidad marca-${fia}`} />
-          {ETIQUETA_FIABILIDAD[fia]}
-          {r.cii.metodo === 'fallback_admiralty' &&
-            ' — estimado desde las dimensiones del casco, no comparable con otros buques'}
-        </p>
+        {ETIQUETA_FIABILIDAD[fia] && (
+          <p className="procedencia" title={DETALLE_FIABILIDAD[fia]}>
+            <span className={`marca-fiabilidad marca-${fia}`} />
+            {ETIQUETA_FIABILIDAD[fia]}
+          </p>
+        )}
+        {combustibleExtra
+          ? <p className="fuel-linea">
+              {Math.abs(r.fuel_saved_t!).toFixed(1)} t más de combustible al acelerar
+            </p>
+          : r.fuel_saved_t !== null && r.fuel_saved_t !== undefined && r.fuel_saved_t > 0
+          ? <p className="fuel-linea">{r.fuel_saved_t.toFixed(1)} t menos de combustible en la travesía</p>
+          : null}
       </section>
 
       <section className="bloque">
         <h3 className="bloque-titulo">Por qué</h3>
-        <p className="racional">{r.rationale}</p>
+        <p className="racional">{conEnfasis(r.rationale)}</p>
       </section>
 
       <section className="bloque">
         <h3 className="bloque-titulo">
           Estado del mar en ruta
           <span className="bloque-sub">
-            {num(ev.route.distance_nm, 1, 'nm')} · {ev.route_weather.length} waypoints
+            {ev.route_weather.length} puntos
+            {r.weather_speed_loss_pct !== null && r.weather_speed_loss_pct !== undefined
+              && ` · resta ${r.weather_speed_loss_pct.toFixed(1)} % de velocidad`}
           </span>
         </h3>
         {primerTramo && (
@@ -226,28 +308,10 @@ export function Panel({
           </span>
         </h3>
         <div className="conteos">
-          <div className="conteo"><b>{ev.port.berthed_count}</b><span>amarrados</span></div>
-          <div className="conteo"><b>{ev.port.anchored_count}</b><span>fondeados</span></div>
-          <div className="conteo"><b>{ev.port.inbound_count}</b><span>en camino</span></div>
+          <div className="conteo"><b>{conteo(ev.context_vessels.berthed)}</b><span>amarrados</span></div>
+          <div className="conteo"><b>{conteo(ev.context_vessels.anchored)}</b><span>fondeados</span></div>
+          <div className="conteo"><b>{conteo(ev.context_vessels.inbound)}</b><span>en camino</span></div>
         </div>
-        <p className="apunte-conteo">
-          «En camino» incluye a este buque, que viene también en el contexto del puerto.
-          {ev.port.context_radius_nm === null &&
-            ' El evento no trae el radio con que se armó el contexto, así que no se dibuja en el mapa.'}
-        </p>
-        {r.queue ? (
-          <dl className="datos">
-            <Dato etiqueta="Posición en cola" valor={r.queue.queue_position?.toString() ?? SIN_DATO} />
-            <Dato etiqueta="Espera estimada" valor={num(r.queue.estimated_wait_hours, 1, 'h')}
-                  apunte="modelada, no observada" />
-            <Dato etiqueta="Segmento de atraque" valor={r.queue.berth_segment ?? SIN_DATO} />
-          </dl>
-        ) : (
-          <p className="nota-vacia">
-            El oráculo calcula la posición en cola y la espera estimada de este buque, pero
-            todavía no las envía en el evento —- son justo la justificación de frenar.
-          </p>
-        )}
         <ListaContexto ev={ev} />
       </section>
 
@@ -256,7 +320,6 @@ export function Panel({
       <footer className="panel-pie">
         <div><span>Fix del buque</span><b>{horaUtc(ev.vessel.position_at)} · {antiguedad(ev.vessel.position_at)}</b></div>
         <div><span>Emitido</span><b>{horaUtc(ev.emitted_at)} · {antiguedad(ev.emitted_at)}</b></div>
-        <div><span>Destino AIS (crudo)</span><b>{ev.vessel.destination_raw ?? SIN_DATO}</b></div>
         <div><span>Rumbo</span><b>{ev.vessel.heading === null || ev.vessel.heading === undefined
           ? 'sin dato en el AIS' : rumbo(ev.vessel.heading)}</b></div>
         <div className="panel-pie-id"><span>event_id</span><b>{ev.event_id}</b></div>
@@ -275,7 +338,7 @@ function ListaContexto({ ev }: { ev: OracleRecommendationV1 }) {
   return (
     <div className="contexto">
       {grupos.map(({ clase, titulo, lista }) => {
-        const otros = lista.filter((b) => String(b.mmsi) !== propio)
+        const otros = lista.filter((b) => b.es_objetivo !== true && String(b.mmsi) !== propio)
         return (
           <div key={clase} className="contexto-grupo">
             <h4 className="contexto-titulo">
@@ -290,8 +353,8 @@ function ListaContexto({ ev }: { ev: OracleRecommendationV1 }) {
                       <span className="contexto-mmsi">{b.mmsi}</span>
                       <span className="contexto-espera">
                         {esperaEstimada(b) !== null
-                          ? `${esperaEstimada(b)!.toFixed(1)} h est.`
-                          : clase === 'berthed' ? '' : 'espera sin dato'}
+                          ? `${esperaEstimada(b)!.toFixed(0)} h`
+                          : ''}
                       </span>
                     </li>
                   ))}

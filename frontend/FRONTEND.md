@@ -1,6 +1,8 @@
 # Frontal de visualización — plan de ejecución
 
-> **Estado.** Cuarta pasada: el frontal está **implementado**. Este documento pasa de plan a
+> **Estado.** Quinta pasada: el frontal está **implementado y contrastado contra la tabla
+> real**. Los TODOs de §11 están hechos en `feature/math_oracle` (`07086cb`) y hay filas en
+> `oracle_recommendations`; §13 recoge la verificación. Este documento pasa de plan a
 > memoria de lo construido y de lo que quedó pendiente de otros equipos. Revisado contra
 > `feature/math_oracle` en `dbe92d0`
 > (*"uv + schema + gitignore"*, 20 ago 2026). El oráculo **ya está implementado de punta a punta y
@@ -183,12 +185,21 @@ Este es el evento tal como sale hoy, anotado con lo que el frontal puede dar por
       "wind_speed_kn": 17.3, "wind_direction": 205, "wind_gusts_kn": 24.1 }
   ],
 
+  // Justificacion de la recomendacion: la cola de ESTE buque. A nivel raiz, hermano de
+  // `recommendation`, porque describe el estado del mundo, no la decision.
+  "queue": {
+    "estimated_wait_hours": 129.0,
+    "queue_position": 5,
+    "berth_segment": "large"               // los atraques se agrupan por eslora
+  },
+
   "recommendation": {
     "recommended_speed_kn": 6.4,
     "speed_delta_kn": -3.4,
     "eta_current": "2026-08-20T12:41:00Z",   // null si el webhook no manda ETA_dynamic
     "eta_optimized": "2026-08-20T14:38:00Z",
-    "idle_hours_avoided": 1.9,               // null si no hay ETA_dynamic
+    "idle_hours_avoided": 1.9,               // null si no hay ETA_dynamic. OJO: es EXPOSICION
+                                             // al fondeo, no ahorro. Ver §7.9
     "fuel_saved_t": null,                    // null si thetis_mrv no da DWT real
     "rationale": "…",                        // PROSA de LLM, varios párrafos posibles
 
@@ -197,6 +208,7 @@ Este es el evento tal como sale hoy, anotado con lo que el frontal puede dar por
     "excede_v_diseno": false,
     "alerta_cii": false,
     "nota": null,
+    "weather_speed_loss_pct": 1.6,           // correccion Kwon: cuanto se come el mar
     "cii": { "inicial": 12.8, "jit": 11.1, "metodo": "eexi", "ahorro_pct": 13.3 }
   }
 }
@@ -214,6 +226,8 @@ razonados**. Se aceptan tal cual; lo que cambia es el frontal.
 | `fuel_saved_t` estimado siempre | Solo con DWT real de `thetis_mrv`; `null` si no | ✅ **Mejor.** Un ahorro calculado sobre un DWT geométrico tiene la incertidumbre del propio DWT. `null` es más honesto que un número que nadie puede defender |
 | `locode` como columna e identidad | `puerto` (nombre) como columna, `locode` a `null` | ⚠️ **Aceptado.** El webhook manda lat/lon del puerto, así que no hay resolución nombre→LOCODE. El frontal etiqueta por nombre. Coste: no se puede unir con `ports` ni agrupar dos grafías del mismo puerto |
 | — | `session_id` | ✅ **Añadido y valioso.** Es lo que permite el panel de evolución de §7.4 |
+| `recommendation.queue` | `queue` a nivel raíz | ✅ **Mejor.** La cola es estado del mundo, no parte de la decisión. El esquema se movió a donde está el dato (§12) |
+| `queue.kwon_loss_pct` | `recommendation.weather_speed_loss_pct` | ✅ **Mejor nombre.** Dice qué mide, no de qué fórmula sale |
 
 ---
 
@@ -493,9 +507,167 @@ no se esconde.** Es el resultado más interesante que produce el oráculo.
 | En camino | triángulo pequeño | azul | hover → MMSI + espera **estimada** |
 
 Reglas de honestidad que se mantienen: el color codifica el estado de la recomendación, **no la
-velocidad**; `fuel_saved_t` va rotulado *estimación* y desaparece cuando es `null`; se muestran
-**conteos**, nunca porcentajes de ocupación; la ruta es **calculada**, no la derrota observada, y se
-dibuja punteada y rotulada como *ruta prevista*.
+velocidad**; se muestran **conteos**, nunca porcentajes de ocupación; la ruta es **calculada**, no
+la derrota observada, y se dibuja punteada y rotulada como *ruta prevista*; y las posiciones no se
+interpolan.
+
+### 7.7 Rectificación: la honestidad no se narra
+
+La primera versión del panel rotulaba cada ausencia y cada matiz de procedencia: *«sin DWT real en
+THETIS-MRV para este IMO»*, *«CII declarado (EEXI), sin DWT real»*, *«estimada, no observada»*, *«el
+evento no trae el radio con que se armó el contexto»*. La intención era no afirmar más de lo que el
+dato aguanta. El efecto era el contrario del buscado: **una pantalla que parece disculparse
+transmite que el sistema no tiene datos**, y el ruido tapaba el número que importa.
+
+La regla correcta es más simple, y es la que rige ahora:
+
+- **Lo que no hay, no se muestra.** Si `fuel_saved_t` es `null`, no aparece la métrica —- ni vacía, ni
+  con un guion, ni con una nota. Omitir no es ocultar: es no afirmar. Enseñar un hueco rotulado sí
+  era afirmar algo, y lo que afirmaba era «aquí falta algo».
+- **El matiz de procedencia solo se rotula si cambia la lectura.** Un CII por
+  `fallback_admiralty` no es comparable con el de otro buque, así que lleva un rótulo: **una
+  palabra**, «estimado», con la explicación completa en el `title`. Un CII por EEXI no lleva nada,
+  porque no había nada que advertir.
+- **Mejor arreglar el dato que explicarlo.** `port.inbound_count` incluye al propio buque, y eso
+  obligaba a una nota aclarando por qué la lista de abajo tenía uno menos. Ahora el conteo se hace
+  sobre el contexto ya deduplicado (`es_objetivo`): el número sale correcto y no hay nada que
+  aclarar.
+- **La jerga del cálculo va al tooltip.** La `nota` de Kwon (*«sobra tiempo incluso a v_min_kn…»*)
+  decía en jerga lo mismo que la etiqueta de saturación en claro. Se conserva como `title`.
+
+Lo que **no** cambia: no se inventa un rumbo que no existe, no se interpolan posiciones, no se
+presenta una ruta calculada como observada y no se convierte una estimación en una medida. La
+honestidad está en no afirmar, no en narrar lo que falta.
+
+### 7.8 El objetivo es llegar a tiempo, no navegar despacio
+
+El panel lideraba con el CII y enterraba las horas de fondeo evitadas en una celda pequeña. Estaba
+mal jerarquizado: el proyecto existe para que un buque **llegue cuando hay atraque libre** y no
+queme combustible esperando fondeado. El ahorro de emisiones es la consecuencia de esa decisión, no
+su objetivo.
+
+Ahora el bloque principal se llama *Llegada Just-In-Time*, y el número más grande del panel es
+`idle_hours_avoided` —- las horas que el buque no pasa fondeado—, por encima de la velocidad y muy
+por encima del CII, que baja a sección secundaria. Las etiquetas de estado dejaron de hablar de CII
+y hablan de llegada, sin cambiar las señales que las deciden:
+
+| Señal del oráculo | Antes | Ahora |
+| :-- | :-- | :-- |
+| `excede_v_diseno` | «No ejecutable» | **«No llega a tiempo»** |
+| `alerta_cii` | «Frenar empeora el CII» | **«Llega a tiempo, emitiendo más»** |
+| resto | «Frenar mejora el CII» | **«Llega a tiempo emitiendo menos»** |
+| `!convergio` y frena | «Slow steaming máximo» | **«Incluso al mínimo llega antes de tener atraque»** |
+| `!convergio` y acelera | «A máxima velocidad» | **«Ni a máxima velocidad alcanza el hueco»** |
+
+
+### 7.9 `idle_hours_avoided` no son horas ahorradas
+
+El nombre del campo engaña, y el panel lo amplificaba a titular. El oráculo lo calcula así:
+
+```
+idle_hours_avoided = espera_hasta_atraque − ETA_dynamic
+```
+
+Es decir: **las horas que el buque pasaría fondeado si no cambia nada**. Eso coincide con las
+horas *evitadas* solo cuando Kwon-Euler consigue estirar la travesía hasta la ventana de
+atraque — cuando `convergio` es `true`.
+
+En el caso saturado al mínimo no coincide en absoluto. MSC PRATITI, con los números reales del
+fixture:
+
+| | |
+| :-- | :-- |
+| Distancia | 36,7 nm |
+| Travesía a 14,2 kn (actual) | 2,6 h |
+| Travesía a 9,8 kn (recomendada) | 3,8 h |
+| Atraque libre en | 63,6 h |
+| Fondeo si no cambia nada | **61,0 h** |
+| Fondeo siguiendo la recomendación | **59,8 h** |
+| Fondeo realmente evitado | **1,2 h** |
+
+El panel anunciaba «61 h menos fondeado quemando combustible». Lo cierto es que va a fondear
+unas 60 h de todos modos: frenar de 14,2 a 9,8 kn no puede rellenar un hueco de 61 h con una
+travesía de 3 h. Lo que la recomendación consigue ahí es **gastar menos en el trayecto** (CII
++52,9 %), no evitar el fondeo.
+
+No era un caso raro: pasa en **7 de los 14 eventos del fixture y en los 3 de la tabla real**.
+Es decir, el titular era falso en el 100 % de los datos de producción.
+
+Corregido separando los dos enunciados, con la misma cifra:
+
+- `convergio === true` → «X h menos fondeado quemando combustible, llegando cuando se libera el
+  atraque». Legítimo: el buque sí alcanza la ventana.
+- saturado al mínimo → «X h fondeado esperando atraque, incluso frenando al mínimo. Reducir la
+  velocidad no lo evita: recorta el consumo de la travesía». Misma cifra, enunciado verdadero, y
+  sin el color de estado, que ahí se leía como un logro.
+
+### 7.10 El caso que el proyecto persigue existe, y es una franja estrecha
+
+Al enunciar §7.9 quedó a la vista algo incómodo: en las primeras 14 grabaciones **ninguna**
+llegaba a tiempo ahorrando combustible. Las que convergían lo hacían **acelerando** (y el CII
+empeoraba); las que ahorraban combustible **fondeaban igual**. Y el proyecto persigue las dos
+cosas a la vez.
+
+No era casualidad de los escenarios: es geometría. Para llegar JIT **frenando** hace falta que
+la espera caiga en una franja concreta:
+
+```
+travesía a velocidad actual   <   espera hasta atraque   <   travesía a velocidad mínima
+```
+
+- Si la espera es **menor** que la travesía actual → hay que acelerar → el CII empeora.
+- Si es **mayor** que la travesía al mínimo → ni frenando al máximo se llena el hueco →
+  fondea igual.
+
+La anchura de esa franja es el rango del casco: `v_actual / v_min`, o sea como mucho un factor
+de ~1,7. Con el modelo de esperas actual produciendo **20–185 h** frente a travesías de **3–30
+h**, casi todos los casos se salen por arriba.
+
+Buscándolo a propósito, el caso aparece y es el que hay que enseñar:
+
+| `SALGUEIRO` → Valencia | |
+| :-- | :-- |
+| Velocidad | 17,5 → **13,0 kn** (frena 4,5) |
+| Travesía a velocidad actual | 15,9 h |
+| Atraque libre en | 21,9 h (1.º en cola, segmento *medium*) |
+| Fondeo evitado | **6 h** — llega justo cuando se libera el atraque |
+| CII | 14,74 → 8,10 (**+45,1 %**) |
+
+Llega a tiempo **y** emite un 45 % menos por milla. Sin ancla, chip verde, y la aritmética
+cuadra en pantalla: 22 − 16 = 6.
+
+**Lo que esto dice del sistema, y no del frontal:** que el caso bueno sea 1 de 15 depende
+directamente de lo grandes que sean las esperas que estima `jit_calculus`. Si esas esperas
+están sobreestimadas —- y 129 h para el 5.º de la cola implica ~26 h de servicio por buque—, el
+sistema dirá «fondeará igual» casi siempre y el JIT quedará inutilizado en la práctica. Es la
+misma pregunta de negocio de §12, ahora con una consecuencia concreta y medible.
+
+### 7.11 El color dice una cosa y el titular otra, a propósito
+
+Al enunciar bien §7.9 saltó una contradicción en cascada: el chip de MSC PRATITI decía
+«Llega a tiempo emitiendo menos» justo encima de «61 h fondeado». La etiqueta de estado se
+derivaba de la severidad sola, que no mira la saturación.
+
+Los dos ejes están ahora separados y dicen cosas distintas porque **miden cosas distintas**:
+
+| | Qué codifica | Valores |
+| :-- | :-- | :-- |
+| **Color** (mapa, lista, chip) | calidad del **ajuste de velocidad** | reduce emisiones · las aumenta · no ejecutable |
+| **Titular** (`titular()`) | el **resultado JIT** de este evento | fondeará igual · llega a tiempo (emitiendo más o menos) · necesita más velocidad de la de diseño |
+| **⚓** (`fondearaIgual()`) | el buque **va a fondear** haga lo que haga | presente / ausente |
+
+Por eso un buque puede salir en **verde con ancla**: frenar es buen consejo (menos emisiones) y
+aun así va a esperar fondeado, porque el puerto está saturado. Son dos hechos verdaderos a la
+vez, y colapsarlos en un solo eje obligaba a mentir en uno de los dos.
+
+El símbolo no es decoración: **7 de los 14 eventos del fixture y los 3 de la tabla real** lo
+llevan. Sin él, media flota sale en verde y el mapa sugiere que el JIT está funcionando cuando
+lo que pasa es que el puerto no da atraque. El glifo del chip sigue al titular por lo mismo: un
+«✓» junto a «fondeará igual» se contradice.
+
+**Consecuencia para §14:** dar la cifra *real* de horas evitadas en el caso saturado exige
+`tiempo_transito_estimado_h` del oráculo. Deja de ser un *nice to have*: es lo único que
+permitiría afirmar un ahorro de fondeo sin inventarlo.
 
 ---
 
@@ -608,107 +780,100 @@ se ve al primer vistazo. Ahora el rumbo es la demora al puerto más un sesgo por
 
 ---
 
-## 11. TODOs para los otros equipos
+## 11. TODOs para los otros equipos — cerrados
 
-La pasada anterior tenía seis TODOs; el oráculo cerró la mayoría. Quedan estos, ordenados por
-relación valor/coste.
+Todos hechos en `feature/math_oracle` (`0410d46` … `07086cb`) y verificados contra las filas
+reales de `oracle_recommendations`.
 
-### TODO 1 · Oráculo — emitir la cola del puerto  ·  ~4 líneas
+| TODO | Estado |
+| :-- | :-- |
+| 1 · emitir la cola del puerto | ✅ `queue` con `estimated_wait_hours`, `queue_position` y `berth_segment` |
+| 2 · nombre del buque | ✅ `vessel.name` desde `thetis_mrv`, sin consultas nuevas |
+| 3 · publicar sin tumbar el grafo | ✅ y mejorado: Supabase es la fuente de verdad y ADLS solo se escribe si Supabase confirmó |
+| 4 · `schema.sql` idempotente | ✅ tabla, índices y RLS aplicados |
+| 5 · marcar el buque objetivo | ✅ `es_objetivo` en las tres listas del contexto |
+| 6 · nulos de Open-Meteo | ✅ `list[float \| None]` en `_MarineHourly` y `_WindHourly` |
+| 7 · DevOps | pendiente: crear el recurso de Static Web Apps y sus tres secretos |
 
-`fetch_tiempo_espera` ya calcula `estimacion_jit` con `tiempo_espera_estimado_h`, `posicion_cola` y
-`segmento_atraque`, y `build_informe` los pone en `informe["cola_puerto"]`. **Pero `informe` no se
-persiste**: `construir_evento_contrato` no los copia, así que el frontal no puede enseñar *"posición
-4 en cola, espera estimada 6,3 h"* — que es literalmente la justificación de frenar.
+Dos cosas que llegaron **de más** y el frontal ya usa:
 
-- [ ] Añadir el bloque al evento, con los tres campos ya calculados:
-      ```python
-      "queue": {
-          "estimated_wait_hours": state["estimacion_jit"]["tiempo_espera_estimado_h"],
-          "queue_position":       state["estimacion_jit"]["posicion_cola"],
-          "berth_segment":        state["estimacion_jit"]["segmento_atraque"],
-      },
-      ```
-- [ ] *Si sale gratis:* `perdida_kwon_media_pct` de `velocidad_jit.perdida_media_pct` — cuánto
-      castiga la meteo a este buque en esta ruta. Es un dato bonito y ya está en el estado.
-
-### TODO 2 · Oráculo — el nombre del buque  ·  sin consultas nuevas
-
-El docstring dice que el nombre no está *"ni en paquete_1/2 ni en thetis_mrv"*. Lo primero es cierto;
-lo segundo no: **`thetis_mrv.name` existe** — `schema.sql` lo documenta como *"Nombre del buque según
-la declaración MRV"*. Y `cii_calculus.estimar_cii` **ya trae la fila completa** por IMO
-(`db_conn.get_thetis_mrv_record`, que hace `SELECT *`), así que el nombre ya está en memoria: **no
-hace falta ninguna consulta nueva**.
-
-- [ ] Exponerlo — p. ej. añadiéndolo a `CIIResult.detalles` junto a `tipo_normalizado`, que es el
-      camino que `construir_evento_contrato` ya usa — y rellenar `vessel.name` cuando haya IMO;
-      `null` cuando no.
-
-Sin esto, todo el frontal etiqueta buques por MMSI de nueve dígitos. Es la mejora de legibilidad más
-barata que queda en el sistema.
-
-### TODO 3 · Oráculo — que publicar no tumbe el grafo
-
-`publicar_recomendacion` llama a `db_conn.guardar_recomendacion` sin protección: si Supabase no
-responde, el nodo lanza y **se pierde el cálculo entero**, incluida la llamada al LLM que ya se pagó.
-
-- [ ] Envolver la escritura y **registrar el fallo sin propagarlo**, devolviendo `evento_contrato`
-      igual. Mismo criterio que ya se aplicó en `ingestion/src/ais/tracker.py` (`d52a096`): un fallo
-      al publicar en la DLQ no tumba el tracker.
-
-### TODO 4 · Infra — `schema.sql` ya no es idempotente
-
-El fichero declara en su cabecera *"Idempotente: se puede ejecutar tantas veces como haga falta"*, y
-`ingestion/src/reference/db.py::init_schema` lo ejecuta entero. Pero PostgreSQL **no soporta
-`CREATE POLICY IF NOT EXISTS`**, así que `CREATE POLICY "lectura anonima"` **falla en la segunda
-ejecución** y se lleva por delante todo el `init_schema`.
-
-- [ ] Precederla de `DROP POLICY IF EXISTS "lectura anonima" ON oracle_recommendations;`, o envolverla
-      en un `DO $$ ... EXCEPTION WHEN duplicate_object THEN NULL; END $$;`.
-- [ ] Aplicar el esquema en Supabase y entregar la **`anon` key** (pública, va al bundle del frontal).
-      Las `PG*` de `db_conn.py` no salen del oráculo.
-- [ ] Añadir a `.env.example`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (build del frontal) y
-      `GEMINI_API_KEY` (oráculo, hoy sin documentar).
-
-### TODO 5 · Oráculo — marcar el buque objetivo en el contexto  ·  opcional
-
-`jit_calculus.estimar_desde_contrato` ya devuelve `es_objetivo`, pero `_contexto_buques` no lo
-propaga al evento. El frontal deduplica por `mmsi` de todos modos (§7.2), así que esto solo ahorra
-una comparación — pero hace el contrato autoexplicativo.
-
-- [ ] Propagar `es_objetivo` a los elementos de `context_vessels`.
-
-### TODO 6 · Oráculo — Open-Meteo devuelve nulos y tumba el evento entero
-
-**Encontrado al grabar el fixture, y se llevó 5 de 11 escenarios.** Open-Meteo devuelve
-`wave_height: null` en celdas que el modelo de olas no cubre —- típicamente costeras, y una de
-ellas era la propia posición del buque. Pero `_MarineHourly` en `open_meteo.py` declara
-`wave_height: list[float]`, sin `Optional`, así que Pydantic lanza `ValidationError` y **se
-pierde la recomendación completa**, incluida la llamada al LLM que ya se pagó.
-
-```
-ValidationError: 144 validation errors for _MarineLocationResult
-hourly.wave_height.0  Input should be a valid number
-```
-
-- [ ] `list[float | None]` en `_MarineHourly` y `_WindHourly`, y propagar el `None` hasta el
-      evento. El contrato ya lo admite: `route_weather[].wave_height` es `["number","null"]` y
-      el frontal pinta ese tramo en el gris de «sin dato del modelo» en vez de mentir.
-- [ ] El validador `_series_alineadas` sigue valiendo: lo que hay que relajar es el tipo del
-      elemento, no la comprobación de longitudes.
-
-### TODO 7 · DevOps
-
-- [ ] Crear el recurso **Azure Static Web Apps (plan Free)** y guardar su token de despliegue como
-      secreto de GitHub.
-- [ ] `.github/workflows/deploy_frontend.yml`, filtrado por `frontend/**`, inyectando las `VITE_*`.
-- [ ] **Aparte de este plan:** `deploy_fastapi.yml` hace `docker build .` contra la raíz, donde no
-      hay `Dockerfile` — está en `api/` y sigue siendo solo comentarios. Ese workflow falla tal cual.
-      Y `api/pyproject.toml` todavía tiene `fastapi`/`uvicorn` comentados, así que no hay servicio
-      HTTP que reciba el webhook: el grafo solo se invoca desde su `__main__`.
+- **`recommendation.weather_speed_loss_pct`** — la corrección Kwon (`perdida_media_pct`).
+  Cuánta de la velocidad recomendada se la come el mar; se muestra junto a la saturación.
+- **`api/scripts/replay_alertas.py`** — inyecta alertas capturadas de Flink en el grafo y deja
+  el resultado en Supabase y ADLS. Es la siembra del arranque en frío de §5.6 y el guion
+  reproducible de una demo.
 
 ---
 
-## 12. Alcance
+## 12. Verificación contra la tabla real
+
+Se validaron las filas de `oracle_recommendations` contra
+`contracts/oracle_recommendation_v1.schema.json`. **Aparecieron tres desajustes, y los tres
+eran del lado del frontal**, no del oráculo:
+
+1. **`queue` se emite a nivel raíz**, no dentro de `recommendation` como decía el esquema. La
+   ubicación del oráculo es la buena —- describe el estado del mundo que motiva la decisión, no
+   la decisión— así que se movió el esquema. El frontal leía `recommendation.queue`, siempre
+   `undefined`, y mostraba «el oráculo todavía no lo envía» teniendo el dato delante.
+2. **`weather_speed_loss_pct` no estaba en el esquema** (se había previsto como
+   `queue.kwon_loss_pct`). Se adoptó el nombre del oráculo, que además es más claro.
+3. **El esquema rechazaba `estimated_wait_hours`**, y era un fallo propio: `WaitingVessel`
+   heredaba de `ContextVessel` con `allOf`, pero cada rama de un `allOf` valida por separado y
+   el `additionalProperties: false` del padre no ve las propiedades del hermano. Se declara
+   completo en vez de heredar.
+
+Tras corregir: **0 errores de validación** sobre las filas reales y sobre los 14 del fixture.
+
+La tabla real trae además tres cosas que el esquema no anticipaba y el frontal ya trata:
+
+- **El `rationale` del LLM viene con énfasis Markdown** (`*large*` al citar el segmento de
+  atraque). Se resolvía como asteriscos literales en pantalla. Ahora se renderiza solo
+  `*cursiva*`, partiendo el texto en nodos de React —- sin `dangerouslySetInnerHTML` ni un
+  parser completo por tres asteriscos.
+- **Esperas de 39 a 129 h** y hasta 118 h de ralentí evitado. Son coherentes con lo que ya se
+  midió al grabar el fixture (§7.1) y con que Kwon-Euler sature en `v_min` casi siempre.
+  Conviene que alguien de negocio confirme que 129 h de espera en el segmento *large* es
+  plausible y no un artefacto de la capacidad de atraque inferida.
+- **`emitted_at` puede ir días por detrás de `position_at`.** `replay_alertas.py` sella la
+  emisión con `now()` mientras la posición viene de la alerta capturada. Eso obligó a separar
+  dos relojes que el frontal confundía: la **lista** caduca por `emitted_at` (una decisión es
+  una decisión) pero la **opacidad del marcador** va por `position_at`, porque el marcador
+  afirma *dónde está el buque*. Antes se habría pintado a plena opacidad una posición de hace
+  cinco días. El panel además lo dice explícitamente cuando el desfase pasa de una hora.
+
+### `ETA_dynamic` de Flink no es consciente de la ruta
+
+El panel pone juntos «travesía 14 h» (de `route.duration_hours`, que sale de searoute) y
+«atraque libre en 129 h», así que invita a restar. Con las tres filas reales la resta **no
+cuadra**: sobra entre 3 y 8 h.
+
+| Buque | Travesía (searoute) | Espera | Ralentí esperado | `idle_hours_avoided` emitido |
+| :-- | --: | --: | --: | --: |
+| BULK VALOR | 13,9 h | 129,0 h | 115,1 h | 118,28 h |
+| MSC CHINA | 11,2 h | 39,4 h | 28,2 h | 33,15 h |
+| MINOAN PIONEER | 27,9 h | 75,3 h | 47,4 h | 55,25 h |
+
+La causa: `idle_hours_avoided = espera − ETA_dynamic`, y `ETA_dynamic` lo manda Flink con su
+propio cálculo, que es **sistemáticamente optimista** frente a la distancia navegable de
+`searoute` —- probablemente una estimación sobre distancia directa. Se están mezclando dos
+modelos de distancia en la misma resta.
+
+No cambia ninguna decisión (3–8 h sobre magnitudes de 30–130 h) y no se disimula en el frontal:
+cada número va rotulado con su origen. Pero conviene que streaming y la capa cognitiva usen la
+misma distancia, o que el oráculo recalcule el ETA actual con su propia ruta en vez de fiarse
+del que le llega.
+
+### Divergencia deliberada con §2
+
+El diagrama dice «emisión al frontal **en paralelo** a Bronze», con la salvedad de que el
+frontal podría mostrar algo que falló al persistirse. El oráculo hizo algo mejor: **Supabase
+primero como fuente de verdad, y ADLS solo si Supabase confirmó**. La salvedad de §2 ya no
+aplica, y §2 queda desactualizado a la baja —- se deja constancia aquí en vez de reescribir el
+diagrama.
+
+---
+
+## 13. Alcance
 
 **MVP.** Mapa + evento del oráculo con su ruta, su estado del mar, su contexto de puerto, su CII
 antes/después y la evolución de la aproximación.
@@ -724,6 +889,76 @@ antes/después y la evolución de la aproximación.
 
 **No entra.** Ocupación de atraques en %, ahorro en €, autenticación, edición desde la UI. El frontal
 es de solo lectura y debería seguir siéndolo.
+
+---
+
+## 14. *Nice to have* — información que existe y no se está usando
+
+Nada de esto bloquea nada, y el frontal funciona sin ello. Está aquí porque es trabajo ya
+hecho aguas arriba que hoy se queda por el camino, ordenado por lo que aporta frente a lo que
+cuesta. Verificado campo por campo contra el código del oráculo y contra las filas reales.
+
+### 14.1 El oráculo ya lo calcula y no lo emite
+
+Están en el estado del grafo cuando `construir_evento_contrato` se ejecuta: son líneas de
+copia, no cálculo nuevo.
+
+- **`velocidad_jit.v_diseno_kn`** — la velocidad de diseño del casco. Hoy `excede_v_diseno` es
+  un booleano sin su número: el panel dice *«no llega a tiempo»* sin poder decir *«necesitaría
+  25,5 kn y su casco da 21,3»*. El número existe siempre y solo llega al usuario cuando la
+  prosa del LLM decide mencionarlo —- en el fixture, 3 de 14 veces; en las filas reales, ninguna.
+  **Es el de mejor relación valor/coste de toda esta lista.**
+- **`velocidad_jit.tiempo_transito_estimado_h` y `tiempo_objetivo_h`** — las dos horas que
+  Kwon-Euler compara para decidir. **Ya no es un *nice to have*** (ver §7.9): sin
+  `tiempo_transito_estimado_h` el frontal no puede calcular cuántas horas de fondeo evita de
+  verdad la recomendación, y por eso hoy no puede afirmar ningún ahorro de fondeo en el caso
+  saturado —- que es el más frecuente. De paso harían innecesario deducir el caso por el signo de
+  `speed_delta_kn` (§7.1).
+- **`cii_*.co2_estimado_kg`** — CO₂ absoluto de la travesía en cada escenario. **Ojo, aporta
+  menos de lo que parece:** en la rama `eexi` está condicionado al MISMO DWT real que
+  `fuel_saved_t` (`cii_calculus.py`, `if dwt_real is not None`), así que en el caso frecuente
+  viene vacío igual. Solo añade cobertura en `fallback_admiralty`, que es justo la rama que el
+  propio código decide no considerar fiable. Poco interés.
+
+### 14.2 Ya viene en el evento y el frontal no lo pinta
+
+- **`vessel.nav_status`** — si el buque está navegando (0), fondeado (1) o amarrado (5). Es el
+  único estado del buque del evento que no se muestra, y distingue «viene de camino» de «ya
+  está esperando fondeado», que no es un matiz menor en un producto sobre esperas.
+- **Dirección de ola y de viento en cada waypoint** — viajan en el evento y llegan hasta las
+  propiedades de la capa del mapa (`route-layer.ts`), pero solo se muestra la del viento en la
+  posición del buque. Serían flechas a lo largo de la ruta.
+- **`wave_period` y `wind_gusts_kn` a lo largo de la ruta** — hoy solo en la tabla desplegable.
+
+### 14.3 Requiere una consulta más
+
+- **`port.locode` resuelto por coordenadas.** La tabla `ports` tiene 16.665 filas, el 100 % con
+  coordenadas, y probado sobre datos reales resuelve bien por las dos vías: por nombre exacto
+  (1 coincidencia para los tres puertos objetivo) y por cercanía (el acierto está a 0–2,7 nm y
+  el segundo candidato a 3–5 nm). **Debe hacerse por coordenadas, no por nombre**, porque las
+  coordenadas son el único campo que nadie puede teclear mal.
+
+  Hoy no resuelve un problema vivo: hay tres nombres canónicos y uniformes. Es un seguro para
+  cuando `puerto` lleve texto de verdad, y arregla algo ya observable: **Barcelona llega con dos
+  coordenadas distintas según quién armó el paquete** (`41.338, 2.1675` en el replay frente a
+  `41.38258, 2.17707`), 2,7 nm de diferencia, así que el mismo puerto se puede dibujar en dos
+  sitios. Con LOCODE la posición sale de `ports`, una sola pareja canónica. La capa analítica lo
+  necesita más que el frontal: un nombre en texto libre es una clave mala para cruzar en el
+  tiempo.
+- **`thetis_mrv.co2_at_berth_t`** — CO₂ anual que ese buque emite **atracado**. Es la línea base
+  directa del objetivo del proyecto y ya está cargada en Supabase; daría contexto real a las
+  horas de ralentí evitadas.
+
+### 14.4 Está mal etiquetado (arreglo gratis, y es del oráculo)
+
+- **`vessel.destination_raw` no es el destino crudo.** Trae `paquete_1["puerto"]`, el MISMO
+  string que `port.name` —- idénticos en las 17 filas comprobadas—, que el propio oráculo
+  documenta como «solo un nombre para mostrar». El frontal dejó de mostrarlo: era repetir el
+  nombre del puerto bajo una etiqueta falsa. El esquema ya documenta la discrepancia.
+
+  Lo que hay que decidir en el oráculo: **o se emite ahí el destino AIS de verdad** —- el texto
+  sucio que teclea la tripulación, que es el dato interesante y hoy no llega al evento—, **o se
+  retira el campo** por duplicado.
 
 ---
 

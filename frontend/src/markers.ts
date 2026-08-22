@@ -14,8 +14,8 @@
  */
 import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import type { OracleRecommendationV1 } from './types'
-import { severidad, fiabilidad, COLOR_SEVERIDAD, OPACIDAD_FIABILIDAD, ETIQUETA_SEVERIDAD } from './status'
-import { vigencia, OPACIDAD_VIGENCIA, type FilaRecomendacion } from './feed'
+import { severidad, fiabilidad, titular, fondearaIgual, COLOR_SEVERIDAD, OPACIDAD_FIABILIDAD } from './status'
+import { vigencia, opacidadPosicion, type FilaRecomendacion } from './feed'
 import { etiquetaBuque, num, horaUtc, antiguedad, esperaEstimada, SIN_DATO } from './format'
 
 export interface CapaMarcadores {
@@ -39,11 +39,11 @@ function marcadorBuque(
   const ev = fila.payload
   const sev = severidad(ev.recommendation)
   const fia = fiabilidad(ev.recommendation)
-  const vig = vigencia(fila.emitted_at)
 
   const raiz = el('mk mk-buque' + (seleccionado ? ' mk-sel' : ''))
   raiz.style.setProperty('--c', COLOR_SEVERIDAD[sev])
-  raiz.style.opacity = String(OPACIDAD_FIABILIDAD[fia] * OPACIDAD_VIGENCIA[vig])
+  // Fiabilidad del dato x frescura del FIX (no de la decisión: ver opacidadPosicion).
+  raiz.style.opacity = String(OPACIDAD_FIABILIDAD[fia] * opacidadPosicion(ev.vessel.position_at))
   raiz.setAttribute('role', 'button')
   raiz.setAttribute('tabindex', '0')
 
@@ -58,18 +58,22 @@ function marcadorBuque(
   // El color de estado nunca va solo: la etiqueta lo acompaña siempre.
   const rotulo = el('mk-rotulo')
   rotulo.appendChild(el('mk-rotulo-id', etiquetaBuque(ev.vessel.mmsi, ev.vessel.name)))
+  // El ancla no es decoracion: sin ella un buque que va a fondear 60 h sale en verde,
+  // porque el color codifica la calidad de la RECOMENDACION, no el resultado JIT.
+  const ancla = fondearaIgual(ev.recommendation) ? ' ⚓' : ''
   rotulo.appendChild(el('mk-rotulo-v',
-    `${num(ev.vessel.speed_kn, 1)} → ${num(ev.recommendation.recommended_speed_kn, 1)} kn`))
+    `${num(ev.vessel.speed_kn, 1)} → ${num(ev.recommendation.recommended_speed_kn, 1)} kn${ancla}`))
   raiz.appendChild(rotulo)
 
   const titulo = [
     etiquetaBuque(ev.vessel.mmsi, ev.vessel.name),
     `Destino: ${ev.vessel.destination_raw ?? SIN_DATO} (crudo del AIS)`,
-    `${ETIQUETA_SEVERIDAD[sev]}`,
+    titular(ev.recommendation),
     heading === null || heading === undefined
       ? 'Sin rumbo en el AIS: se dibuja círculo, no se infiere'
       : `Rumbo ${Math.round(heading)}°`,
     `Fix a las ${horaUtc(ev.vessel.position_at)} (${antiguedad(ev.vessel.position_at)})`,
+    `Decisión emitida ${antiguedad(fila.emitted_at)}`,
   ].join('\n')
   raiz.title = titulo
   raiz.setAttribute('aria-label', titulo.replace(/\n/g, '. '))
@@ -165,7 +169,9 @@ export function crearCapaMarcadores(mapa: MapLibreMap): CapaMarcadores {
         ] as const
         for (const [clase, lista] of grupos) {
           for (const b of lista) {
-            if (String(b.mmsi) === mmsiBuque) continue   // dedup: es el propio buque
+            // El oraculo marca ya el buque del evento con `es_objetivo`; se compara el
+            // MMSI solo como respaldo por si algun emisor no lo rellena.
+            if (b.es_objetivo === true || String(b.mmsi) === mmsiBuque) continue
             if (b.lat === null || b.lon === null || b.lat === undefined || b.lon === undefined) continue
             vivos.push(new maplibregl.Marker({
               element: marcadorContexto(clase, String(b.mmsi), esperaEstimada(b)),

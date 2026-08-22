@@ -1,12 +1,5 @@
 /* GENERADO por 'npm run gen:types' desde contracts/oracle_recommendation_v1.schema.json. NO editar a mano. */
 
-export type WaitingVessel = ContextVessel & {
-  /**
-   * Espera MODELADA por jit_calculus, no observada. El frontal la rotula como estimada.
-   */
-  estimated_wait_hours?: number | null;
-};
-
 /**
  * Una decision del Oraculo Matematico (Adaptive Slow Steaming). Es la frontera de contrato entre api/ (escribe) y frontend/ (solo lee): viaja en la columna `payload` (jsonb) de la tabla `oracle_recommendations`.
  *
@@ -56,7 +49,7 @@ export interface OracleRecommendationV1 {
      */
     nav_status: number | null;
     /**
-     * Destino AIS SIN normalizar, tal como lo teclea la tripulacion. Se muestra en crudo.
+     * ATENCION: el nombre miente. Hoy trae `paquete_1['puerto']`, que es el MISMO string que `port.name` (verificado: identicos en las 17 filas del fixture y de la tabla) y que el propio oraculo documenta como "solo un nombre para mostrar". NO es el destino crudo que teclea la tripulacion, que no llega al evento. Por eso el frontal no lo muestra: seria repetir el nombre del puerto bajo una etiqueta falsa. Pendiente en el oraculo: o emitir aqui el destino AIS de verdad —- que es el dato sucio e interesante— o retirar el campo por duplicado.
      */
     destination_raw: string | null;
     /**
@@ -118,7 +111,7 @@ export interface OracleRecommendationV1 {
   route: {
     distance_nm: number;
     /**
-     * Informativo, a la velocidad actual. La velocidad JIT la resuelve Kwon-Euler aparte.
+     * Horas de travesia A LA VELOCIDAD ACTUAL, informativo de searoute. No es el transito a la velocidad recomendada. Puesto junto a `queue.estimated_wait_hours` deja ver la decision JIT de un vistazo: tarda N horas en llegar y no hay atraque hasta la hora M.
      */
     duration_hours: number;
     /**
@@ -148,6 +141,17 @@ export interface OracleRecommendationV1 {
     wind_direction: number | null;
     wind_gusts_kn: number | null;
   }[];
+  /**
+   * Posicion y espera de ESTE buque en la cola del puerto: la justificacion de frenar. Va a nivel raiz, hermano de `route` y `recommendation`, no dentro de la decision: describe el estado del mundo que la motiva, no la decision misma. Verificado contra las filas reales de oracle_recommendations.
+   */
+  queue: {
+    estimated_wait_hours: number | null;
+    queue_position: number | null;
+    /**
+     * Segmento de atraque al que opta el buque por su eslora (p.ej. "large"). Los atraques se agrupan por tamano, asi que la cola es por segmento, no por puerto.
+     */
+    berth_segment: string | null;
+  };
   /**
    * La decision. NO trae `status` ni `confidence`: el oraculo expone las senales nativas del calculo y el frontal deriva severidad y fiabilidad en src/status.ts, en un solo sitio.
    */
@@ -217,17 +221,9 @@ export interface OracleRecommendationV1 {
       ahorro_pct: number | null;
     };
     /**
-     * PENDIENTE (TODO 1): la posicion en cola y la espera estimada del buque objetivo. jit_calculus ya las calcula y build_informe las pone en informe['cola_puerto'], pero `informe` no se persiste, asi que hoy no llegan al frontal — y son literalmente la justificacion de frenar. Declarado aqui como opcional para que el frontal las pinte en cuanto aterricen, sin cambio de contrato.
+     * Perdida media de velocidad por meteo en esta ruta, en por ciento (correccion Kwon: `perdida_media_pct`). Cuanto castiga el mar al buque, y por tanto cuanta de la velocidad recomendada se la come la meteo en vez del motor.
      */
-    queue?: {
-      estimated_wait_hours?: number | null;
-      queue_position?: number | null;
-      berth_segment?: string | null;
-      /**
-       * perdida_media_pct de Kwon-Euler: cuanto castiga la meteo a este buque en esta ruta.
-       */
-      kwon_loss_pct?: number | null;
-    };
+    weather_speed_loss_pct: number | null;
   };
 }
 export interface ContextVessel {
@@ -245,4 +241,27 @@ export interface ContextVessel {
    * PENDIENTE (TODO 5). jit_calculus ya lo calcula pero no se propaga. Mientras no llegue, el frontal deduplica comparando con vessel.mmsi.
    */
   es_objetivo?: boolean | null;
+}
+/**
+ * Buque del contexto que ademas espera: fondeados y en camino. Se declara completo en vez de heredar de ContextVessel con `allOf` — con `additionalProperties: false` cada rama del allOf valida por separado y la del padre rechazaba `estimated_wait_hours`.
+ */
+export interface WaitingVessel {
+  /**
+   * Llega tal cual venga en paquete_2, asi que puede ser numero o texto. El frontal normaliza a string.
+   */
+  mmsi: number | string;
+  /**
+   * HOY SIEMPRE null: paquete_2 no trae nombres.
+   */
+  name: string | null;
+  lat: number | null;
+  lon: number | null;
+  /**
+   * PENDIENTE (TODO 5). jit_calculus ya lo calcula pero no se propaga. Mientras no llegue, el frontal deduplica comparando con vessel.mmsi.
+   */
+  es_objetivo?: boolean | null;
+  /**
+   * Espera MODELADA por jit_calculus, no observada. El frontal la rotula como estimada.
+   */
+  estimated_wait_hours?: number | null;
 }

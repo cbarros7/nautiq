@@ -13,10 +13,10 @@ import { montarCapasRuta, pintarRuta } from './route-layer'
 import { crearCapaMarcadores, type CapaMarcadores } from './markers'
 import {
   cargarInicial, cargarSesion, arrancarRepesca, porBuque, vigencia,
-  USANDO_MOCK, INTERVALO_REPESCA_MS, type FilaRecomendacion,
+  USANDO_MOCK, INTERVALO_REPESCA_MS, totalMock, type FilaRecomendacion,
 } from './feed'
 import { Panel } from './panel'
-import { severidad, COLOR_SEVERIDAD, ETIQUETA_SEVERIDAD } from './status'
+import { severidad, titular, fondearaIgual, COLOR_SEVERIDAD, ETIQUETA_SEVERIDAD } from './status'
 import { etiquetaBuque, num, antiguedad } from './format'
 import { BANDAS_DOUGLAS } from './douglas'
 
@@ -34,6 +34,9 @@ export default function App() {
   const [cargando, setCargando] = useState(true)
   const [seamark, setSeamark] = useState(false)
   const [ahora, setAhora] = useState(Date.now())
+  const [nMock, setNMock] = useState(0)
+
+  useEffect(() => { if (USANDO_MOCK) totalMock().then(setNMock) }, [])
 
   // Un reloj propio: la vigencia de los marcadores depende del paso del tiempo, no
   // solo de que lleguen filas nuevas. Sin esto un marcador se quedaría "fresco" para
@@ -122,7 +125,7 @@ export default function App() {
       <header className="cabecera">
         <div className="marca">
           <span className="marca-n">Nautiq</span>
-          <span className="marca-s">Oráculo de Adaptive Slow Steaming</span>
+          <span className="marca-s">Llegada Just-In-Time · Adaptive Slow Steaming</span>
         </div>
         {USANDO_MOCK && (
           <div
@@ -132,7 +135,7 @@ export default function App() {
                    'desplazado en bloque para que el más reciente sea «ahora»; los intervalos ' +
                    'relativos entre eventos son los originales.'}
           >
-            <b>Datos de ejemplo</b> · 11 eventos grabados del oráculo
+            <b>Datos de ejemplo</b>{nMock ? ` · ${nMock} eventos reales del oráculo` : ''}
           </div>
         )}
         <div className="cabecera-ctrl">
@@ -157,10 +160,7 @@ export default function App() {
           </p>
         )}
         {!cargando && !error && visibles.length === 0 && (
-          <p className="avisos-estado">
-            Ningún aviso en las últimas 3 h. El oráculo solo emite cuando hay un buque a
-            menos de 12 h de su puerto.
-          </p>
+          <p className="avisos-estado">Ningún aviso en las últimas 3 h.</p>
         )}
         <ul className="avisos-lista">
           {visibles.map((f) => {
@@ -175,7 +175,7 @@ export default function App() {
                   aria-pressed={f.event_id === seleccion}
                 >
                   <span className="aviso-punto" style={{ background: COLOR_SEVERIDAD[sev] }}
-                        title={ETIQUETA_SEVERIDAD[sev]} />
+                        title={titular(f.payload.recommendation)} />
                   <span className="aviso-cuerpo">
                     <span className="aviso-id">
                       {etiquetaBuque(f.payload.vessel.mmsi, f.payload.vessel.name)}
@@ -183,6 +183,11 @@ export default function App() {
                     <span className="aviso-meta">
                       {f.payload.port.name} · {num(f.payload.vessel.speed_kn, 1)} →{' '}
                       {num(f.payload.recommendation.recommended_speed_kn, 1)} kn
+                      {fondearaIgual(f.payload.recommendation) && (
+                        <span className="aviso-ancla" title="Fondeará esperando atraque aunque frene al mínimo">
+                          {' ⚓'}
+                        </span>
+                      )}
                     </span>
                     <span className="aviso-hora">{antiguedad(f.emitted_at, ahora)}</span>
                   </span>
@@ -224,8 +229,8 @@ export default function App() {
           </div>
         </div>
         <p className="leyenda-nota">
-          Ruta discontinua: prevista por searoute, no la derrota observada. Sin rumbo en
-          el AIS se dibuja círculo en vez de triángulo. Las posiciones no se interpolan.
+          <b>⚓</b> fondeará esperando atraque aunque frene al mínimo. Ruta prevista,
+          discontinua. Sin rumbo conocido, círculo en vez de triángulo.
         </p>
       </div>
     </div>

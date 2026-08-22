@@ -19,10 +19,7 @@ export function PanelSesion({ eventos }: { eventos: FilaRecomendacion[] }) {
     return (
       <section className="bloque">
         <h3 className="bloque-titulo">Evolución de la aproximación</h3>
-        <p className="nota-vacia">
-          Un solo aviso en esta sesión. El oráculo emite cada 30 min mientras el buque
-          está a menos de 12 h del puerto, así que la serie se irá llenando.
-        </p>
+        <p className="nota-vacia">Primer aviso de esta aproximación.</p>
       </section>
     )
   }
@@ -69,7 +66,7 @@ export function PanelSesion({ eventos }: { eventos: FilaRecomendacion[] }) {
         color="var(--serie)"
         base={0}
         pie={<span className="gr-lectura gr-lectura-inerte">
-          Bajo la línea de base, frenar empeora el CII
+          Bajo la línea de base, la maniobra emite más
         </span>}
       />
 

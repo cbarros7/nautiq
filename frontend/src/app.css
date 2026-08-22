@@ -90,6 +90,8 @@
             overflow: hidden; text-overflow: ellipsis; }
 .aviso-meta { font-size: .72rem; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
 .aviso-hora { font-size: .66rem; color: var(--tinta-3); font-family: var(--mono); }
+.aviso-ancla { color: var(--tinta-3); }
+.leyenda-nota b { color: var(--tinta-2); }
 
 /* ---------------------------------------------------------------- leyenda */
 .leyenda {
@@ -211,8 +213,35 @@
 .velocidad-u { font-size: .9rem; color: var(--tinta-2); }
 .velocidad-delta { margin-left: auto; font-size: .74rem; color: var(--tinta-2);
                    font-variant-numeric: tabular-nums; }
+
+/*
+ * El nucleo del producto: las horas que el buque NO pasa fondeado quemando combustible.
+ * Es el numero mas grande del panel a proposito — por encima de la velocidad y muy por
+ * encima del CII, que es la consecuencia y no el objetivo.
+ */
+.jit-hero {
+  display: flex; align-items: baseline; gap: .7rem;
+  margin: .2rem 0 .95rem; padding: .7rem .85rem;
+  background: var(--superficie-2); border-radius: 6px;
+  border-left: 3px solid var(--estado-ok);   /* lo sobrescribe la severidad */
+}
+.jit-cifra { font-size: 2.5rem; font-weight: 640; line-height: 1; letter-spacing: -.03em;
+             color: var(--tinta); font-variant-numeric: tabular-nums; flex: none; }
+.jit-cifra i { font-style: normal; font-size: .95rem; font-weight: 500;
+               color: var(--tinta-2); margin-left: .12rem; }
+.jit-texto { font-size: .8rem; line-height: 1.4; color: var(--tinta-2); }
+
+.fuel-linea { margin: .5rem 0 0; font-size: .78rem; color: var(--tinta-2); }
+
+/*
+ * Variante para el caso saturado al minimo: la cifra NO es un ahorro, es la espera que el
+ * buque va a sufrir igual. No lleva el color de estado, que aqui leeria como un logro.
+ */
+.jit-hero-espera { border-left-color: var(--tinta-3); }
+.jit-hero-espera .jit-cifra { color: var(--tinta-2); }
 .etiqueta-saturacion { margin: .1rem 0 .7rem; font-size: .72rem; color: var(--tinta-3);
-                       font-family: var(--mono); }
+                       font-family: var(--mono); line-height: 1.45; }
+.perdida-meteo { color: var(--tinta-3); }
 
 .datos { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .55rem .8rem; }
 .dato-et { font-size: .66rem; color: var(--tinta-3); text-transform: uppercase;
@@ -236,8 +265,9 @@
 .cii-flecha { color: var(--tinta-3); }
 .cii-ahorro { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; }
 .cii-ahorro-v { font-size: 1.1rem; font-weight: 640; font-variant-numeric: tabular-nums; }
-.procedencia { margin: .6rem 0 0; font-size: .71rem; color: var(--tinta-3);
-               display: flex; align-items: baseline; gap: .4rem; line-height: 1.4; }
+.procedencia { margin: .5rem 0 0; font-size: .7rem; color: var(--tinta-3);
+               display: inline-flex; align-items: baseline; gap: .35rem; line-height: 1.4;
+               cursor: help; }
 .marca-fiabilidad { width: 7px; height: 7px; border-radius: 50%; flex: none;
                     background: var(--tinta-3); margin-top: .3rem; }
 .marca-alta { background: var(--estado-ok); }
@@ -246,6 +276,8 @@
 
 .racional { margin: 0; font-size: .84rem; line-height: 1.6; color: var(--tinta-2);
             white-space: pre-wrap; }
+.racional em { font-style: normal; color: var(--tinta); font-family: var(--mono);
+               font-size: .95em; }
 .mar-ahora { margin: 0 0 .7rem; font-size: .76rem; color: var(--tinta-2); line-height: 1.5; }
 
 .conteos { display: flex; gap: 1.2rem; }
@@ -271,6 +303,9 @@
 .panel-pie span { color: var(--tinta-3); }
 .panel-pie b { font-weight: 500; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
 .panel-pie-id b { font-family: var(--mono); font-size: .64rem; word-break: break-all; }
+.desfase { display: block; margin: .3rem 0 .1rem; font-size: .71rem; color: var(--tinta-3);
+           line-height: 1.45; border-left: 2px solid var(--linea-fuerte); padding-left: .55rem; }
+.desfase b { color: var(--tinta-2); }
 
 /* ---------------------------------------------------------------- graficos */
 .gr { margin: .7rem 0 0; }

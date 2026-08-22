@@ -90,6 +90,11 @@ async function cargarMock(): Promise<FilaRecomendacion[]> {
   return rebasarFixture(mod.default as unknown as FilaRecomendacion[])
 }
 
+/** Cuántos eventos trae el fixture, para el banner. Contado, no escrito a mano. */
+export async function totalMock(): Promise<number> {
+  return (await import('./mock/events.json')).default.length
+}
+
 /** Arranque en frío: las últimas N decisiones. Resuelve el mapa vacío al abrir. */
 export async function cargarInicial(): Promise<FilaRecomendacion[]> {
   if (USANDO_MOCK) return cargarMock()
@@ -175,6 +180,29 @@ export const OPACIDAD_VIGENCIA: Record<Vigencia, number> = {
   fresco: 1,
   atenuado: 0.45,
   retirado: 0,
+}
+
+/**
+ * Opacidad del marcador según la edad del FIX, no la de la decisión.
+ *
+ * Son dos relojes distintos y hay que separarlos: `emitted_at` es cuándo habló el
+ * oráculo, `position_at` es de cuándo es la posición que se está dibujando. La lista de
+ * avisos ordena y caduca por el primero —- una decisión es una decisión—- pero el marcador
+ * afirma *dónde está el buque*, así que su frescura es la del fix.
+ *
+ * Lo descubrió el replay: `replay_alertas.py` sella `emitted_at` con `now()` mientras el
+ * `position_at` viene de la alerta capturada, así que en la tabla hay filas recién
+ * emitidas con posiciones de hace días. Atenuar por `emitted_at` las habría pintado a
+ * plena opacidad, afirmando que el buque está ahí ahora.
+ *
+ * Nunca baja a 0: si la decisión es reciente, su marcador tiene que existir para que el
+ * aviso de la lista apunte a algún sitio. Se atenúa y el motivo está en el tooltip.
+ */
+export function opacidadPosicion(positionAt: string, ahora = Date.now()): number {
+  const minutos = (ahora - new Date(positionAt).getTime()) / 60000
+  if (minutos < 40) return 1
+  if (minutos < 180) return 0.6
+  return 0.32
 }
 
 /**
