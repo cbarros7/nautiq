@@ -103,7 +103,9 @@ autocontenido: quitar la variable y borrar `ais/synthetic.py` +
 `ais/synthetic_fixtures.json` deja el servicio exactamente como estaba.
 
 **Fondeo por congestión real.** Cada puerto tiene `_BERTH_CAPACITY` plazas de
-atraque (2 por defecto). Al llegar, un buque solo amarra (`nav_status=5`) si hay
+atraque (10 por defecto, calibrado — ver el comentario del propio `synthetic.py`:
+con 2 el puerto acumulaba ~20 fondeados frente a ~6 amarrados y el oráculo deducía
+esperas de ~114 h, inabsorbibles bajando la velocidad). Al llegar, un buque solo amarra (`nav_status=5`) si hay
 plaza libre; si no, se queda fondeado (`nav_status=1`, velocidad casi nula) y lo
 reintenta en cada ciclo hasta que otro buque zarpa. No es un parpadeo de un tick:
 dura lo que tarde en liberarse una plaza, con una válvula de seguridad
