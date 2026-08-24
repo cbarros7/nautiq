@@ -57,7 +57,7 @@ from pathlib import Path
 # que `import app.agents...` resuelva.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.agents.math_oracle import oracle_graph  # noqa: E402
+from app.agents.math_oracle import BuqueNoNavegandoError, oracle_graph  # noqa: E402
 from app.agents.tools import adls_conn, db_conn  # noqa: E402
 
 logger = logging.getLogger("replay")
@@ -132,7 +132,7 @@ def replay(
     config = _config_llm(sin_llm)
     print("-" * 72)
 
-    ok, fallidas = 0, []
+    ok, descartadas, fallidas = 0, [], []
     for i, alerta in enumerate(seleccion, start=1):
         p1 = alerta["paquete_1"]
         etiqueta = f"[{i}/{len(seleccion)}] mmsi={p1.get('mmsi')} puerto={p1.get('puerto')}"
@@ -143,6 +143,7 @@ def replay(
             )
             evento = resultado["evento_contrato"]
             reco = evento["recommendation"]
+            marca_llm = " [resumen degradado]" if reco.get("rationale_degradado") else ""
             print(
                 f"  {etiqueta}\n"
                 f"      event_id={evento['event_id']} session={evento['session_id']}\n"
@@ -150,17 +151,21 @@ def replay(
                 f"(pos {evento['queue']['queue_position']}) | "
                 f"v: {reco['recommended_speed_kn']}kn "
                 f"(actual {evento['vessel']['speed_kn']}kn) | "
-                f"CII {reco['cii']['ahorro_pct']}%\n"
+                f"CII {reco['cii']['ahorro_pct']}%{marca_llm}\n"
                 f"      {reco['rationale'][:110]}..."
             )
             ok += 1
+        except BuqueNoNavegandoError as exc:
+            # No es un fallo: la alerta no aplica (buque atracado/parado).
+            descartadas.append({"indice": desde + i - 1, "mmsi": p1.get("mmsi"), "motivo": str(exc)})
+            print(f"  {etiqueta} -> DESCARTADA: {exc}")
         except Exception as exc:  # noqa: BLE001 — se registra y se sigue con la siguiente
             logger.exception("%s FALLÓ", etiqueta)
             fallidas.append({"indice": desde + i - 1, "mmsi": p1.get("mmsi"), "error": repr(exc)})
             print(f"  {etiqueta} -> ERROR: {type(exc).__name__}: {exc}")
 
     print("-" * 72)
-    print(f"  OK: {ok} | Fallidas: {len(fallidas)}")
+    print(f"  OK: {ok} | Descartadas (no aplican): {len(descartadas)} | Fallidas: {len(fallidas)}")
     for f in fallidas:
         print(f"    - índice {f['indice']} (mmsi {f['mmsi']}): {f['error'][:120]}")
     print("=" * 72)

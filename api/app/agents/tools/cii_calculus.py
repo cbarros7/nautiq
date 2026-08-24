@@ -262,19 +262,26 @@ def _cii_via_admiralty(eslora_m: float, manga_m: float, calado_m: float,
     3. Fuel = P × SFC × tiempo
     4. CO₂ = Fuel × CF
     5. CII = CO₂ / (DWT × D)
- 
+
     Devuelve (cii, dwt, co2_kg).
     """
     tipo = _normalizar_tipo(tipo_buque)
     dwt = estimar_dwt(eslora_m, manga_m, calado_m, tipo_buque)
- 
+
     cb = CB_POR_TIPO.get(tipo, 0.70)
     desplazamiento_t = cb * eslora_m * manga_m * calado_m * RHO_SW
     c_adm = C_ADM_POR_TIPO.get(tipo, 450.0)
- 
-    v_ms = v_actual_kn * KN_TO_MS
-    # Potencia en kW
-    potencia_kw = (desplazamiento_t ** (2 / 3)) * (v_ms ** 3) / c_adm
+
+    # OJO CON LAS UNIDADES: V va en NUDOS, no en m/s. El coeficiente de
+    # Almirantazgo no es adimensional — su valor depende de las unidades
+    # con las que se tabuló, y los 350-600 de C_ADM_POR_TIPO están
+    # calibrados para V en nudos y P en kW (comprobación: un bulk de
+    # Δ≈50.000 t que navega a 14 kn con ~9.000 kW propulsivos da
+    # C = 50000^(2/3)·14³/9000 ≈ 414, dentro del rango de la tabla; el
+    # mismo cálculo en m/s daría ≈56, fuera de rango).
+    # Convertir a m/s aquí dividía la potencia por (1/0.5144)³ ≈ 7.35 y
+    # devolvía un CII ~7x más optimista, sin lanzar ningún error.
+    potencia_kw = (desplazamiento_t ** (2 / 3)) * (v_actual_kn ** 3) / c_adm
  
     # Tiempo de travesía restante (horas)
     if v_actual_kn <= 0:

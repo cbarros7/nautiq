@@ -27,13 +27,50 @@ aproximación genera varios resúmenes.
 
 from __future__ import annotations
 
+import logging
 from typing import Callable, Optional
+
+logger = logging.getLogger(__name__)
 
 
 def _formato_horas(h: Optional[float]) -> str:
     if h is None:
         return "—"
     return f"{h:.1f} h"
+
+
+def _texto_con_fallback(
+    prompt: str,
+    generar_texto: Optional[Callable[[str], str]],
+    fallback: Callable[[dict], str],
+    informe: dict,
+) -> tuple[str, bool]:
+    """
+    Llama al LLM y, si falla, degrada al resumen determinista.
+
+    El resumen es lo ÚLTIMO del pipeline: para cuando se llama aquí ya
+    se han pagado la ruta, la meteo, el CII y el JIT. Dejar que un 429
+    por rate limit (probable: el free tier de Gemini ronda 15-30 RPM y
+    las ráfagas reales de Flink llegan a 17 alertas/min), un 5xx
+    transitorio o un model_id inválido tumben `oracle_graph.invoke()`
+    tiraría todo ese trabajo por el texto de acompañamiento. Mismo
+    criterio que las escrituras a Supabase/ADLS en math_oracle: se
+    registra y se sigue.
+
+    Devuelve (texto, degradado) — `degradado=True` avisa de que el
+    texto NO viene del LLM, para que el consumidor pueda distinguirlo.
+    """
+    if generar_texto is None:
+        return fallback(informe), False
+
+    try:
+        return generar_texto(prompt), False
+    except Exception:
+        logger.exception(
+            "La generación del resumen con LLM falló; se degrada al resumen "
+            "determinista (el cálculo del oráculo se conserva intacto)"
+        )
+        return fallback(informe), True
 
 
 def _formato_historial(historial: Optional[list[dict]]) -> str:
@@ -133,8 +170,15 @@ def resumen_ahorro(
 ) -> dict:
     """Resumen para el caso en que el CII mejora con la velocidad JIT."""
     prompt = construir_prompt_ahorro(informe, historial)
-    texto = generar_texto(prompt) if generar_texto else _resumen_sin_llm_ahorro(informe)
-    return {"texto": texto, "prompt": prompt, "alerta_cii": False}
+    texto, degradado = _texto_con_fallback(
+        prompt, generar_texto, _resumen_sin_llm_ahorro, informe
+    )
+    return {
+        "texto": texto,
+        "prompt": prompt,
+        "alerta_cii": False,
+        "llm_degradado": degradado,
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -196,5 +240,12 @@ def resumen_alerta(
 ) -> dict:
     """Resumen para el caso en que el CII empeora con la velocidad JIT."""
     prompt = construir_prompt_alerta(informe, historial)
-    texto = generar_texto(prompt) if generar_texto else _resumen_sin_llm_alerta(informe)
-    return {"texto": texto, "prompt": prompt, "alerta_cii": True}
+    texto, degradado = _texto_con_fallback(
+        prompt, generar_texto, _resumen_sin_llm_alerta, informe
+    )
+    return {
+        "texto": texto,
+        "prompt": prompt,
+        "alerta_cii": True,
+        "llm_degradado": degradado,
+    }

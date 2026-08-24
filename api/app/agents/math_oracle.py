@@ -81,7 +81,9 @@ Sobre oracle_recommendation_v1 (acordado con el equipo de frontend):
   - Sin `status`/`confidence` inventados: se exponen las señales
     nativas del cálculo (`convergio`, `excede_v_diseno`, `nota`,
     `alerta_cii`, `weather_speed_loss_pct`) directamente en
-    `recommendation`.
+    `recommendation`. `rationale_degradado` avisa de que el texto viene
+    del resumen determinista porque el LLM falló (el cálculo sigue
+    siendo válido; solo cambia la redacción).
   - `fuel_saved_t` sólo se rellena cuando thetis_mrv da un DWT REAL
     para el IMO (CIIResult.dwt_real_t) — nunca a partir del DWT
     geométrico estimado, que tiene la misma incertidumbre que el
@@ -109,6 +111,22 @@ from app.agents.tools.sea_route import Port, Route, route_to_port
 logger = logging.getLogger(__name__)
 
 
+class BuqueNoNavegandoError(ValueError):
+    """
+    El buque de la alerta no está navegando (atracado, o parado sobre el
+    ancla): no hay recomendación de velocidad JIT que dar.
+
+    NO es un fallo del sistema, es una alerta que no aplica — de ahí que
+    sea un tipo propio y no un ValueError genérico: quien invoque el
+    grafo puede distinguir "esta alerta hay que descartarla" (el webhook
+    devolvería 422, no 500) de "algo se ha roto".
+
+    Es un caso REAL, no hipotético: el generador sintético emite
+    sog=0.0 con nav_status=5 para los buques atracados, y los fondeados
+    salen con sog entre 0.0 y 0.3, que redondeado puede dar 0.0.
+    """
+
+
 class OracleState(TypedDict):
     paquete_1: dict
     paquete_2: dict
@@ -123,6 +141,7 @@ class OracleState(TypedDict):
     weather: list[dict]
     wind: list[dict]
     cii_inicial: cii_calculus.CIIResult
+    db_record: Optional[dict]  # ficha de thetis_mrv, resuelta una vez y reutilizada
     estimacion_jit: dict
     estimaciones_puerto: list[dict]
     tiempo_espera_h: float
@@ -148,14 +167,18 @@ def fetch_datos_buque(state: OracleState) -> dict:
 
     speed_knot = float(paquete_1["velocidad_buque"])
     if speed_knot <= 0:
-        # open_meteo.waypoints_with_eta divide la distancia acumulada
-        # entre speed_knot para estimar el ETA de cada waypoint — con
-        # 0 (buque fondeado/parado, o campo ausente) eso es un
-        # ZeroDivisionError tres nodos más abajo, sin contexto. Se
-        # corta aquí con un error claro.
-        raise ValueError(
-            f"paquete_1['velocidad_buque'] debe ser > 0 (recibido: {speed_knot}); "
-            "no se puede calcular una ruta/ETA con el buque parado."
+        # El buque no navega (atracado sobre el muelle o parado sobre el
+        # ancla): no hay velocidad que recomendar, que es el producto de
+        # este grafo. Se corta aquí, y con un tipo propio, por dos
+        # razones: (1) aguas abajo, open_meteo.waypoints_with_eta divide
+        # la distancia acumulada entre speed_knot, así que un 0 sería un
+        # ZeroDivisionError sin contexto tres nodos más allá; (2) esto no
+        # es un fallo del sistema sino una alerta no aplicable, y el
+        # llamador debe poder distinguirlo (ver BuqueNoNavegandoError).
+        raise BuqueNoNavegandoError(
+            f"velocidad_buque={speed_knot} (nav_status={paquete_1.get('estado')}): "
+            "el buque está atracado o parado, no aplica recomendación de "
+            "velocidad JIT."
         )
 
     nombre_puerto = paquete_1["puerto"]
@@ -208,9 +231,20 @@ def fetch_weather(state: OracleState) -> dict:
 
 
 def fetch_cii_inicial(state: OracleState) -> dict:
-    """CII a la velocidad y distancia ACTUALES del buque (antes de aplicar JIT)."""
-    cii_inicial = cii_calculus.estimar_cii(state["paquete_1"], state["distance_nm"])
-    return {"cii_inicial": cii_inicial}
+    """
+    CII a la velocidad y distancia ACTUALES del buque (antes de aplicar JIT).
+
+    Resuelve aquí la ficha de thetis_mrv (ship_type/eexi/dwt/name) y la
+    guarda en el estado: es la MISMA fila para fetch_cii_jit, que sólo
+    cambia la velocidad. Sin esto cada nodo hacía su propio SELECT por
+    el mismo IMO — dos consultas idénticas por alerta.
+    """
+    imo = state["paquete_1"].get("imo")
+    db_record = db_conn.get_thetis_mrv_record(imo) if imo is not None else None
+    cii_inicial = cii_calculus.estimar_cii(
+        state["paquete_1"], state["distance_nm"], db_record=db_record
+    )
+    return {"cii_inicial": cii_inicial, "db_record": db_record}
 
 
 def fetch_tiempo_espera(state: OracleState) -> dict:
@@ -258,10 +292,16 @@ def fetch_velocidad_jit(state: OracleState) -> dict:
 
 
 def fetch_cii_jit(state: OracleState) -> dict:
-    """CII con la velocidad JIT recomendada (misma ruta/distancia, distinta velocidad)."""
+    """
+    CII con la velocidad JIT recomendada (misma ruta/distancia, distinta
+    velocidad). Reutiliza el db_record que ya resolvió fetch_cii_inicial:
+    es el mismo buque, así que la fila de thetis_mrv es la misma.
+    """
     paquete_1_jit = dict(state["paquete_1"])
     paquete_1_jit["velocidad_buque"] = state["velocidad_jit"].v_motor_kn
-    cii_jit = cii_calculus.estimar_cii(paquete_1_jit, state["distance_nm"])
+    cii_jit = cii_calculus.estimar_cii(
+        paquete_1_jit, state["distance_nm"], db_record=state.get("db_record")
+    )
     return {"cii_jit": cii_jit}
 
 
@@ -553,6 +593,10 @@ def construir_evento_contrato(state: OracleState, event_id: str, session_id: str
             "idle_hours_avoided": idle_hours_avoided,
             "fuel_saved_t": fuel_saved_t,
             "rationale": resumen["texto"],
+            # True si el LLM falló y el texto viene del resumen determinista
+            # de respaldo — el cálculo es igual de válido, pero la redacción
+            # es la de plantilla. Permite al frontal distinguirlo.
+            "rationale_degradado": resumen.get("llm_degradado", False),
             # Sin status/confidence inventados: señales nativas del cálculo.
             "convergio": velocidad_jit.convergio,
             "excede_v_diseno": velocidad_jit.excede_v_diseno,
