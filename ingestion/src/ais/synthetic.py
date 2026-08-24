@@ -77,7 +77,18 @@ _NAME_FIELD_LEN, _CALLSIGN_FIELD_LEN = 20, 7
 # "idle burn" que el JIT de Nautiq busca evitar. `_MAX_ANCHOR_WAIT_HOURS` es una
 # válvula de seguridad: pasado ese tiempo atraca igual, para no dejar un buque
 # fondeado indefinidamente si la carga de la flota supera la capacidad elegida.
-_BERTH_CAPACITY = 2
+# Calibrado (barrido de 2 a 24 sobre una semana simulada, midiendo la ocupación de
+# los 3 puertos objetivo): con 2 plazas la capacidad era la restricción dominante y
+# el puerto acumulaba ~20 fondeados frente a ~6 amarrados — tres de cada cuatro
+# buques esperando. Eso hace que el oráculo (que infiere los atraques del puerto a
+# partir de los buques amarrados que observa) deduzca un puerto de 3 atraques y
+# calcule esperas de ~114 h, imposibles de absorber bajando la velocidad: la
+# recomendación JIT queda inutilizada casi siempre. Con 10, los amarrados alcanzan
+# la demanda natural de la flota (~9,5; a partir de 12 ya no sube), la espera
+# estimada baja a ~16 h — dentro de lo que el slow steaming puede absorber — y el
+# fondeo SIGUE ocurriendo (~3 de media, picos de 12). Por encima de 12 el fondeo
+# desaparece por completo y se perdería el "idle burn" que esto simula.
+_BERTH_CAPACITY = 10
 _MAX_ANCHOR_WAIT_HOURS = 30.0
 
 
