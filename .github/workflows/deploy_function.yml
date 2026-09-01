@@ -203,38 +203,16 @@ jobs:
       #
       # (La vía "oficial" para Flex es azure/login + ARM, pero eso exige un
       # service principal que el tenant de la universidad no deja crear.)
+      # Las credenciales NO pasan por el shell: la primera versión hacía `eval`
+      # de asignaciones generadas y devolvía 401, porque las contraseñas de los
+      # perfiles de Azure llevan caracteres que bash expande o parte ($, +...).
+      # Al hacerlo dentro de Python ese fallo no puede reproducirse.
       - name: Desplegar (OneDeploy contra el SCM regional)
         env:
           PERFIL: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
         run: |
           python "${{ env.PACKAGE_PATH }}/scripts/empaquetar.py" paquete.zip
-
-          # El host y las credenciales salen del perfil (perfil ZipDeploy).
-          # add-mask evita que la contraseña acabe en los logs: GitHub enmascara
-          # el secret entero, pero NO los valores derivados de él.
-          eval "$(python - <<'PY'
-          import os, xml.etree.ElementTree as ET
-          perfil = ET.fromstring(os.environ["PERFIL"])
-          p = next(x for x in perfil.findall("publishProfile") if x.get("publishMethod") == "ZipDeploy")
-          print(f'echo "::add-mask::{p.get("userPWD")}"')
-          print(f'SCM={p.get("publishUrl").split(":")[0]}')
-          print(f'SCM_USER={p.get("userName")}')
-          print(f'SCM_PASS={p.get("userPWD")}')
-          PY
-          )"
-          echo "Desplegando a $SCM"
-
-          CODIGO=$(curl --silent --output respuesta.txt --write-out "%{http_code}" \
-            --max-time 300 -X POST -u "$SCM_USER:$SCM_PASS" \
-            -H "Content-Type: application/zip" --data-binary @paquete.zip \
-            "https://$SCM/api/publish?RemoteBuild=true")
-
-          if [ "$CODIGO" != "200" ] && [ "$CODIGO" != "202" ]; then
-            echo "::error::OneDeploy devolvió HTTP $CODIGO"
-            cat respuesta.txt
-            exit 1
-          fi
-          echo "Aceptado (HTTP $CODIGO), id de despliegue: $(cat respuesta.txt)"
+          python "${{ env.PACKAGE_PATH }}/scripts/desplegar.py" paquete.zip
 
       # Prueba de humo: /api/health es anónimo y devuelve a qué entorno y tabla
       # apunta la instancia. Es la forma de cazar el fallo más silencioso de
