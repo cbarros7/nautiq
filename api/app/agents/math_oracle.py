@@ -52,7 +52,9 @@ Secuencia
     fetch_resumen_ahorro | fetch_resumen_alerta — resumen en lenguaje
     natural del informe (informe_llm.py, agnóstico al proveedor de LLM
     — el "generar_texto" se inyecta vía config["configurable"], ver
-    _generar_texto_inyectado; para Gemini, ver gemini_client.py).
+    _generar_texto_inyectado). Quien invoca suele inyectar la cadena de
+    llm_provider.crear_generar_texto_desde_entorno: Gemini free tier ->
+    Foundry (respaldo de pago) -> resumen determinista de informe_llm.
 11. publicar_recomendacion — construye el evento con la forma de
     contracts/oracle_recommendation_v1 (construir_evento_contrato) y lo
     publica en dos destinos, en orden: primero Supabase
@@ -585,9 +587,11 @@ def construir_evento_contrato(state: OracleState, event_id: str, session_id: str
         },
         "recommendation": {
             "recommended_speed_kn": velocidad_jit.v_motor_kn,
+            "design_speed_kn": cii_inicial.v_diseno_kn,
             "speed_delta_kn": round(
                 velocidad_jit.v_motor_kn - float(paquete_1.get("velocidad_buque", 0)), 2
             ),
+            "estimated_transit_hours": velocidad_jit.tiempo_transito_estimado_h,
             "eta_current": informe["eta"]["inicial_sin_cola"],
             "eta_optimized": informe["eta"]["recomendada_jit"],
             "idle_hours_avoided": idle_hours_avoided,
@@ -800,17 +804,16 @@ if __name__ == "__main__":
         },
     }
 
-    # Si hay GEMINI_API_KEY en el entorno, se usa Gemini de verdad para
-    # el resumen; si no, informe_llm cae al resumen determinista sin LLM
-    # (el grafo es ejecutable de punta a punta en ambos casos).
-    import os
-    invoke_config = {}
-    gemini_api_key = os.environ.get("GEMINI_API_KEY")
-    if gemini_api_key:
-        from app.agents.tools.gemini_client import crear_generar_texto
-        invoke_config = {
-            "configurable": {"generar_texto": crear_generar_texto(gemini_api_key)}
-        }
+    # Cadena de proveedores según el entorno: Gemini (free tier) ->
+    # Foundry (respaldo de pago) -> resumen determinista. Si no hay
+    # ninguno configurado, informe_llm usa el resumen determinista (el
+    # grafo es ejecutable de punta a punta en todos los casos).
+    from app.agents.tools.llm_provider import crear_generar_texto_desde_entorno
+
+    generar_texto = crear_generar_texto_desde_entorno()
+    invoke_config = (
+        {"configurable": {"generar_texto": generar_texto}} if generar_texto else {}
+    )
 
     result = oracle_graph.invoke(
         {"paquete_1": paquete_1_ejemplo, "paquete_2": paquete_2_ejemplo},

@@ -11,6 +11,7 @@ Google)
 
 from __future__ import annotations
 
+import os
 from typing import Callable
 
 from google import genai
@@ -18,7 +19,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODELO_POR_DEFECTO = "gemini-3.5-flash-lite"
+# Modelo por entorno (GEMINI_MODEL en las variables de entorno): en DEV
+# interesa un modelo barato/rápido y en PRO el que se vaya a presentar,
+# y son cuentas distintas con cuotas distintas. Va por entorno y no por
+# NAUTIQ_ENV en el código porque el par (api_key, modelo) tiene que
+# viajar junto: la key de una cuenta no da acceso a los modelos de otra.
+#
+# OJO al formato: el SDK google-genai quiere el id pelado
+# ("gemini-3.5-flash-lite"). El prefijo de proveedor que usan LiteLLM y
+# similares ("gemini/gemini-3.5-flash-lite") NO vale aquí y da un 404 de
+# modelo no encontrado.
+MODELO_POR_DEFECTO = os.getenv("GEMINI_MODEL") or "gemini-3.5-flash-lite"
 
 
 def crear_generar_texto(

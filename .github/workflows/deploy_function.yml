@@ -1,0 +1,236 @@
+# ============================================================================
+# Nautiq — Deploy Oráculo (LangGraph) to Azure Functions (Flex Consumption)
+# ============================================================================
+# Despliegue por CÓDIGO (zip + build remoto), no por contenedor: Flex
+# Consumption es code-only; las imágenes Docker requieren Premium/Dedicated.
+# Por eso este workflow no usa el ACR ni el Dockerfile que sí utiliza
+# deploy_fastapi.yml (la vía App Service, hoy no usada).
+#
+# DOS CUENTAS DE AZURE, Y POR QUÉ PERFIL DE PUBLICACIÓN
+# -----------------------------------------------------
+# Las Function Apps del oráculo (dev y pro) viven en una suscripción DISTINTA
+# de la del resto de la plataforma (ACR, App Service, storage), que es la que
+# usa deploy_fastapi.yml. Por eso este workflow NO reutiliza el secret
+# AZURE_CREDENTIALS: aquel service principal pertenece a la otra suscripción y
+# no tiene permiso sobre estos recursos.
+#
+# Tampoco se crea uno propio: la suscripción del oráculo cuelga del tenant de
+# la universidad, que bloquea el registro de aplicaciones a los usuarios
+# normales ("Insufficient privileges to complete the operation"). Eso descarta
+# tanto `az ad sp create-for-rbac` como OIDC, que necesitan ese mismo registro.
+# La vía que queda usa permisos sobre el RECURSO, no sobre el directorio: el
+# PERFIL DE PUBLICACIÓN.
+#
+# Requiere tener habilitada la autenticación básica de SCM, que se desactiva
+# por defecto al crear la app:
+#   az resource update --resource-group <rg> --namespace Microsoft.Web \
+#     --resource-type basicPublishingCredentialsPolicies --name scm \
+#     --parent sites/<app> --set properties.allow=true
+# Y el perfil se descarga del portal ("Obtener perfil de publicación") o con
+# `az functionapp deployment list-publishing-profiles --xml`. El XML COMPLETO
+# va como secret del Environment. Es menos seguro que OIDC —son credenciales
+# de larga duración— pero es lo disponible; si algún día se puede registrar
+# una aplicación, migrar a OIDC es cambiar este paso por azure/login.
+#
+# Que las cuentas estén separadas NO afecta al runtime: la Function llega a
+# ADLS con un SAS token, a Supabase con cadena de conexión y a Gemini/Foundry
+# con API key. Ninguno depende de identidad de Azure, así que cruzan
+# suscripciones sin configuración adicional.
+#
+# UN WORKFLOW, DOS ENTORNOS (GitHub Environments)
+# -----------------------------------------------
+# En vez de duplicar el fichero, cada entorno (dev/prod) aporta sus propios
+# valores desde su GitHub Environment:
+#   - secret  AZURE_FUNCTIONAPP_PUBLISH_PROFILE : XML del perfil de esa app
+#   - var     FUNCTION_APP_NAME                 : nombre de la Function App
+# Un push a main despliega dev; producción solo se despliega a mano
+# (workflow_dispatch), y el Environment "prod" admite además reglas de
+# protección —revisor obligatorio— si se quiere.
+#
+# Requisitos previos en Azure (no los crea este workflow):
+#   - Function App Linux, runtime Python 3.11, plan Flex Consumption, UNA POR
+#     ENTORNO, en la suscripción del oráculo.
+#   - Autenticación básica de SCM habilitada (comando de arriba), por app.
+#   - Application Settings con NAUTIQ_ENV, PG*, ADLS_SAS_TOKEN, GEMINI_*,
+#     FOUNDRY_* (ver api/local.settings.json.example). SIN ellas la Function
+#     arranca pero falla en la primera alerta. NAUTIQ_ENV es la crítica y hay
+#     que ponerla DISTINTA en cada app (DEV / PRO): si falta, app/config.py
+#     asume DEV y producción escribiría en las tablas y carpetas de
+#     desarrollo sin quejarse. Comprobable con GET /api/health.
+#   - PGHOST debe apuntar al POOLER de Supabase, no a la conexión directa: el
+#     host directo (db.<ref>.supabase.co) solo tiene registro AAAA, y App
+#     Service/Functions no tiene salida IPv6 — desde la Function sería
+#     inalcanzable y toda alerta fallaría en fetch_cii_inicial.
+#
+# ---------------------------------------------------------------------------
+# MEMORIA Y CONCURRENCIA (no se configuran aquí ni en host.json)
+# ---------------------------------------------------------------------------
+# En Flex Consumption se factura por GB-s = (memoria de instancia) x (tiempo
+# de ejecución), con un free grant de 100.000 GB-s/mes. El coste por alerta es
+# `memoria / concurrencia x tiempo`, así que la memoria SOLA no ahorra nada:
+# lo que ahorra es repartirla entre ejecuciones simultáneas. Medido sobre
+# alertas reales: ~138 MB de base fija, 2,5-5,2 s por alerta (dominado por la
+# latencia de Open-Meteo y del LLM) y solo ~0,2 MB marginales por alerta
+# adicional — un perfil I/O-bound, ideal para concurrencia alta.
+#
+#   2048 MB con concurrencia 8 -> ~1,3 GB-s/alerta   (~77.000 alertas gratis)
+#   2048 MB con concurrencia 1 -> ~10,4 GB-s/alerta  (~9.600 alertas gratis)
+#
+# Es decir: dejar la concurrencia por defecto sin mirarla consume el grant
+# hasta 8x más rápido. Ese ajuste NO vive en host.json (el
+# `extensions.http.maxConcurrentRequests` se IGNORA en Flex Consumption, por
+# eso se quitó de ahí: engañaba al que lo leyera). Es propiedad de la app:
+#
+#   az functionapp scale config set \
+#     --name <FUNCTION_APP_NAME> --resource-group <RG> \
+#     --instance-memory 2048
+#
+#   az functionapp scale config set \
+#     --name <FUNCTION_APP_NAME> --resource-group <RG> \
+#     --trigger-type http --trigger-settings perInstanceConcurrency=8
+#
+# Y un TECHO DE INSTANCIAS, que por defecto viene en 100:
+#
+#   az functionapp scale config set \
+#     --name <FUNCTION_APP_NAME> --resource-group <RG> \
+#     --maximum-instance-count 5
+#
+# Ese tope NO se dimensiona por el tráfico esperado —las cifras de alertas que
+# tenemos salen de un generador sintético y no predicen producción—, sino por
+# lo que aguantan los recursos de aguas abajo. Es un cortafuegos:
+#   - Conexiones: db_conn abre una conexión por invocación (sin pool), así que
+#     el máximo simultáneo es instancias x concurrencia. Con el defecto de 100
+#     salen hasta 800 conexiones contra Supabase; con 5, cuarenta.
+#   - Coste: 100 instancias x 2 GB sostenidas una hora son 720.000 GB-s, y el
+#     grant mensual son 100.000. Una tormenta de reintentos lo agotaría en
+#     minutos, sin que nadie se entere hasta que llega la factura.
+# Si el tráfico real supera esa capacidad, el síntoma es encolado y latencia
+# —visible y ajustable subiendo el tope— en vez de agotar la base de datos o
+# el grant en silencio. Revisar el número con tráfico real, no con el fixture.
+#
+# Consultar lo que hay puesto:
+#   az functionapp scale config show --name <FUNCTION_APP_NAME> --resource-group <RG>
+#
+# `functionTimeout: 00:05:00` en host.json es deliberado y no herencia: en
+# Flex el techo por defecto son 30 min, y como se paga por tiempo, una alerta
+# atascada quemaría GB-s del grant. 5 min deja ~60x el peor caso medido.
+# ============================================================================
+
+name: Deploy Oracle Function
+
+on:
+  push:
+    branches: [main, feature/math_oracle]
+    paths:
+      - "api/**"
+      - ".github/workflows/deploy_function.yml"
+  workflow_dispatch:
+    inputs:
+      entorno:
+        description: "Entorno de despliegue"
+        required: true
+        default: dev
+        type: choice
+        options: [dev, prod]
+
+env:
+  # Raíz del paquete: contiene host.json, function_app.py, requirements.txt
+  # y el paquete app/. Lo que no debe viajar está en api/.funcignore.
+  PACKAGE_PATH: api
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    # `inputs.entorno` solo existe en la ejecución manual; un push a main no lo
+    # define y cae a "dev". Producción NUNCA se despliega por push, hay que
+    # pedirla explícitamente.
+    environment: ${{ inputs.entorno || 'dev' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Comprobación barata que evita el fallo más caro de este despliegue:
+      # un error de importación no se ve hasta que el host intenta cargar
+      # function_app.py YA en Azure, y allí se manifiesta como "No job
+      # functions found" — un mensaje que no dice nada del error real.
+      - name: Verificar que el Function App carga
+        working-directory: ${{ env.PACKAGE_PATH }}
+        run: |
+          pip install -r requirements.txt
+          python -c "import function_app; print('function_app importa correctamente')"
+
+      # Falla pronto y con un mensaje claro si el Environment no está
+      # configurado. Sin esto, un FUNCTION_APP_NAME vacío llega hasta el paso
+      # de despliegue y allí el error habla de un nombre de app inexistente,
+      # que no señala la causa real.
+      - name: Comprobar configuración del entorno
+        run: |
+          if [ -z "${{ vars.FUNCTION_APP_NAME }}" ]; then
+            echo "::error::Falta la variable FUNCTION_APP_NAME en el GitHub Environment '${{ inputs.entorno || 'dev' }}'."
+            exit 1
+          fi
+          if [ -z "${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}" ]; then
+            echo "::error::Falta el secret AZURE_FUNCTIONAPP_PUBLISH_PROFILE en el GitHub Environment '${{ inputs.entorno || 'dev' }}'."
+            exit 1
+          fi
+          echo "Entorno: ${{ inputs.entorno || 'dev' }} -> Function App: ${{ vars.FUNCTION_APP_NAME }}"
+
+      # Marca el paquete con el commit desplegado. /api/health lo devuelve en
+      # "build", y el paso de humo comprueba que coincide: así se confirma que
+      # la app está sirviendo ESTE código, y no una versión anterior que
+      # respondía igual porque el despliegue falló en silencio.
+      - name: Sellar el build con el commit
+        run: echo "${{ github.sha }}" > ${{ env.PACKAGE_PATH }}/BUILD_INFO
+
+      # Sin azure/login: no hay service principal (ver cabecera). El perfil de
+      # publicación lleva sus propias credenciales, así que la action se
+      # autentica sola contra el endpoint SCM de la app.
+      #
+      # Tampoco se fija scm-do-build-during-deployment ni enable-oryx-build:
+      # Flex Consumption hace build remoto por defecto con su propio mecanismo
+      # (one deploy), y esos flags son de los planes clásicos.
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ vars.FUNCTION_APP_NAME }}
+          package: ${{ env.PACKAGE_PATH }}
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+      # Prueba de humo: /api/health es anónimo y devuelve a qué entorno y tabla
+      # apunta la instancia. Es la forma de cazar el fallo más silencioso de
+      # este despliegue —NAUTIQ_ENV mal puesta en las Application Settings—,
+      # que si no no se nota hasta ver filas en la tabla equivocada.
+      - name: Prueba de humo (/api/health)
+        run: |
+          sleep 30  # margen para que el host recargue tras el despliegue
+          RESPUESTA=$(curl --fail --silent --show-error --retry 5 --retry-delay 10 --retry-all-errors \
+            "https://${{ vars.FUNCTION_APP_NAME }}.azurewebsites.net/api/health")
+          echo "$RESPUESTA"
+
+          # El build que responde tiene que ser ESTE commit. Si no coincide,
+          # la app sigue con código antiguo: el despliegue no llegó aunque la
+          # action haya salido en verde, y sin esta comprobación pasaría por
+          # bueno.
+          BUILD=$(echo "$RESPUESTA" | python -c "import json,sys; print(json.load(sys.stdin).get('build',''))")
+          if [ "$BUILD" != "${{ github.sha }}" ]; then
+            echo "::error::La app responde con build '$BUILD' pero se desplegó '${{ github.sha }}'."
+            exit 1
+          fi
+          echo "Build confirmado: $BUILD"
+
+          # NAUTIQ_ENV mal puesta escribe en las tablas del otro entorno sin
+          # dar ningún error, así que se verifica explícitamente.
+          ENTORNO=$(echo "$RESPUESTA" | python -c "import json,sys; print(json.load(sys.stdin).get('entorno',''))")
+          ESPERADO=$([ "${{ inputs.entorno || 'dev' }}" = "prod" ] && echo "PRO" || echo "DEV")
+          if [ "$ENTORNO" != "$ESPERADO" ]; then
+            echo "::error::La app reporta NAUTIQ_ENV='$ENTORNO' y se esperaba '$ESPERADO'. Revisa las Application Settings."
+            exit 1
+          fi
+          echo "Entorno confirmado: $ENTORNO"

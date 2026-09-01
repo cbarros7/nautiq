@@ -45,21 +45,20 @@ from typing import Optional
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
 
+from app.config import ENV_SLUG, NAUTIQ_ENV
+
 load_dotenv()
 
-# Entorno: misma convención que ingestion/src/config.py (DEV/PRE/PRO ->
-# dev/pre/prod). PRO -> "prod", no "pro", igual que los topics de Kafka.
-NAUTIQ_ENV = os.getenv("NAUTIQ_ENV", "DEV").upper()
-_ENV_PREFIX = {"DEV": "dev", "PRO": "prod"}
-if NAUTIQ_ENV not in _ENV_PREFIX:
-    raise ValueError(f"NAUTIQ_ENV={NAUTIQ_ENV!r} inválido; debe ser DEV o PRO.")
-
+# Entorno: NAUTIQ_ENV se lee y valida una sola vez en app/config.py
+# (DEV -> "dev", PRO -> "prod"), que es también quien decide la tabla de
+# Supabase — así ambos destinos del mismo evento no pueden apuntar a
+# entornos distintos por una validación duplicada que divergió.
 ADLS_ACCOUNT = os.getenv("ADLS_ACCOUNT_NAME", "stnautiqdatadevswc")
 ADLS_CONTAINER = os.getenv("ADLS_RECOMMENDATIONS_CONTAINER", "recommendations")
 ADLS_SAS_TOKEN = os.getenv("ADLS_SAS_TOKEN")
 # Carpeta raíz dentro del container; deriva del entorno salvo override
 # explícito (útil si algún entorno necesita una ruta fuera del patrón).
-ADLS_PREFIX = os.getenv("ADLS_RECOMMENDATIONS_PREFIX") or _ENV_PREFIX[NAUTIQ_ENV]
+ADLS_PREFIX = os.getenv("ADLS_RECOMMENDATIONS_PREFIX") or ENV_SLUG
 
 
 def esta_configurado() -> bool:

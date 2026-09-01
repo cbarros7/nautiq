@@ -7,7 +7,15 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from dotenv import load_dotenv
 
+from app.config import TABLA_RECOMENDACIONES
+
 load_dotenv()
+
+# Tabla de recomendaciones del entorno activo (ver app/config.py):
+# DEV -> oracle_recommendations, PRO -> oracle_recommendations_prod.
+# Se interpola en el SQL porque Postgres no admite parámetros `%s` para
+# identificadores; el valor viene ya validado de app.config.
+_TABLA = f"public.{TABLA_RECOMENDACIONES}"
 
 DB_CONFIG = {
     "host" : os.getenv('PGHOST'),
@@ -133,9 +141,9 @@ def buscar_session_id(mmsi: str, puerto: str, horas: int = 24) -> Optional[str]:
     """
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             SELECT session_id
-            FROM public.oracle_recommendations
+            FROM {_TABLA}
             WHERE mmsi = %s AND puerto = %s
               AND emitted_at >= now() - (%s || ' hours')::interval
             ORDER BY emitted_at DESC
@@ -173,8 +181,8 @@ def guardar_recomendacion(
     """
     with get_cursor(commit=True) as cur:
         cur.execute(
-            """
-            INSERT INTO public.oracle_recommendations
+            f"""
+            INSERT INTO {_TABLA}
                 (event_id, session_id, mmsi, puerto, alerta_cii, payload)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (event_id) DO NOTHING
@@ -201,9 +209,9 @@ def get_historial_recomendaciones(
     """
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             SELECT event_id, session_id, emitted_at, alerta_cii, payload
-            FROM public.oracle_recommendations
+            FROM {_TABLA}
             WHERE mmsi = %s AND puerto = %s
               AND emitted_at >= now() - (%s || ' hours')::interval
             ORDER BY emitted_at DESC
@@ -230,15 +238,16 @@ def test_connection() -> None:
         
 if __name__ == "__main__":
     print(DB_CONFIG)
+    print(f"Tabla de recomendaciones activa: {_TABLA}")
     test_connection()
     with get_cursor() as cur:
         # cur.execute("SELECT * FROM public.ports limit 10;")
-        # print('ports')        
+        # print('ports')
         # print(cur.fetchall())
         query = """SELECT * FROM public.thetis_mrv where dwt>=0 limit 10"""
         cur.execute(query)
         print('thetis_mrv')
         # print(cur.fetchall())
-        cur.execute("SELECT * FROM public.oracle_recommendations")
+        cur.execute(f"SELECT * FROM {_TABLA}")
         print('Vessels type')
         print(cur.fetchall())

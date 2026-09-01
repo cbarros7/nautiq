@@ -132,7 +132,14 @@ ALTER TABLE thetis_mrv
 -- LLM entre avisos sucesivos del mismo buque/puerto (la alerta se
 -- dispara cada 30 min mientras el buque está a <12h del puerto) y es
 -- la tabla que lee el frontal por polling.
-CREATE TABLE IF NOT EXISTS oracle_recommendations (
+--
+-- Hay una tabla por entorno (ver api/app/config.py, decide segun
+-- NAUTIQ_ENV): oracle_recommendations_dev / oracle_recommendations_prod.
+-- Tablas separadas y no una columna "entorno" porque asi el aislamiento
+-- no depende de que ninguna consulta se acuerde de filtrar: una
+-- credencial mal apuntada escribe en la tabla equivocada, no ensucia
+-- los datos buenos.
+CREATE TABLE IF NOT EXISTS oracle_recommendations_dev (
     event_id     text PRIMARY KEY,          -- ULID, = correlation_id del webhook
     session_id   text NOT NULL,             -- agrupa la misma aproximación buque/puerto (hueco < 24h)
     emitted_at   timestamptz NOT NULL DEFAULT now(),
@@ -142,20 +149,49 @@ CREATE TABLE IF NOT EXISTS oracle_recommendations (
     payload      jsonb NOT NULL             -- evento completo (oracle_recommendation_v1)
 );
 
-CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_recent
-    ON oracle_recommendations (emitted_at DESC);
-CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_session
-    ON oracle_recommendations (session_id, emitted_at DESC);
-CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_mmsi_puerto
-    ON oracle_recommendations (mmsi, puerto, emitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_dev_recent
+    ON oracle_recommendations_dev (emitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_dev_session
+    ON oracle_recommendations_dev (session_id, emitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_dev_mmsi_puerto
+    ON oracle_recommendations_dev (mmsi, puerto, emitted_at DESC);
 
-COMMENT ON TABLE oracle_recommendations IS
-    'Decisiones del oraculo (Adaptive Slow Steaming). Frontera de contrato entre api/ y frontend/: el payload sigue oracle_recommendation_v1. Tambien sirve de historial para dar contexto al LLM entre avisos sucesivos del mismo buque/puerto.';
+COMMENT ON TABLE oracle_recommendations_dev IS
+    'Decisiones del oraculo (Adaptive Slow Steaming) en DEV. Frontera de contrato entre api/ y frontend/: el payload sigue oracle_recommendation_v1. Tambien sirve de historial para dar contexto al LLM entre avisos sucesivos del mismo buque/puerto.';
 
-ALTER TABLE oracle_recommendations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE oracle_recommendations_dev ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "lectura anonima" ON oracle_recommendations
+CREATE POLICY "lectura anonima" ON oracle_recommendations_dev
     FOR SELECT TO anon USING (true);
 -- Deliberadamente SIN policy de INSERT/UPDATE/DELETE: el oraculo
 -- escribe con las credenciales de servidor de db_conn.py (psycopg
 -- directo), que saltan RLS. El navegador nunca escribe.
+
+
+-- Misma tabla para PRODUCCION.
+CREATE TABLE IF NOT EXISTS oracle_recommendations_prod (
+    event_id     text PRIMARY KEY,          -- ULID, = correlation_id del webhook
+    session_id   text NOT NULL,             -- agrupa la misma aproximación buque/puerto (hueco < 24h)
+    emitted_at   timestamptz NOT NULL DEFAULT now(),
+    mmsi         text NOT NULL,
+    puerto       text NOT NULL,             -- nombre del puerto (aún sin locode real, ver payload)
+    alerta_cii   boolean NOT NULL,          -- CII con velocidad JIT peor que el inicial
+    payload      jsonb NOT NULL             -- evento completo (oracle_recommendation_v1)
+);
+
+CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_prod_recent
+    ON oracle_recommendations_prod (emitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_prod_session
+    ON oracle_recommendations_prod (session_id, emitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_oracle_recommendations_prod_mmsi_puerto
+    ON oracle_recommendations_prod (mmsi, puerto, emitted_at DESC);
+
+COMMENT ON TABLE oracle_recommendations_prod IS
+    'Decisiones del oraculo (Adaptive Slow Steaming) en PRODUCCION. Misma estructura y contrato que oracle_recommendations_dev; el oraculo escribe en una u otra segun NAUTIQ_ENV.';
+
+ALTER TABLE oracle_recommendations_prod ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "lectura anonima" ON oracle_recommendations_prod
+    FOR SELECT TO anon USING (true);
+-- Igual que en DEV: sin policy de INSERT/UPDATE/DELETE, el oraculo
+-- escribe con credenciales de servidor que saltan RLS.

@@ -48,7 +48,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -80,20 +79,24 @@ def cargar_alertas(ruta: Path) -> list[dict]:
 
 
 def _config_llm(sin_llm: bool) -> dict:
-    """Inyecta Gemini en el grafo si hay API key y no se pidió --sin-llm."""
+    """
+    Inyecta en el grafo la cadena de proveedores configurada en el
+    entorno (Gemini -> Foundry -> resumen determinista), salvo que se
+    pida --sin-llm.
+    """
     if sin_llm:
         print("  LLM: desactivado (--sin-llm) -> resumen determinista")
         return {}
 
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        print("  LLM: sin GEMINI_API_KEY -> resumen determinista")
+    from app.agents.tools.llm_provider import crear_generar_texto_desde_entorno
+
+    generar_texto = crear_generar_texto_desde_entorno()
+    if generar_texto is None:
+        print("  LLM: sin proveedor configurado -> resumen determinista")
         return {}
 
-    from app.agents.tools.gemini_client import crear_generar_texto
-
-    print("  LLM: Gemini activo")
-    return {"configurable": {"generar_texto": crear_generar_texto(api_key)}}
+    print("  LLM: activo (ver log para la cadena de proveedores)")
+    return {"configurable": {"generar_texto": generar_texto}}
 
 
 def _desactivar_escrituras() -> None:
@@ -184,6 +187,13 @@ def main() -> None:
 
     logging.basicConfig(level=logging.INFO, format="      [%(levelname)s] %(message)s")
     logging.getLogger("azure").setLevel(logging.WARNING)  # el SDK loguea cada request HTTP
+    # google-genai loguea cada POST a generativelanguage.googleapis.com y avisa
+    # en cada llamada sobre "automatic function calling" (que aquí no se usa:
+    # generate_content con un prompt suelto). Ese ruido tapaba justo la línea
+    # que interesa —qué proveedor sirvió el resumen (llm_provider)—, y los
+    # fallos reales no se pierden: llegan como excepción y los registra la
+    # cadena de llm_provider nombrando al proveedor.
+    logging.getLogger("google_genai").setLevel(logging.ERROR)
 
     resumen = replay(
         ruta=args.fichero,

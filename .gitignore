@@ -245,3 +245,12 @@ frontend/dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Azure Functions: secretos de ejecucion local (la plantilla versionada es
+# api/local.settings.json.example). En Azure van en Application Settings.
+local.settings.json
+.python_packages/
+
+# Sello de build que escribe el workflow antes de empaquetar (SHA del commit).
+# Se genera en cada despliegue, no se versiona.
+BUILD_INFO
