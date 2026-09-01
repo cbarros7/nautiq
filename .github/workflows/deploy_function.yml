@@ -189,19 +189,52 @@ jobs:
       - name: Sellar el build con el commit
         run: echo "${{ github.sha }}" > ${{ env.PACKAGE_PATH }}/BUILD_INFO
 
-      # Sin azure/login: no hay service principal (ver cabecera). El perfil de
-      # publicación lleva sus propias credenciales, así que la action se
-      # autentica sola contra el endpoint SCM de la app.
+      # NO se usa Azure/functions-action. Con perfil de publicación construye
+      # el hostname SCM clásico `<app>.scm.azurewebsites.net`, que en Flex
+      # Consumption NO EXISTE —el real es regional y con hash, del tipo
+      # `<app>-<hash>.scm.<region>-01.azurewebsites.net`— y falla con
+      # "zipDeploy ... Not Found (CODE: 404)", un error que parece del paquete
+      # y en realidad es de resolución de host. La ironía es que el hostname
+      # correcto viene DENTRO del propio perfil, en publishUrl.
       #
-      # Tampoco se fija scm-do-build-during-deployment ni enable-oryx-build:
-      # Flex Consumption hace build remoto por defecto con su propio mecanismo
-      # (one deploy), y esos flags son de los planes clásicos.
-      - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v1
-        with:
-          app-name: ${{ vars.FUNCTION_APP_NAME }}
-          package: ${{ env.PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+      # Así que se despliega con un POST directo a OneDeploy, leyendo el host
+      # y las credenciales del perfil. Verificado contra la app real: 202 y el
+      # build nuevo sirviéndose ~80 s después.
+      #
+      # (La vía "oficial" para Flex es azure/login + ARM, pero eso exige un
+      # service principal que el tenant de la universidad no deja crear.)
+      - name: Desplegar (OneDeploy contra el SCM regional)
+        env:
+          PERFIL: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+        run: |
+          python "${{ env.PACKAGE_PATH }}/scripts/empaquetar.py" paquete.zip
+
+          # El host y las credenciales salen del perfil (perfil ZipDeploy).
+          # add-mask evita que la contraseña acabe en los logs: GitHub enmascara
+          # el secret entero, pero NO los valores derivados de él.
+          eval "$(python - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          perfil = ET.fromstring(os.environ["PERFIL"])
+          p = next(x for x in perfil.findall("publishProfile") if x.get("publishMethod") == "ZipDeploy")
+          print(f'echo "::add-mask::{p.get("userPWD")}"')
+          print(f'SCM={p.get("publishUrl").split(":")[0]}')
+          print(f'SCM_USER={p.get("userName")}')
+          print(f'SCM_PASS={p.get("userPWD")}')
+          PY
+          )"
+          echo "Desplegando a $SCM"
+
+          CODIGO=$(curl --silent --output respuesta.txt --write-out "%{http_code}" \
+            --max-time 300 -X POST -u "$SCM_USER:$SCM_PASS" \
+            -H "Content-Type: application/zip" --data-binary @paquete.zip \
+            "https://$SCM/api/publish?RemoteBuild=true")
+
+          if [ "$CODIGO" != "200" ] && [ "$CODIGO" != "202" ]; then
+            echo "::error::OneDeploy devolvió HTTP $CODIGO"
+            cat respuesta.txt
+            exit 1
+          fi
+          echo "Aceptado (HTTP $CODIGO), id de despliegue: $(cat respuesta.txt)"
 
       # Prueba de humo: /api/health es anónimo y devuelve a qué entorno y tabla
       # apunta la instancia. Es la forma de cazar el fallo más silencioso de
