@@ -57,6 +57,28 @@ def _credenciales(perfil_xml: str) -> tuple[str, str, str]:
     return host, usuario, contrasena
 
 
+def _publicar_host_app(host_scm: str) -> str:
+    """
+    Deriva el hostname público de la app y, en CI, lo expone como salida
+    del paso (GITHUB_OUTPUT) para que la prueba de humo lo use.
+
+    Existe porque componer `<app>.azurewebsites.net` a mano NO funciona en
+    Flex Consumption: el hostname real lleva un hash y la región
+    (`<app>-<hash>.<region>-01.azurewebsites.net`). Ese nombre no se puede
+    adivinar desde el nombre de la app, pero sí se obtiene del perfil —el
+    del SCM es el mismo quitando el ".scm"—, así que se deriva de ahí en
+    vez de mantenerlo como otra variable de configuración que puede
+    quedarse desincronizada.
+    """
+    host_app = host_scm.replace(".scm.", ".", 1)
+    salida = os.environ.get("GITHUB_OUTPUT")
+    if salida:
+        with open(salida, "a", encoding="utf-8") as f:
+            f.write(f"host_app={host_app}\n")
+    print(f"Host público de la app: {host_app}")
+    return host_app
+
+
 def desplegar(zip_path: Path, perfil_xml: str) -> str:
     """Sube el paquete y devuelve el id de despliegue que responde Azure."""
     host, usuario, contrasena = _credenciales(perfil_xml)
@@ -81,6 +103,7 @@ def desplegar(zip_path: Path, perfil_xml: str) -> str:
         with urllib.request.urlopen(peticion, timeout=TIMEOUT_S) as respuesta:
             cuerpo = respuesta.read().decode("utf-8", "replace").strip()
             print(f"Aceptado (HTTP {respuesta.status}), id de despliegue: {cuerpo}")
+            _publicar_host_app(host)
             return cuerpo
     except urllib.error.HTTPError as exc:
         detalle = exc.read().decode("utf-8", "replace").strip()

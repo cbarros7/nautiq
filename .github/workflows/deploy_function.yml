@@ -208,6 +208,7 @@ jobs:
       # perfiles de Azure llevan caracteres que bash expande o parte ($, +...).
       # Al hacerlo dentro de Python ese fallo no puede reproducirse.
       - name: Desplegar (OneDeploy contra el SCM regional)
+        id: desplegar
         env:
           PERFIL: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
         run: |
@@ -218,30 +219,13 @@ jobs:
       # apunta la instancia. Es la forma de cazar el fallo más silencioso de
       # este despliegue —NAUTIQ_ENV mal puesta en las Application Settings—,
       # que si no no se nota hasta ver filas en la tabla equivocada.
+      # El host sale del paso de despliegue, que lo deriva del perfil. NO se
+      # compone como "<app>.azurewebsites.net": en Flex Consumption ese nombre
+      # no existe (el real lleva hash y región) y curl falla con "Could not
+      # resolve host", que parece un problema de red y es de nomenclatura.
       - name: Prueba de humo (/api/health)
         run: |
-          sleep 30  # margen para que el host recargue tras el despliegue
-          RESPUESTA=$(curl --fail --silent --show-error --retry 5 --retry-delay 10 --retry-all-errors \
-            "https://${{ vars.FUNCTION_APP_NAME }}.azurewebsites.net/api/health")
-          echo "$RESPUESTA"
-
-          # El build que responde tiene que ser ESTE commit. Si no coincide,
-          # la app sigue con código antiguo: el despliegue no llegó aunque la
-          # action haya salido en verde, y sin esta comprobación pasaría por
-          # bueno.
-          BUILD=$(echo "$RESPUESTA" | python -c "import json,sys; print(json.load(sys.stdin).get('build',''))")
-          if [ "$BUILD" != "${{ github.sha }}" ]; then
-            echo "::error::La app responde con build '$BUILD' pero se desplegó '${{ github.sha }}'."
-            exit 1
-          fi
-          echo "Build confirmado: $BUILD"
-
-          # NAUTIQ_ENV mal puesta escribe en las tablas del otro entorno sin
-          # dar ningún error, así que se verifica explícitamente.
-          ENTORNO=$(echo "$RESPUESTA" | python -c "import json,sys; print(json.load(sys.stdin).get('entorno',''))")
-          ESPERADO=$([ "${{ inputs.entorno || 'dev' }}" = "prod" ] && echo "PRO" || echo "DEV")
-          if [ "$ENTORNO" != "$ESPERADO" ]; then
-            echo "::error::La app reporta NAUTIQ_ENV='$ENTORNO' y se esperaba '$ESPERADO'. Revisa las Application Settings."
-            exit 1
-          fi
-          echo "Entorno confirmado: $ENTORNO"
+          python "${{ env.PACKAGE_PATH }}/scripts/verificar_despliegue.py" \
+            "${{ steps.desplegar.outputs.host_app }}" \
+            "${{ github.sha }}" \
+            "$([ "${{ inputs.entorno || 'dev' }}" = "prod" ] && echo PRO || echo DEV)"
