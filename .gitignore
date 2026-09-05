@@ -235,3 +235,16 @@ data/reference/
 
 #claude
 .claude/
+
+#oraculo
+prueba.ipynb
+# Node / frontend (Vite)
+node_modules/
+frontend/dist/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Pycharm
+.idea/
