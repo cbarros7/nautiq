@@ -171,18 +171,20 @@
    del marcador para su oclusion con terreno. */
 .mk-contenido { display: flex; flex-direction: column; align-items: center; }
 .mk-buque { --c: var(--estado-ok); }
-.mk-triangulo, .mk-circulo {
-  width: 0; height: 0; filter: drop-shadow(0 0 2px var(--mar-sombra)) drop-shadow(0 0 2px var(--mar-sombra));
-}
-/* El vertice apunta a 0deg = norte, y `rotate(heading)` lo lleva al rumbo real. */
-.mk-triangulo { border-left: 7px solid transparent; border-right: 7px solid transparent;
-                border-bottom: 15px solid var(--c); }
+/* La proa apunta a 0deg = norte, y `rotate(heading)` la lleva al rumbo real. El relleno del
+   SVG es `currentColor`, de ahi que aqui se traduzca `--c` a `color`: el casco sigue
+   cambiando de color con la severidad, sin una segunda via para lo mismo. */
+.mk-casco { width: 10px; height: 22px; color: var(--c); }
+.mk-casco svg { display: block; width: 100%; height: 100%; }
 .mk-circulo { width: 13px; height: 13px; border-radius: 50%; background: var(--c);
               border: 2px solid var(--mar-sombra); }
-.mk-sel .mk-triangulo { border-bottom-width: 23px; border-left-width: 11px; border-right-width: 11px; }
+.mk-casco, .mk-circulo {
+  filter: drop-shadow(0 0 2px var(--mar-sombra)) drop-shadow(0 0 2px var(--mar-sombra));
+}
+.mk-sel .mk-casco { width: 15px; height: 33px; }
 .mk-sel .mk-circulo { width: 20px; height: 20px; }
 /* Halo del color de estado: destaca sin cambiar de forma ni de color. */
-.mk-sel .mk-triangulo, .mk-sel .mk-circulo {
+.mk-sel .mk-casco, .mk-sel .mk-circulo {
   filter: drop-shadow(0 0 3px var(--mar-sombra)) drop-shadow(0 0 7px var(--c));
 }
 .mk-pulso { position: relative; }

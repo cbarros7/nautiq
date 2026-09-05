@@ -376,7 +376,7 @@ export default function App() {
         </div>
         <p className="leyenda-nota">
           <b>⚓</b> fondeará esperando atraque aunque frene al mínimo. Ruta prevista,
-          discontinua. Sin rumbo conocido, círculo en vez de triángulo.
+          discontinua. Sin rumbo conocido, círculo en vez de casco.
         </p>
       </div>
     </div>

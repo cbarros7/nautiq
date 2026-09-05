@@ -459,7 +459,7 @@ Dos reglas sobre esto, y son de las que separan un mapa útil de uno que engaña
   filtrar, el mapa lo pinta dos veces y el conteo `inbound_count` lo cuenta a él mismo. **El frontal
   deduplica por `mmsi` contra `vessel.mmsi`** y rotula el conteo como *"3 en camino (incluido este)"*
   en vez de restar en silencio.
-- **La orientación es `heading`, y puede faltar.** Sin él, círculo, no triángulo: no se inventa un
+- **La orientación es `heading`, y puede faltar.** Sin él, círculo, no casco: no se inventa un
   rumbo.
 - **Nunca interpolar posiciones.** Cada buque se dibuja en su último fix, con `position_at` visible.
 
@@ -500,7 +500,7 @@ no se esconde.** Es el resultado más interesante que produce el oráculo.
 | Elemento | Forma | Color | Interacción |
 | :-- | :-- | :-- | :-- |
 | **Ruta navegable** | polilínea de `route.waypoints` | **teñida por `wave_height`** por tramo | hover → ola, viento y ETA de ese waypoint |
-| Buque con novedad | triángulo a `heading`, círculo si falta | severidad del eje 1 (§7.1) | clic → panel de sesión (§7.4) |
+| Buque con novedad | silueta de casco a `heading`, círculo si falta | severidad del eje 1 (§7.1) | clic → panel de sesión (§7.4) |
 | Puerto | círculo + **nombre** | neutro; borde ámbar si `anchored_count > 0` | clic → las tres listas del contexto |
 | Atracados | rectángulo pequeño | gris oscuro | hover → MMSI |
 | Fondeados | ancla pequeña | gris | hover → MMSI + espera **estimada** |
