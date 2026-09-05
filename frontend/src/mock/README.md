@@ -1,18 +1,18 @@
 # `events.json` — grabación, no maqueta
 
-15 eventos con la forma exacta que devuelve `SELECT * FROM oracle_recommendations`, así que
+16 eventos con la forma exacta que devuelve `SELECT * FROM oracle_recommendations`, así que
 `feed.ts` no distingue el fixture de la tabla. Validados contra
 `contracts/oracle_recommendation_v1.schema.json`: **0 errores**.
 
 Dos procedencias, ambas reales:
 
-- **12 eventos grabados** ejecutando el grafo del oráculo (`feature/math_oracle` @ `07086cb`)
+- **13 eventos grabados** ejecutando el grafo del oráculo (`feature/math_oracle` @ `07086cb`)
   de punta a punta. Rutas de `searoute`, oleaje y viento de Open-Meteo, CII y velocidad de
   diseño con las filas reales de `thetis_mrv` leídas del `.xlsx` del repo. Se sustituyó solo
   `db_conn` (almacén en memoria) y `adls_conn` (`esta_configurado() → False`), para no
   escribir en la infraestructura del equipo.
 - **3 filas reales** de `oracle_recommendations`, tal como las dejó `replay_alertas.py`. Están
-  para que quien toque el panel vea **prosa de LLM de verdad**: los 12 grabados salieron sin
+  para que quien toque el panel vea **prosa de LLM de verdad**: los 13 grabados salieron sin
   `GEMINI_API_KEY`, así que su `rationale` es el resumen determinista de respaldo.
 
 ## El realineado temporal
@@ -45,6 +45,7 @@ de FRONTEND.md).
 | `MAERSK NAMIBIA` → Barcelona | sin `ETA_dynamic` → `eta_current` e `idle_hours_avoided` nulos |
 | `HAMBURG EXPRESS` → Valencia | puerto despejado → 9 → 32,4 kn, CII −1191 % |
 | `ELBTOWER` → Valencia | ventana JIT alcanzable → `convergio: true`, pero acelerando (el CII empeora) |
+| `AL MANAMAH` → Algeciras | **LLM caído**: se inyecta un generador de texto que lanza excepción, así que `rationale_degradado: true` sale del camino real del código |
 | **`SALGUEIRO` → Valencia** | **el caso que el proyecto persigue**: llega JIT **frenando** de 17,5 a 13,0 kn, CII +45,1 %, y evita 6 h de fondeo. Es el único de los 15 |
 | `SIARGAO` → Valencia (×4) | **una sesión completa**: 4 avisos con la cola vaciándose y cambio de régimen al final |
 | `BULK VALOR`, `MSC CHINA`, `MINOAN PIONEER` → Barcelona | filas reales: prosa de LLM con énfasis Markdown, esperas de 39–129 h, desfase fix/emisión |
@@ -64,7 +65,7 @@ panel mostraría «travesía 16 h» y «atraque libre en 22 h» —- 6 h de marg
 grande de 10 h, contradiciéndose en pantalla.
 
 Las 3 filas reales sí descuadran 3–8 h, porque su `ETA_dynamic` viene de Flink y no es
-consciente de la ruta. Está documentado en §12 de FRONTEND.md; no se corrige aquí porque son
+consciente de la ruta. Está documentado en §13 de FRONTEND.md; no se corrige aquí porque son
 datos reales.
 
 ## Regenerar

@@ -144,3 +144,41 @@ export function titular(r: OracleRecommendationV1['recommendation']): string {
 export function fondearaIgual(r: OracleRecommendationV1['recommendation']): boolean {
   return saturacion(r) === 'frenando-al-minimo'
 }
+
+
+/**
+ * Desglose del fondeo, ahora que el oraculo emite `estimated_transit_hours`.
+ *
+ * Antes solo se tenia `idle_hours_avoided`, que es el fondeo SI NO SE CAMBIA NADA (§7.9), asi
+ * que en el caso saturado el frontal podia decir «fondeara igual» pero no cuanto evitaba.
+ * Con las horas de travesia a la velocidad recomendada sale la cuenta completa:
+ *
+ *     sinCambios      = espera - travesia a velocidad ACTUAL   (= idle_hours_avoided)
+ *     conRecomendacion = espera - travesia a velocidad RECOMENDADA
+ *     evitado          = sinCambios - conRecomendacion
+ *
+ * Todo `null` si falta alguna pieza: las filas anteriores a estos campos no las llevan, y es
+ * mejor no decir nada que estimar la diferencia.
+ */
+export interface Fondeo {
+  sinCambios: number | null
+  conRecomendacion: number | null
+  evitado: number | null
+}
+
+export function fondeo(ev: OracleRecommendationV1): Fondeo {
+  const sinCambios = ev.recommendation.idle_hours_avoided ?? null
+  const espera = ev.queue.estimated_wait_hours ?? null
+  const transito = ev.recommendation.estimated_transit_hours ?? null
+  if (sinCambios === null || espera === null || transito === null) {
+    return { sinCambios, conRecomendacion: null, evitado: null }
+  }
+  const conRecomendacion = Math.max(0, espera - transito)
+  return {
+    sinCambios,
+    conRecomendacion,
+    // Puede salir negativo si la recomendacion es acelerar para no perder el atraque: ahi
+    // el buque fondea MAS, no menos, y decirlo es mas util que esconderlo tras un max(0).
+    evitado: sinCambios - conRecomendacion,
+  }
+}

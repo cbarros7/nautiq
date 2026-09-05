@@ -161,9 +161,23 @@ export interface OracleRecommendationV1 {
      */
     recommended_speed_kn: number;
     /**
+     * Velocidad de diseno estimada del casco (cii_calculus). Es el numero que hace concreto a `excede_v_diseno`: sin el, el frontal solo puede decir «no llega a tiempo»; con el, «necesitaria 25,5 kn y su casco da 21,3».
+     *
+     * Opcional: las filas anteriores a que el oraculo lo emitiera no lo llevan.
+     */
+    design_speed_kn?: number | null;
+    /**
      * recommended_speed_kn - speed_kn. Negativo = frenar (el caso JIT habitual); positivo = acelerar.
      */
     speed_delta_kn: number;
+    /**
+     * Horas de travesia a la velocidad RECOMENDADA (Kwon-Euler, corregidas por meteo). No confundir con `route.duration_hours`, que es a la velocidad actual.
+     *
+     * Es la pieza que permite cuantificar el fondeo de verdad: restandola a `queue.estimated_wait_hours` sale lo que el buque seguira fondeado SI sigue la recomendacion, y por diferencia con `idle_hours_avoided` -- que es el fondeo si no cambia nada -- las horas que la recomendacion evita realmente. Sin este campo el frontal solo podia decir «fondeara igual», sin numero.
+     *
+     * Opcional: las filas anteriores a que el oraculo lo emitiera no lo llevan.
+     */
+    estimated_transit_hours?: number | null;
     /**
      * ETA a la velocidad actual, sin contar colas. null si el webhook no manda ETA_dynamic.
      */
@@ -173,7 +187,7 @@ export interface OracleRecommendationV1 {
      */
     eta_optimized: string;
     /**
-     * Horas de ralenti al ancla que se evitan. null sin ETA_dynamic.
+     * Horas que el buque pasaria fondeado SI NO CAMBIA NADA (`espera - ETA_dynamic`). OJO: el nombre engana, no son horas ahorradas — solo coinciden cuando el buque alcanza la ventana de atraque. Con `estimated_transit_hours` ya se puede calcular el ahorro real. null sin ETA_dynamic.
      */
     idle_hours_avoided: number | null;
     /**
@@ -184,6 +198,14 @@ export interface OracleRecommendationV1 {
      * Justificacion en lenguaje natural. La genera un LLM (Gemini via inyeccion, o un resumen determinista si no hay clave) y es coherente entre avisos de la misma sesion, porque el prompt lleva las 3 recomendaciones anteriores. Se pinta como prosa.
      */
     rationale: string;
+    /**
+     * El texto de `rationale` NO viene del LLM: viene del resumen determinista de respaldo porque la llamada al modelo fallo (429 por rate limit, 5xx, model_id invalido). El calculo del oraculo -- ruta, meteo, CII, Kwon-Euler -- es el mismo y sigue siendo valido: lo unico degradado es el texto de acompanamiento, que es lo ultimo del pipeline.
+     *
+     * OJO con el sentido: `false` significa "no ha fallado nada", NO "esto lo escribio un LLM". Un despliegue sin GEMINI_API_KEY usa el resumen determinista desde el principio y emite `false`, porque no hay fallo que reportar.
+     *
+     * Opcional: las filas escritas antes de que el oraculo lo emitiera no lo llevan. Ausente se trata como `false`.
+     */
+    rationale_degradado?: boolean;
     /**
      * La biseccion de Kwon-Euler encontro una velocidad exacta dentro del rango realizable del casco ([0.4, 1.2] x velocidad de diseno).
      *

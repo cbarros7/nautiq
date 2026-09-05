@@ -1,8 +1,8 @@
 # Frontal de visualización — plan de ejecución
 
 > **Estado.** Quinta pasada: el frontal está **implementado y contrastado contra la tabla
-> real**. Los TODOs de §11 están hechos en `feature/math_oracle` (`07086cb`) y hay filas en
-> `oracle_recommendations`; §13 recoge la verificación. Este documento pasa de plan a
+> real**. Los TODOs de §12 están hechos en `feature/math_oracle` (`07086cb`) y hay filas en
+> `oracle_recommendations`; §14 recoge la verificación. Este documento pasa de plan a
 > memoria de lo construido y de lo que quedó pendiente de otros equipos. Revisado contra
 > `feature/math_oracle` en `dbe92d0`
 > (*"uv + schema + gitignore"*, 20 ago 2026). El oráculo **ya está implementado de punta a punta y
@@ -15,7 +15,7 @@
 > `api/app/agents/math_oracle.py`. Este documento se ajusta a lo que el oráculo emite hoy, no al
 > revés.
 >
-> **Alcance.** Solo trabajo dentro de `frontend/`. Lo que hace falta fuera está en §11, y ahora son
+> **Alcance.** Solo trabajo dentro de `frontend/`. Lo que hace falta fuera está en §12, y ahora son
 > pocas cosas y baratas: el oráculo ya cerró casi todo lo que la pasada anterior pedía.
 >
 > **Qué cambió respecto de la pasada anterior** — resumen para quien ya leyó la v2, detalle en §4.1:
@@ -128,7 +128,7 @@ Lo que el frontal recibe **de verdad**, hoy, con el oráculo en `dbe92d0`.
 **Fuente de verdad de hecho: `construir_evento_contrato()` en `api/app/agents/math_oracle.py`.**
 `contracts/oracle_recommendation_v1.schema.json` está referenciado en dos sitios — el comentario de
 la tabla en `schema.sql` y el docstring de `math_oracle` — pero **el fichero no existe todavía**.
-Escribirlo es trabajo del frontal y es la fase 0 (§9), porque es quien más lo necesita: se
+Escribirlo es trabajo del frontal y es la fase 0 (§10), porque es quien más lo necesita: se
 **extrae** ejecutando el `__main__` del grafo y capturando `evento_contrato`, no se inventa.
 
 Este es el evento tal como sale hoy, anotado con lo que el frontal puede dar por bueno:
@@ -226,7 +226,7 @@ razonados**. Se aceptan tal cual; lo que cambia es el frontal.
 | `fuel_saved_t` estimado siempre | Solo con DWT real de `thetis_mrv`; `null` si no | ✅ **Mejor.** Un ahorro calculado sobre un DWT geométrico tiene la incertidumbre del propio DWT. `null` es más honesto que un número que nadie puede defender |
 | `locode` como columna e identidad | `puerto` (nombre) como columna, `locode` a `null` | ⚠️ **Aceptado.** El webhook manda lat/lon del puerto, así que no hay resolución nombre→LOCODE. El frontal etiqueta por nombre. Coste: no se puede unir con `ports` ni agrupar dos grafías del mismo puerto |
 | — | `session_id` | ✅ **Añadido y valioso.** Es lo que permite el panel de evolución de §7.4 |
-| `recommendation.queue` | `queue` a nivel raíz | ✅ **Mejor.** La cola es estado del mundo, no parte de la decisión. El esquema se movió a donde está el dato (§12) |
+| `recommendation.queue` | `queue` a nivel raíz | ✅ **Mejor.** La cola es estado del mundo, no parte de la decisión. El esquema se movió a donde está el dato (§13) |
 | `queue.kwon_loss_pct` | `recommendation.weather_speed_loss_pct` | ✅ **Mejor nombre.** Dice qué mide, no de qué fórmula sale |
 
 ---
@@ -270,7 +270,7 @@ frontal de lo que parece:
 
 - **`alerta_cii`** permite filtrar *"enséñame solo lo preocupante"* sin abrir el `jsonb`.
 - **`session_id`** permite traer una aproximación completa con un índice dedicado.
-- **`puerto`** permite el filtro por puerto de §12 sin parsear el payload.
+- **`puerto`** permite el filtro por puerto de §13 sin parsear el payload.
 - **No hay `status` ni `confidence`** porque el oráculo no los emite (§4.1). El frontal los deriva.
 
 ### 5.3 Escritura — ya hecha, del lado del oráculo
@@ -334,7 +334,7 @@ la RLS, no el secreto de la clave. Se inyecta en build como `VITE_SUPABASE_URL` 
 | Opción | Infra nueva | Arranque en frío | Veredicto |
 | :-- | :-- | :-- | :-- |
 | **Tabla + repesca cada 30 s** ⭐ | ninguna | ✅ el mismo `SELECT` | **Elegida.** Con eventos cada 30 min, 30 s de latencia es ruido. Cero servidor, y el frontal queda desacoplado del despliegue del oráculo |
-| Supabase Realtime | ninguna | ✅ | ~5 líneas más, pero exige habilitar replicación y razonar RLS sobre el canal. **Preparado, no activado** (§12) |
+| Supabase Realtime | ninguna | ✅ | ~5 líneas más, pero exige habilitar replicación y razonar RLS sobre el canal. **Preparado, no activado** (§13) |
 | WebSocket en el App Service | ninguna | ❌ | Exige habilitar WebSockets en App Service y *sticky sessions* con más de una instancia. Y acopla la conexión al ciclo de despliegue del oráculo |
 | Topic Kafka nuevo | ninguna | ❌ | Un navegador no habla Kafka: la opción anterior **más** un relay |
 | Event Hub / Web PubSub · Redis | sí | ❌ | Infra nueva para un problema que Postgres ya resuelve |
@@ -640,7 +640,7 @@ cuadra en pantalla: 22 − 16 = 6.
 directamente de lo grandes que sean las esperas que estima `jit_calculus`. Si esas esperas
 están sobreestimadas —- y 129 h para el 5.º de la cola implica ~26 h de servicio por buque—, el
 sistema dirá «fondeará igual» casi siempre y el JIT quedará inutilizado en la práctica. Es la
-misma pregunta de negocio de §12, ahora con una consecuencia concreta y medible.
+misma pregunta de negocio de §13, ahora con una consecuencia concreta y medible.
 
 ### 7.11 El color dice una cosa y el titular otra, a propósito
 
@@ -665,20 +665,204 @@ llevan. Sin él, media flota sale en verde y el mapa sugiere que el JIT está fu
 lo que pasa es que el puerto no da atraque. El glifo del chip sigue al titular por lo mismo: un
 «✓» junto a «fondeará igual» se contradice.
 
-**Consecuencia para §14:** dar la cifra *real* de horas evitadas en el caso saturado exige
+**Consecuencia para §15:** dar la cifra *real* de horas evitadas en el caso saturado exige
 `tiempo_transito_estimado_h` del oráculo. Deja de ser un *nice to have*: es lo único que
 permitiría afirmar un ahorro de fondeo sin inventarlo.
 
+### 7.12 El mapa: de negro a carta náutica
+
+Feedback recibido: la escala de negros no contrastaba y no llamaba la atención. Al ir a
+tocarlo apareció algo peor: **las teselas de CARTO llegan con una marca de agua «API KEY
+REQUIRED · carto.com/basemaps/apikey» incrustada en la imagen.** Responden 200 sin clave, así
+que no fallaba nada visiblemente en consola, pero el texto sale impreso sobre el mapa —- y
+contradice la premisa de §9 («sin token, sin licencia propietaria»).
+
+Se cambió a **OpenFreeMap**: teselas vectoriales OpenMapTiles, sin clave, con sus propios
+glifos. Tres cosas mejoran a la vez:
+
+1. **Sin marca de agua** y sin depender de una cuenta.
+2. **Color exacto por capa.** Al ser vectorial no hay que conformarse con lo que traiga la
+   imagen: se repinta cada capa. La paleta elegida —- comparada renderizando cuatro
+   candidatas, no a ojo— pone la **tierra más clara que el mar**, que es lo que separa la
+   costa de un vistazo y lo que hace saltar la ruta naranja y los colores de estado.
+3. **Etiquetas de verdad.** Con el estilo ráster eran imposibles sin montar un servidor de
+   fuentes; ahora se ven Valencia, Algeciras, Gibraltar y el resto.
+
+| Rol | Color |
+| :-- | :-- |
+| Mar | `#041b2d` |
+| Tierra | `#242c32` |
+| Líneas (fronteras, costa) | `#38454d` |
+| Texto del mapa | `#8698a3` |
+
+Dos detalles del estilo base que hubo que corregir: se retira `ne2_shaded` —- el relieve de
+Natural Earth, que a poco zoom pinta África más oscura que Europa y rompe la lectura
+tierra/mar— y se silencian las capas de ciudad (edificios, carreteras, pistas), que a escala
+de Mediterráneo son ruido.
+
+**Si OpenFreeMap no responde**, el mapa cae a un estilo mínimo de un solo color y la
+aplicación sigue funcionando: buques, ruta, puertos y contexto son GeoJSON propio. Probado
+bloqueando el dominio: 13 avisos y 16 marcadores siguen pintándose. Peor mapa, no aplicación
+rota.
+
+### 7.13 Aviso de llegada
+
+Un frontal que se deja abierto en una pantalla necesita avisar cuando entra algo. Suena una
+vez **por tanda**, no por fila: una ráfaga de Flink son hasta 17 alertas por minuto y un pitido
+por cada una sería una ametralladora.
+
+- **Sonido sintetizado con Web Audio**, sin fichero de audio: nada que servir, nada que pueda
+  fallar al descargarse, y el timbre se ajusta en el código. Dos timbres — uno normal de dos
+  notas y otro descendente de tres para lo que no es ejecutable, para distinguirlo sin mirar.
+- **Señal visual siempre**, suene o no: barra lateral ámbar en el aviso nuevo durante 12 s y
+  una insignia «N nuevos» en la cabecera. El aviso nunca depende solo del audio, que puede
+  estar en silencio o el usuario no llevar altavoces.
+- **Interruptor en la cabecera**, con la preferencia en `localStorage`.
+
+El navegador no deja sonar nada hasta que el usuario interactúa con la página, así que el
+`AudioContext` nace suspendido y se reanuda en el primer gesto. Ojo con el orden: `resume()`
+es asíncrono, y un aviso disparado por ese mismo gesto llegaría **antes** de que el contexto
+esté listo, perdiendo justo el primero. Por eso `reproducirAviso` reanuda y emite al
+resolverse en vez de descartar. Verificado contando osciladores: 0 antes del primer clic, 2
+después, 4 tras el segundo, y ninguno más con el sonido apagado.
+
+En modo fixture no hay repesca, así que el aviso no se dispararía nunca: hay un botón
+**«Probar aviso»** para lanzarlo a mano. Solo aparece con datos de ejemplo.
+
+Las animaciones respetan `prefers-reduced-motion`, como el resto.
+
 ---
 
-## 8. Stack
+### 7.14 Los dos indicadores de la cabecera
+
+Preguntados en revisión, y uno de los dos no se sostenía.
+
+**Balizamiento** enciende la superposición de **OpenSeaMap**: boyas, luces con sus sectores y
+marcas de navegación. Comprobado midiendo las teselas: a zoom 12 sobre el puerto de Valencia
+traen 3–7 KB de contenido y se ven balizas laterales verdes y rojas, sectores de luz y marcas
+de puerto; a zoom 9 son ~900 bytes, es decir, nada. **Solo aporta acercándose a un puerto**, y
+en la vista general —- donde el frontal pasa la mayor parte del tiempo— no dibuja absolutamente
+nada. Por eso nace apagada, y ahora el interruptor lo explica en su texto de ayuda en vez de
+dejar al usuario adivinando.
+
+**«Sin repesca» se ha retirado.** Era jerga propia y, en modo fixture, repetía lo que la
+chapa de entorno ya dice al lado (§7.15). Conectado tampoco valía gran cosa: anunciar
+«repesca cada 30 s» describe una intención, no un hecho —- si la conexión se cae, el cartel
+sigue diciendo lo mismo.
+
+Lo sustituye un indicador vivo, **solo en modo conectado**: un punto que late y **«leído hace
+N s»**, que sube segundo a segundo. Si pasan dos ciclos y medio sin lectura correcta, el punto
+se vuelve ámbar y deja de latir —- así una caída se ve sin necesidad de un mensaje de error. La
+cadencia teórica pasa al texto de ayuda, que es donde estorba menos.
+
+
+### 7.15 La chapa de entorno, en el hueco que ocupaba el aviso de ejemplo
+
+El centro de la cabecera lo ocupaba un aviso ámbar de «datos de ejemplo». Con **dos
+despliegues** —- uno por entorno, leyendo tablas distintas— lo que de verdad hace falta saber
+de un vistazo es otra cosa: **cuál de los dos se está mirando, y de qué tabla sale lo que se
+ve**. Que los datos sean de ejemplo pasa a ser un matiz dentro de esa misma chapa.
+
+```
+DEV  datos de ejemplo              PRO  prod_oracle_recommendations
+```
+
+**Producción se distingue por relleno, no por color.** Los colores saturados están reservados
+para el estado de los datos (§7.11) y gastar uno aquí lo devaluaría; un fondo sólido en medio
+de una interfaz de contornos se ve igual de rápido y no compite con el mapa. El texto de ayuda
+completa la información: el nombre largo del entorno y si el nombre de la tabla está derivado
+o fijado a mano.
+
+Enseñar el nombre de la tabla no es un detalle técnico de más: es lo primero que se querrá
+comprobar el día que dos despliegues muestren cosas distintas.
+
+---
+
+## 8. Dos entornos, dos despliegues
+
+Misma lógica y mismo código; **lo único que cambia es de qué tabla se lee**.
+
+### La convención no la decide el frontal
+
+`src/entorno.ts` es **espejo de `api/app/config.py`**. Si divergen, un despliegue lee la tabla
+del otro, así que se copia tal cual —- incluidos los dos detalles que invitan a "arreglarlos":
+
+| `NAUTIQ_ENV` | Tabla |
+| :-- | :-- |
+| `DEV` | `oracle_recommendations_dev` |
+| `PRO` | `oracle_recommendations_prod` |
+
+- El entorno va como **sufijo**, y `PRO` es `prod` (no `pro`), igual que los topics de Kafka
+  en Aiven.
+- **Solo DEV y PRO.** `ingestion` admite además `PRE`, pero el oráculo no tiene entorno de
+  preproducción y por tanto esa tabla no existe. Aceptar `PRE` aquí daría un frontal
+  apuntando a una tabla inexistente, que es peor que rechazarlo: se avisa por consola y se
+  cae a DEV.
+
+Las dos tablas viven en el **mismo proyecto de Supabase**, ambas con RLS y policy de lectura
+para `anon` (verificado). Así que los dos despliegues comparten `VITE_SUPABASE_URL` y
+`VITE_SUPABASE_ANON_KEY`: lo único que los diferencia es `VITE_NAUTIQ_ENV`.
+
+`VITE_ORACLE_RECOMMENDATIONS_TABLE` sobreescribe el nombre —- mismo papel y mismo patrón de
+validación que `ORACLE_RECOMMENDATIONS_TABLE` en el oráculo— para poder corregirlo sin volver
+a desplegar.
+
+### El despliegue
+
+**Static Web Apps no se puede usar en esta suscripción.** La política de *Azure for Students*
+rechaza las **cinco** regiones donde ese servicio existe —- probadas una por una— y los recursos
+reales de la suscripción están todos en `austriaeast`, donde no está disponible. Hacerlo por el
+portal falla igual: la política se aplica también ahí, no es una limitación del CLI.
+
+El frontal se sirve desde **Azure Storage con sitio estático**, que sí existe en esa región:
+
+| Entorno | Cuenta | URL |
+| :-- | :-- | :-- |
+| DEV | `stnautiqfrontdevaue` | `https://stnautiqfrontdevaue.z49.web.core.windows.net/` |
+| PRO | `stnautiqfrontproaue` | `https://stnautiqfrontproaue.z49.web.core.windows.net/` |
+
+Ambas en `rg-nautiq-front-{dev,pro}-aue`, región Austria East, plan Standard LRS. El coste es
+de céntimos: unos MB y el tráfico de un demo.
+
+**El despliegue es manual**, con los scripts de `infrastructure/azure/`:
+
+```bash
+./infrastructure/azure/subir_estatico.sh dev
+./infrastructure/azure/subir_estatico.sh pro
+```
+
+Se ejecuta con la sesión de `az` del operador, así que **no hay ninguna credencial guardada en
+el repositorio**. Automatizarlo en GitHub Actions exigiría la clave de la cuenta como secreto
+o un service principal, y en un tenant universitario la creación de service principals suele
+estar restringida.
+
+`crear_storage_estatico.sh` solo se necesita para recrear la infraestructura desde cero; los
+recursos ya existen.
+
+Construye con las `VITE_*` del entorno (de `frontend/.env.<entorno>`, ignorados por git) y
+sube. Dos detalles que el script resuelve y cuestan una tarde si no:
+
+- **`--auth-mode login` no sirve aunque seas Owner de la suscripción.** Owner es plano de
+  *control*; escribir blobs es plano de *datos* y necesitaría el rol *Storage Blob Data
+  Contributor* asignado aparte. Se lee la clave al vuelo y no se guarda en ningún sitio.
+- **`index.html` va con `no-store`.** Los ficheros de `/assets/` llevan hash y se cachean un
+  año, pero `index.html` no: si se cachea, un redespliegue sigue sirviendo el bundle viejo
+  hasta que caduque. Son dos pasadas de subida distintas.
+
+Lo que se pierde frente a Static Web Apps: deja de ser gratis (céntimos), un dominio propio
+con TLS necesitaría Front Door delante, y no hay previews por PR. El endpoint de Azure ya da
+HTTPS y el enrutado se cubre con el documento de error 404 → `index.html`. Para un frontal de
+solo lectura ninguna de esas pérdidas es grave.
+
+---
+
+## 9. Stack
 
 ```
 frontend/                       ← fuera del workspace uv; ciclo de vida npm
 ├── index.html
 ├── package.json                # incluye gen:types
 ├── vite.config.ts
-├── staticwebapp.config.json    # rutas SPA para Azure Static Web Apps
 └── src/
     ├── main.tsx
     ├── App.tsx
@@ -686,10 +870,12 @@ frontend/                       ← fuera del workspace uv; ciclo de vida npm
     ├── route-layer.ts          # polilínea teñida por oleaje + capa de waypoints
     ├── feed.ts                 # Supabase: SELECT inicial + repesca + caducidad
     ├── status.ts               # severidad y fiabilidad derivadas (§7.1) — un solo sitio
+    ├── alerta.ts               # aviso de llegada: sonido Web Audio + preferencia (§7.13)
+    ├── entorno.ts              # entorno del despliegue y tabla de la que se lee (§8)
     ├── session.tsx             # panel de evolución de la aproximación (§7.4)
     ├── panel.tsx               # recomendación + rationale + CII + perfil meteo
     ├── types.ts                # GENERADO desde contracts/ — no editar a mano
-    └── mock/events.json        # capturas reales del grafo (§9, fase 1)
+    └── mock/events.json        # capturas reales del grafo (§10, fase 1)
 ```
 
 - **MapLibre GL JS** (BSD): sin token, sin licencia propietaria. Teselas CARTO/OSM y la capa
@@ -702,7 +888,7 @@ frontend/                       ← fuera del workspace uv; ciclo de vida npm
 
 ---
 
-## 9. Lo construido
+## 10. Lo construido
 
 Todo dentro de `frontend/`, más el esquema compartido. Estado real, no estimación.
 
@@ -716,7 +902,7 @@ Todo dentro de `frontend/`, más el esquema compartido. Estado real, no estimaci
 | 3 | Panel: recomendación, CII antes/después, `rationale`, perfiles meteo, tabla | ✅ |
 | 3 | `src/session.tsx` — evolución de la aproximación | ✅ |
 | 4 | `feed.ts` con `SELECT` inicial, repesca y caducidad; modo fixture | ✅ |
-| 4 | `.github/workflows/deploy_frontend.yml` → Azure Static Web Apps | ✅ |
+| 4 | Despliegue a Azure Storage estático, DEV y PRO en vivo | ✅ |
 
 ### El fixture es una grabación, no una maqueta
 
@@ -760,9 +946,9 @@ También se corrigió **el fixture**: el grabador fijaba `heading = 74°` en tod
 así que todos los buques apuntaban al mismo sitio independientemente de su destino —- algo que
 se ve al primer vistazo. Ahora el rumbo es la demora al puerto más un sesgo por escenario.
 
-## 10. Decisiones
+## 11. Decisiones
 
-1. **Transporte.** Tabla `oracle_recommendations` + repesca cada 30 s. No Realtime (preparado, §12),
+1. **Transporte.** Tabla `oracle_recommendations` + repesca cada 30 s. No Realtime (preparado, §13),
    no WebSocket. Con eventos cada 30 min, la latencia es irrelevante.
 2. **Contrato.** El que el oráculo emite hoy (§4), extraído del código a
    `contracts/oracle_recommendation_v1.schema.json`. Las cinco desviaciones de §4.1 se aceptan.
@@ -780,7 +966,7 @@ se ve al primer vistazo. Ahora el rumbo es la demora al puerto más un sesgo por
 
 ---
 
-## 11. TODOs para los otros equipos — cerrados
+## 12. TODOs para los otros equipos — cerrados
 
 Todos hechos en `feature/math_oracle` (`0410d46` … `07086cb`) y verificados contra las filas
 reales de `oracle_recommendations`.
@@ -805,7 +991,7 @@ Dos cosas que llegaron **de más** y el frontal ya usa:
 
 ---
 
-## 12. Verificación contra la tabla real
+## 13. Verificación contra la tabla real
 
 Se validaron las filas de `oracle_recommendations` contra
 `contracts/oracle_recommendation_v1.schema.json`. **Aparecieron tres desajustes, y los tres
@@ -841,6 +1027,31 @@ La tabla real trae además tres cosas que el esquema no anticipaba y el frontal 
   afirma *dónde está el buque*. Antes se habría pintado a plena opacidad una posición de hace
   cinco días. El panel además lo dice explícitamente cuando el desfase pasa de una hora.
 
+### El oráculo ya avisa cuando el texto es de respaldo
+
+Preguntado por si existe un resultado determinista cuando falla el modelo: **sí, y el oráculo
+ya lo señala**. `informe_llm._texto_con_fallback` llama al LLM y, si revienta (429 por rate
+limit —- el free tier de Gemini ronda 15-30 RPM frente a ráfagas de 17 alertas/min—, un 5xx o
+un `model_id` inválido), cae al resumen determinista y devuelve `degradado=True`. Eso llega al
+evento como **`recommendation.rationale_degradado`**.
+
+El criterio es el mismo que con las escrituras a Supabase y ADLS: el resumen es lo **último**
+del pipeline, y dejar que un fallo del texto tumbe la invocación tiraría la ruta, la meteo, el
+CII y el JIT ya calculados.
+
+Ojo con el sentido del flag, que es sutil: **`false` significa «no ha fallado nada», no «esto
+lo escribió un LLM»**. Un despliegue sin `GEMINI_API_KEY` usa el resumen determinista desde el
+principio y emite `false`, porque no hay fallo que reportar.
+
+El frontal lo marca con una etiqueta discreta junto a *Por qué* —- **solo cuando es `true`**—,
+y el texto de ayuda deja claro lo que importa: **los cálculos no están afectados**, únicamente
+la redacción. Por eso la marca va junto al texto y no junto a los números.
+
+No estaba en el esquema porque las filas que se validaron son anteriores; se añadió como
+**opcional**, ya que esas filas antiguas no lo llevan y ausente equivale a `false`. El fixture
+cubre el caso con `AL MANAMAH`, grabado inyectando un generador de texto que lanza una
+excepción: el `true` sale del camino real del código, no escrito a mano.
+
 ### `ETA_dynamic` de Flink no es consciente de la ruta
 
 El panel pone juntos «travesía 14 h» (de `route.duration_hours`, que sale de searoute) y
@@ -873,7 +1084,7 @@ diagrama.
 
 ---
 
-## 13. Alcance
+## 14. Alcance
 
 **MVP.** Mapa + evento del oráculo con su ruta, su estado del mar, su contexto de puerto, su CII
 antes/después y la evolución de la aproximación.
@@ -892,7 +1103,7 @@ es de solo lectura y debería seguir siéndolo.
 
 ---
 
-## 14. *Nice to have* — información que existe y no se está usando
+## 15. *Nice to have* — información que existe y no se está usando
 
 Nada de esto bloquea nada, y el frontal funciona sin ello. Está aquí porque es trabajo ya
 hecho aguas arriba que hoy se queda por el camino, ordenado por lo que aporta frente a lo que
@@ -903,17 +1114,13 @@ cuesta. Verificado campo por campo contra el código del oráculo y contra las f
 Están en el estado del grafo cuando `construir_evento_contrato` se ejecuta: son líneas de
 copia, no cálculo nuevo.
 
-- **`velocidad_jit.v_diseno_kn`** — la velocidad de diseño del casco. Hoy `excede_v_diseno` es
-  un booleano sin su número: el panel dice *«no llega a tiempo»* sin poder decir *«necesitaría
-  25,5 kn y su casco da 21,3»*. El número existe siempre y solo llega al usuario cuando la
-  prosa del LLM decide mencionarlo —- en el fixture, 3 de 14 veces; en las filas reales, ninguna.
-  **Es el de mejor relación valor/coste de toda esta lista.**
-- **`velocidad_jit.tiempo_transito_estimado_h` y `tiempo_objetivo_h`** — las dos horas que
-  Kwon-Euler compara para decidir. **Ya no es un *nice to have*** (ver §7.9): sin
-  `tiempo_transito_estimado_h` el frontal no puede calcular cuántas horas de fondeo evita de
-  verdad la recomendación, y por eso hoy no puede afirmar ningún ahorro de fondeo en el caso
-  saturado —- que es el más frecuente. De paso harían innecesario deducir el caso por el signo de
-  `speed_delta_kn` (§7.1).
+- ~~**`velocidad_jit.v_diseno_kn`**~~ — **ENTREGADO** como `recommendation.design_speed_kn`.
+  El panel ya dice «Su casco da 21,3 kn: pediría 25,5 kn» cuando la recomendación no es
+  ejecutable, en vez de solo el adjetivo.
+- ~~**`velocidad_jit.tiempo_transito_estimado_h`**~~ — **ENTREGADO** como
+  `recommendation.estimated_transit_hours`, y resuelve lo que §7.9 dejaba abierto: ya se puede
+  cuantificar el fondeo real (ver ahí). Sigue pendiente `tiempo_objetivo_h`, que solo serviría
+  para dejar de deducir el caso por el signo de `speed_delta_kn` (§7.1) — cosmético al lado.
 - **`cii_*.co2_estimado_kg`** — CO₂ absoluto de la travesía en cada escenario. **Ojo, aporta
   menos de lo que parece:** en la rama `eexi` está condicionado al MISMO DWT real que
   `fuel_saved_t` (`cii_calculus.py`, `if dwt_real is not None`), así que en el caso frecuente

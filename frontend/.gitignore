@@ -2,5 +2,8 @@
 node_modules/
 dist/
 tsconfig.tsbuildinfo
+
+# Credenciales de build por entorno (.env.dev, .env.pro). La plantilla si se versiona.
 .env
-.env.local
+.env.*
+!.env.example

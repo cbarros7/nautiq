@@ -11,6 +11,10 @@
   color-scheme: dark;
 
   --plano:        #0d0d0d;
+  /* Colores del mapa, duplicados aqui para que el CSS pinte el mismo mar que MapLibre
+     mientras las teselas cargan (la fuente de verdad es MAPA en map.ts). */
+  --mar:          #041b2d;
+  --mar-sombra:   #02101c;
   --superficie:   #1a1a19;
   --superficie-2: #232322;
   --superficie-3: #2c2c2a;
@@ -27,6 +31,15 @@
   --estado-ok:       #0ca30c;
   --estado-alerta:   #fab219;
   --estado-critico:  #d03b3b;
+
+  /*
+   * Flota de contexto: un solo tono para todo el grupo, y las FORMAS distinguen el papel
+   * (amarrado / fondeado / en camino). No tres colores: los colores saturados están
+   * reservados para el estado de la recomendación, y tres marcas de color más competirían
+   * con ellos. Cian náutico, distinto del ámbar del oleaje y de los tres de estado.
+   */
+  --contexto:       #4fbfd0;
+  --contexto-suave: rgba(79, 191, 208, .18);
 
   /* Serie única de los gráficos pequeños (ranura 1 del sistema, paso oscuro). */
   --serie:        #3987e5;

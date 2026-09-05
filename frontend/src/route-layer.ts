@@ -81,7 +81,7 @@ export function montarCapasRuta(mapa: MapLibreMap): void {
     source: FUENTE_RUTA,
     filter: ['==', ['get', 'clase'], 'tramo'],
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#0d0d0d', 'line-width': 6, 'line-opacity': 0.65 },
+    paint: { 'line-color': '#02101c', 'line-width': 6.5, 'line-opacity': 0.7 },
   })
 
   mapa.addLayer({
@@ -92,7 +92,7 @@ export function montarCapasRuta(mapa: MapLibreMap): void {
     layout: { 'line-cap': 'butt', 'line-join': 'round' },
     paint: {
       'line-color': expresionColorOleaje() as never,
-      'line-width': 2.6,
+      'line-width': 3,
       'line-dasharray': [2.4, 1.6],
     },
   })
@@ -107,7 +107,7 @@ export function montarCapasRuta(mapa: MapLibreMap): void {
       'circle-color': expresionColorOleaje() as never,
       // Anillo de 2px del color de la superficie: separa marcas que se solapan.
       'circle-stroke-width': 2,
-      'circle-stroke-color': '#0d0d0d',
+      'circle-stroke-color': '#02101c',
     },
   })
 }

@@ -12,6 +12,7 @@
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { OracleRecommendationV1 } from './types'
+import { TABLA } from './entorno'
 
 /** Una fila de la tabla. Las cuatro columnas promovidas + el evento en `payload`. */
 export interface FilaRecomendacion {
@@ -24,7 +25,6 @@ export interface FilaRecomendacion {
   payload: OracleRecommendationV1
 }
 
-export const TABLA = 'oracle_recommendations'
 export const LIMITE_ARRANQUE = 50
 export const INTERVALO_REPESCA_MS = 30_000
 
@@ -141,6 +141,9 @@ export function arrancarRepesca(
   obtenerUltimoVisto: () => string | null,
   alLlegar: (filas: FilaRecomendacion[]) => void,
   alFallar: (e: Error) => void,
+  /** Se llama tras CADA ciclo con éxito, traiga filas o no: es lo que permite a la
+   *  interfaz demostrar que sigue leyendo, en vez de anunciar una cadencia teórica. */
+  alRefrescar?: () => void,
 ): () => void {
   if (USANDO_MOCK) return () => {}
   const id = setInterval(async () => {
@@ -148,6 +151,7 @@ export function arrancarRepesca(
     if (!desde) return
     try {
       const filas = await cargarDesde(desde)
+      alRefrescar?.()
       if (filas.length) alLlegar(filas)
     } catch (e) {
       alFallar(e as Error)
@@ -161,18 +165,25 @@ export function arrancarRepesca(
 export type Vigencia = 'fresco' | 'atenuado' | 'retirado'
 
 /**
+ * Cuanto tiempo sigue un aviso en pantalla. Es una constante y no un numero suelto porque
+ * el texto de "ningun aviso en las ultimas N h" tiene que decir lo mismo que la regla: si
+ * se tocan por separado, la interfaz miente sobre su propio comportamiento.
+ */
+export const VENTANA_AVISOS_H = 5
+
+/**
  * Caducidad de marcadores, calibrada a la cadencia real de 30 min del oráculo:
  *
- *   < 40 min  fresco     un ciclo más margen de jitter
- *  40 min-3 h atenuado   se han perdido de 1 a 5 ciclos: hueco, o fin de la aproximación
- *   > 3 h     retirado   la aproximación terminó (el buque salió de la ventana de <12 h)
+ *   < 40 min      fresco     un ciclo más margen de jitter
+ *  40 min-5 h     atenuado   se han perdido ciclos: hueco, o fin de la aproximación
+ *   > 5 h         retirado   la aproximación terminó (el buque salió de la ventana de <12 h)
  *
  * Un marcador retirado desaparece del mapa pero su sesión sigue consultable.
  */
 export function vigencia(emittedAt: string, ahora = Date.now()): Vigencia {
   const minutos = (ahora - new Date(emittedAt).getTime()) / 60000
   if (minutos < 40) return 'fresco'
-  if (minutos < 180) return 'atenuado'
+  if (minutos < VENTANA_AVISOS_H * 60) return 'atenuado'
   return 'retirado'
 }
 
@@ -182,28 +193,6 @@ export const OPACIDAD_VIGENCIA: Record<Vigencia, number> = {
   retirado: 0,
 }
 
-/**
- * Opacidad del marcador según la edad del FIX, no la de la decisión.
- *
- * Son dos relojes distintos y hay que separarlos: `emitted_at` es cuándo habló el
- * oráculo, `position_at` es de cuándo es la posición que se está dibujando. La lista de
- * avisos ordena y caduca por el primero —- una decisión es una decisión—- pero el marcador
- * afirma *dónde está el buque*, así que su frescura es la del fix.
- *
- * Lo descubrió el replay: `replay_alertas.py` sella `emitted_at` con `now()` mientras el
- * `position_at` viene de la alerta capturada, así que en la tabla hay filas recién
- * emitidas con posiciones de hace días. Atenuar por `emitted_at` las habría pintado a
- * plena opacidad, afirmando que el buque está ahí ahora.
- *
- * Nunca baja a 0: si la decisión es reciente, su marcador tiene que existir para que el
- * aviso de la lista apunte a algún sitio. Se atenúa y el motivo está en el tooltip.
- */
-export function opacidadPosicion(positionAt: string, ahora = Date.now()): number {
-  const minutos = (ahora - new Date(positionAt).getTime()) / 60000
-  if (minutos < 40) return 1
-  if (minutos < 180) return 0.6
-  return 0.32
-}
 
 /**
  * El último evento de cada buque. La clave es el MMSI **normalizado a string**: en el

@@ -382,9 +382,23 @@
           "minimum": 0,
           "description": "Velocidad de motor constante para llegar cuando haya atraque libre (Kwon-Euler, corregida por meteo)."
         },
+        "design_speed_kn": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Velocidad de diseno estimada del casco (cii_calculus). Es el numero que hace concreto a `excede_v_diseno`: sin el, el frontal solo puede decir «no llega a tiempo»; con el, «necesitaria 25,5 kn y su casco da 21,3».\n\nOpcional: las filas anteriores a que el oraculo lo emitiera no lo llevan."
+        },
         "speed_delta_kn": {
           "type": "number",
           "description": "recommended_speed_kn - speed_kn. Negativo = frenar (el caso JIT habitual); positivo = acelerar."
+        },
+        "estimated_transit_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Horas de travesia a la velocidad RECOMENDADA (Kwon-Euler, corregidas por meteo). No confundir con `route.duration_hours`, que es a la velocidad actual.\n\nEs la pieza que permite cuantificar el fondeo de verdad: restandola a `queue.estimated_wait_hours` sale lo que el buque seguira fondeado SI sigue la recomendacion, y por diferencia con `idle_hours_avoided` -- que es el fondeo si no cambia nada -- las horas que la recomendacion evita realmente. Sin este campo el frontal solo podia decir «fondeara igual», sin numero.\n\nOpcional: las filas anteriores a que el oraculo lo emitiera no lo llevan."
         },
         "eta_current": {
           "type": [
@@ -404,7 +418,7 @@
             "number",
             "null"
           ],
-          "description": "Horas de ralenti al ancla que se evitan. null sin ETA_dynamic."
+          "description": "Horas que el buque pasaria fondeado SI NO CAMBIA NADA (`espera - ETA_dynamic`). OJO: el nombre engana, no son horas ahorradas — solo coinciden cuando el buque alcanza la ventana de atraque. Con `estimated_transit_hours` ya se puede calcular el ahorro real. null sin ETA_dynamic."
         },
         "fuel_saved_t": {
           "type": [
@@ -416,6 +430,10 @@
         "rationale": {
           "type": "string",
           "description": "Justificacion en lenguaje natural. La genera un LLM (Gemini via inyeccion, o un resumen determinista si no hay clave) y es coherente entre avisos de la misma sesion, porque el prompt lleva las 3 recomendaciones anteriores. Se pinta como prosa."
+        },
+        "rationale_degradado": {
+          "type": "boolean",
+          "description": "El texto de `rationale` NO viene del LLM: viene del resumen determinista de respaldo porque la llamada al modelo fallo (429 por rate limit, 5xx, model_id invalido). El calculo del oraculo -- ruta, meteo, CII, Kwon-Euler -- es el mismo y sigue siendo valido: lo unico degradado es el texto de acompanamiento, que es lo ultimo del pipeline.\n\nOJO con el sentido: `false` significa \"no ha fallado nada\", NO \"esto lo escribio un LLM\". Un despliegue sin GEMINI_API_KEY usa el resumen determinista desde el principio y emite `false`, porque no hay fallo que reportar.\n\nOpcional: las filas escritas antes de que el oraculo lo emitiera no lo llevan. Ausente se trata como `false`."
         },
         "convergio": {
           "type": "boolean",

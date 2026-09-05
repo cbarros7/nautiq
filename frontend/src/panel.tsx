@@ -15,7 +15,7 @@ import type { FilaRecomendacion } from './feed'
 import type { OracleRecommendationV1 } from './types'
 import {
   severidad, fiabilidad, saturacion,
-  titular, fondearaIgual, ETIQUETA_FIABILIDAD, DETALLE_FIABILIDAD,
+  titular, fondearaIgual, fondeo, ETIQUETA_FIABILIDAD, DETALLE_FIABILIDAD,
   ETIQUETA_SATURACION, COLOR_SEVERIDAD, type Severidad,
 } from './status'
 import { num, pct, horaUtc, fechaHoraUtc, antiguedad, etiquetaBuque, rumbo, esperaEstimada } from './format'
@@ -87,11 +87,14 @@ function distanciaAcumulada(ev: OracleRecommendationV1): number[] {
 }
 
 export function Panel({
-  fila, sesion, alCerrar,
+  fila, sesion, alCerrar, expandido = false, alAlternarExpansion,
 }: {
   fila: FilaRecomendacion
   sesion: FilaRecomendacion[]
   alCerrar: () => void
+  /** Solo en movil: la hoja ocupa toda la pantalla en vez de la parte de abajo. */
+  expandido?: boolean
+  alAlternarExpansion?: () => void
 }) {
   const ev = fila.payload
   const r = ev.recommendation
@@ -110,10 +113,25 @@ export function Panel({
   const primerTramo = ev.route_weather[0]
 
   const combustibleExtra = r.fuel_saved_t !== null && r.fuel_saved_t !== undefined && r.fuel_saved_t < 0
+  const f = fondeo(ev)
 
 
   return (
-    <aside className="panel" aria-label="Recomendación del oráculo">
+    <aside
+      className={'panel' + (expandido ? ' panel-expandido' : '')}
+      aria-label="Recomendación del oráculo"
+    >
+      {/* Asa de la hoja: solo se ve en movil (en escritorio el panel es una columna fija).
+          Dos estados en vez de arrastre libre: cubre el caso real —- ver el mapa o leer el
+          texto— sin la complejidad de un gesto. */}
+      <button
+        className="panel-asa"
+        onClick={alAlternarExpansion}
+        aria-expanded={expandido}
+        aria-label={expandido ? 'Encoger el panel para ver el mapa' : 'Expandir el panel'}
+      >
+        <span aria-hidden="true" />
+      </button>
       <header className="panel-cab">
         <div className="panel-cab-fila">
           <span className="chip" style={{ ['--c' as string]: COLOR_SEVERIDAD[sev] }}>
@@ -155,6 +173,12 @@ export function Panel({
             {ETIQUETA_SATURACION[sat]}
           </p>
         )}
+        {/* Con `design_speed_kn` el «no ejecutable» deja de ser un adjetivo y es una cuenta. */}
+        {r.excede_v_diseno && r.design_speed_kn !== null && r.design_speed_kn !== undefined && (
+          <p className="etiqueta-saturacion etiqueta-excede">
+            Su casco da {num(r.design_speed_kn, 1, 'kn')}: pediría {num(r.recommended_speed_kn, 1, 'kn')}
+          </p>
+        )}
 
         {/*
           El nucleo del proyecto: no es ahorrar combustible navegando, es no quemarlo
@@ -172,21 +196,32 @@ export function Panel({
           "61 h menos fondeado" ahi es falso. Se enuncia como exposicion, no como ahorro.
           .
           Para dar la cifra REAL de horas evitadas en ese caso haria falta
-          `tiempo_transito_estimado_h` del oraculo, que hoy no se emite (ver §14.1).
+          `tiempo_transito_estimado_h` del oraculo, que hoy no se emite (ver §15.1).
         */}
-        {r.idle_hours_avoided !== null && r.idle_hours_avoided !== undefined
-          && r.idle_hours_avoided > 0 && (
+        {f.sinCambios !== null && f.sinCambios > 0 && (
           sat === 'frenando-al-minimo' ? (
+            /*
+              Caso saturado: el buque va a fondear de todas formas. El numero grande es lo
+              que fondeara SIGUIENDO la recomendacion —- que es el plan—, no lo que fondearia
+              sin hacer nada. Y al lado, cuanto evita de verdad: con
+              `estimated_transit_hours` ya es una cifra, no un «no lo evita» (§7.9).
+            */
             <div className="jit-hero jit-hero-espera">
-              <span className="jit-cifra">{r.idle_hours_avoided.toFixed(0)}<i>h</i></span>
+              <span className="jit-cifra">
+                {(f.conRecomendacion ?? f.sinCambios).toFixed(0)}<i>h</i>
+              </span>
               <span className="jit-texto">
                 fondeado esperando atraque, incluso frenando al mínimo.
-                Reducir la velocidad no lo evita: recorta el consumo de la travesía.
+                {f.evitado !== null && f.evitado > 0.05
+                  ? ` Frenar recorta ${f.evitado.toFixed(1)} h de espera y el consumo de la travesía.`
+                  : ' Reducir la velocidad no lo evita: recorta el consumo de la travesía.'}
               </span>
             </div>
           ) : (
             <div className="jit-hero" style={{ borderLeftColor: COLOR_SEVERIDAD[sev] }}>
-              <span className="jit-cifra">{r.idle_hours_avoided.toFixed(0)}<i>h</i></span>
+              <span className="jit-cifra">
+                {(f.evitado ?? f.sinCambios).toFixed(0)}<i>h</i>
+              </span>
               <span className="jit-texto">
                 menos fondeado quemando combustible, llegando cuando se libera el atraque
               </span>
@@ -196,7 +231,9 @@ export function Panel({
 
         <dl className="datos">
           <Dato etiqueta="Travesía" valor={num(ev.route.duration_hours, 0, 'h')}
-                apunte={`${num(ev.route.distance_nm, 0, 'nm')} a velocidad actual`} />
+                apunte={r.estimated_transit_hours !== null && r.estimated_transit_hours !== undefined
+                  ? `${num(ev.route.distance_nm, 0, 'nm')} · ${num(r.estimated_transit_hours, 0, 'h')} frenando`
+                  : `${num(ev.route.distance_nm, 0, 'nm')} a velocidad actual`} />
           <Dato etiqueta="Atraque libre en" valor={num(ev.queue.estimated_wait_hours, 0, 'h')}
                 apunte={ev.queue.queue_position !== null && ev.queue.queue_position !== undefined
                   ? `${ev.queue.queue_position}.º en cola${
@@ -244,7 +281,21 @@ export function Panel({
       </section>
 
       <section className="bloque">
-        <h3 className="bloque-titulo">Por qué</h3>
+        <h3 className="bloque-titulo">
+          Por qué
+          {/*
+            El calculo NO esta degradado: ruta, meteo, CII y Kwon-Euler son los mismos.
+            Lo unico que fallo es el texto de acompanamiento, que es lo ultimo del
+            pipeline. Por eso se marca junto al texto y no junto a los numeros.
+          */}
+          {r.rationale_degradado && (
+            <span className="marca-degradado"
+                  title={'La redacción automática falló y se usó el resumen de respaldo. ' +
+                         'Los cálculos (ruta, meteo, CII, velocidad) no están afectados.'}>
+              redacción de respaldo
+            </span>
+          )}
+        </h3>
         <p className="racional">{conEnfasis(r.rationale)}</p>
       </section>
 
