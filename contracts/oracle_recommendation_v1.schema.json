@@ -1,0 +1,608 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nautiq.io/contracts/oracle_recommendation_v1.schema.json",
+  "title": "OracleRecommendationV1",
+  "description": "Una decision del Oraculo Matematico (Adaptive Slow Steaming). Es la frontera de contrato entre api/ (escribe) y frontend/ (solo lee): viaja en la columna `payload` (jsonb) de la tabla `oracle_recommendations`.\n\nEXTRAIDO, no inventado: derivado de construir_evento_contrato() en api/app/agents/math_oracle.py (feature/math_oracle @ dbe92d0) y verificado contra 11 eventos reales del grafo, grabados en frontend/src/mock/events.json.\n\nSe emite una vez cada 30 min por buque mientras esta a <12 h de su puerto destino, asi que una misma aproximacion genera varios eventos con el mismo session_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "session_id",
+    "emitted_at",
+    "schema_version",
+    "vessel",
+    "port",
+    "context_vessels",
+    "route",
+    "route_weather",
+    "queue",
+    "recommendation"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "ULID. Es el correlation_id del webhook de Flink, asi que sirve de clave de idempotencia: un reintento no duplica fila (ON CONFLICT DO NOTHING en db_conn.guardar_recomendacion)."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "ULID que agrupa una misma aproximacion buque-puerto. Se hereda de la ultima recomendacion del mismo mmsi+puerto dentro de 24 h; si no hay ninguna, empieza uno nuevo. Es la clave para leer una aproximacion completa y ver como evoluciono la recomendacion."
+    },
+    "emitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Instante en que el oraculo construyo el evento."
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "vessel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mmsi",
+        "imo",
+        "name",
+        "lat",
+        "lon",
+        "speed_kn",
+        "heading",
+        "nav_status",
+        "destination_raw",
+        "eta_ais_raw",
+        "position_at",
+        "is_container"
+      ],
+      "properties": {
+        "mmsi": {
+          "type": "integer",
+          "description": "OJO: numero aqui, pero la columna `mmsi` de la tabla es text. El frontal normaliza a string al entrar."
+        },
+        "imo": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "null si el AIS reporta 0 o el webhook no lo trae. Sin IMO no hay fila de thetis_mrv, y el CII cae a fallback_admiralty."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "HOY SIEMPRE null. thetis_mrv.name existe y estimar_cii ya trae la fila completa por IMO, asi que es rellenable sin consultas nuevas (TODO 2). El frontal etiqueta por MMSI mientras siga null."
+        },
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "speed_kn": {
+          "type": "number",
+          "minimum": 0,
+          "description": "SOG del AIS. El oraculo rechaza <= 0: no se puede calcular ruta ni ETA con el buque parado."
+        },
+        "heading": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Rumbo verdadero. null es frecuente (centinela 511 en ~27% del AIS real). Sin el, el frontal dibuja circulo y no triangulo: no se inventa rumbo."
+        },
+        "nav_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Codigo AIS numerico (0 = en navegacion a motor, 1 = fondeado, 5 = amarrado)."
+        },
+        "destination_raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "ATENCION: el nombre miente. Hoy trae `paquete_1['puerto']`, que es el MISMO string que `port.name` (verificado: identicos en las 17 filas del fixture y de la tabla) y que el propio oraculo documenta como \"solo un nombre para mostrar\". NO es el destino crudo que teclea la tripulacion, que no llega al evento. Por eso el frontal no lo muestra: seria repetir el nombre del puerto bajo una etiqueta falsa. Pendiente en el oraculo: o emitir aqui el destino AIS de verdad —- que es el dato sucio e interesante— o retirar el campo por duplicado."
+        },
+        "eta_ais_raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "ETA_static del webhook, cruda. El oraculo no la usa en ningun calculo."
+        },
+        "position_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Frescura real del fix. Se muestra siempre junto al buque: nunca se interpolan posiciones."
+        },
+        "is_container": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Derivado del tipo normalizado del CII. null si no se pudo determinar."
+        }
+      }
+    },
+    "port": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "locode",
+        "name",
+        "lat",
+        "lon",
+        "context_radius_nm",
+        "berthed_count",
+        "anchored_count",
+        "inbound_count",
+        "snapshot_at"
+      ],
+      "properties": {
+        "locode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "HOY SIEMPRE null: el webhook manda lat/lon del puerto y no se resuelve nombre->LOCODE contra la tabla ports. Sin el no se puede unir con `ports` ni unificar dos grafias del mismo puerto."
+        },
+        "name": {
+          "type": "string",
+          "description": "Nombre del puerto tal como llega del webhook (p.ej. \"ALGECIRAS\"). Es la etiqueta del mapa y la columna `puerto` de la tabla. Texto libre: dos grafias son dos puertos."
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "context_radius_nm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "HOY SIEMPRE null: lo define quien arma paquete_2 y el oraculo no lo conoce. Por eso el frontal NO dibuja el circulo de contexto: hacerlo exigiria inventarse el radio."
+        },
+        "berthed_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Amarrados (nav_status 5). Ocupacion real de atraque."
+        },
+        "anchored_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Fondeados (nav_status 1). Es la cola."
+        },
+        "inbound_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "En camino. OJO: INCLUYE al propio buque del evento, que aparece tambien en context_vessels.inbound. El frontal deduplica por mmsi y lo rotula."
+        },
+        "snapshot_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "HOY SIEMPRE null: paquete_2 no trae timestamp propio. El frontal usa emitted_at y lo rotula como hora de emision, no como hora del contexto."
+        }
+      }
+    },
+    "context_vessels": {
+      "type": "object",
+      "description": "El resto de la flota alrededor del puerto. Las esperas son MODELADAS por jit_calculus, no observadas por un tracker con estado: de ahi `estimated_wait_hours` y no `wait_hours`/`anchored_since`.",
+      "additionalProperties": false,
+      "required": [
+        "berthed",
+        "anchored",
+        "inbound"
+      ],
+      "properties": {
+        "berthed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ContextVessel"
+          }
+        },
+        "anchored": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WaitingVessel"
+          }
+        },
+        "inbound": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WaitingVessel"
+          }
+        }
+      }
+    },
+    "route": {
+      "type": "object",
+      "description": "Ruta navegable calculada por searoute: esquiva tierra. NO es la derrota observada — el frontal la dibuja punteada y la rotula como ruta prevista.",
+      "additionalProperties": false,
+      "required": [
+        "distance_nm",
+        "duration_hours",
+        "waypoints"
+      ],
+      "properties": {
+        "distance_nm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "duration_hours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Horas de travesia A LA VELOCIDAD ACTUAL, informativo de searoute. No es el transito a la velocidad recomendada. Puesto junto a `queue.estimated_wait_hours` deja ver la decision JIT de un vistazo: tarda N horas en llegar y no hay atraque hasta la hora M."
+        },
+        "waypoints": {
+          "type": "array",
+          "minItems": 2,
+          "description": "Orden de navegacion, [lon, lat] — misma convencion que el resto del pipeline. Su longitud coincide SIEMPRE con la de route_weather: el frontal tine cada tramo con el oleaje de su waypoint.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "route_weather": {
+      "type": "array",
+      "description": "Estado del mar en cada waypoint, a la hora estimada en que el buque pasara por el. Un elemento por waypoint, en el mismo orden. Es el elemento visual principal del frontal.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lat",
+          "lon",
+          "eta",
+          "wave_height",
+          "wave_direction",
+          "wave_period",
+          "wind_speed_kn",
+          "wind_direction",
+          "wind_gusts_kn"
+        ],
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          },
+          "eta": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ETA estimado en ESTE waypoint, acumulando distancia/velocidad."
+          },
+          "wave_height": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Altura de ola en m. Open-Meteo devuelve null en celdas sin cobertura (tipicamente costeras); hoy eso hace fallar el evento completo (TODO 6)."
+          },
+          "wave_direction": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "wave_period": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "wind_speed_kn": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "wind_direction": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "wind_gusts_kn": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "queue": {
+      "type": "object",
+      "description": "Posicion y espera de ESTE buque en la cola del puerto: la justificacion de frenar. Va a nivel raiz, hermano de `route` y `recommendation`, no dentro de la decision: describe el estado del mundo que la motiva, no la decision misma. Verificado contra las filas reales de oracle_recommendations.",
+      "additionalProperties": false,
+      "properties": {
+        "estimated_wait_hours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "queue_position": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "berth_segment": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Segmento de atraque al que opta el buque por su eslora (p.ej. \"large\"). Los atraques se agrupan por tamano, asi que la cola es por segmento, no por puerto."
+        }
+      },
+      "required": [
+        "estimated_wait_hours",
+        "queue_position",
+        "berth_segment"
+      ]
+    },
+    "recommendation": {
+      "type": "object",
+      "description": "La decision. NO trae `status` ni `confidence`: el oraculo expone las senales nativas del calculo y el frontal deriva severidad y fiabilidad en src/status.ts, en un solo sitio.",
+      "additionalProperties": false,
+      "required": [
+        "recommended_speed_kn",
+        "speed_delta_kn",
+        "eta_current",
+        "eta_optimized",
+        "idle_hours_avoided",
+        "fuel_saved_t",
+        "rationale",
+        "convergio",
+        "excede_v_diseno",
+        "alerta_cii",
+        "nota",
+        "cii",
+        "weather_speed_loss_pct"
+      ],
+      "properties": {
+        "recommended_speed_kn": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Velocidad de motor constante para llegar cuando haya atraque libre (Kwon-Euler, corregida por meteo)."
+        },
+        "design_speed_kn": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Velocidad de diseno estimada del casco (cii_calculus). Es el numero que hace concreto a `excede_v_diseno`: sin el, el frontal solo puede decir «no llega a tiempo»; con el, «necesitaria 25,5 kn y su casco da 21,3».\n\nOpcional: las filas anteriores a que el oraculo lo emitiera no lo llevan."
+        },
+        "speed_delta_kn": {
+          "type": "number",
+          "description": "recommended_speed_kn - speed_kn. Negativo = frenar (el caso JIT habitual); positivo = acelerar."
+        },
+        "estimated_transit_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Horas de travesia a la velocidad RECOMENDADA (Kwon-Euler, corregidas por meteo). No confundir con `route.duration_hours`, que es a la velocidad actual.\n\nEs la pieza que permite cuantificar el fondeo de verdad: restandola a `queue.estimated_wait_hours` sale lo que el buque seguira fondeado SI sigue la recomendacion, y por diferencia con `idle_hours_avoided` -- que es el fondeo si no cambia nada -- las horas que la recomendacion evita realmente. Sin este campo el frontal solo podia decir «fondeara igual», sin numero.\n\nOpcional: las filas anteriores a que el oraculo lo emitiera no lo llevan."
+        },
+        "eta_current": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "ETA a la velocidad actual, sin contar colas. null si el webhook no manda ETA_dynamic."
+        },
+        "eta_optimized": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ETA a la velocidad recomendada."
+        },
+        "idle_hours_avoided": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Horas que el buque pasaria fondeado SI NO CAMBIA NADA (`espera - ETA_dynamic`). OJO: el nombre engana, no son horas ahorradas — solo coinciden cuando el buque alcanza la ventana de atraque. Con `estimated_transit_hours` ya se puede calcular el ahorro real. null sin ETA_dynamic."
+        },
+        "fuel_saved_t": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Toneladas de combustible ahorradas. SOLO se rellena si thetis_mrv da un DWT REAL para ese IMO — nunca desde el DWT geometrico estimado. En la practica es null casi siempre: de los portacontenedores de la flota, ninguno tiene DWT real. Puede ser NEGATIVO (combustible extra) cuando la recomendacion es acelerar."
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Justificacion en lenguaje natural. La genera un LLM (Gemini via inyeccion, o un resumen determinista si no hay clave) y es coherente entre avisos de la misma sesion, porque el prompt lleva las 3 recomendaciones anteriores. Se pinta como prosa."
+        },
+        "rationale_degradado": {
+          "type": "boolean",
+          "description": "El texto de `rationale` NO viene del LLM: viene del resumen determinista de respaldo porque la llamada al modelo fallo (429 por rate limit, 5xx, model_id invalido). El calculo del oraculo -- ruta, meteo, CII, Kwon-Euler -- es el mismo y sigue siendo valido: lo unico degradado es el texto de acompanamiento, que es lo ultimo del pipeline.\n\nOJO con el sentido: `false` significa \"no ha fallado nada\", NO \"esto lo escribio un LLM\". Un despliegue sin GEMINI_API_KEY usa el resumen determinista desde el principio y emite `false`, porque no hay fallo que reportar.\n\nOpcional: las filas escritas antes de que el oraculo lo emitiera no lo llevan. Ausente se trata como `false`."
+        },
+        "convergio": {
+          "type": "boolean",
+          "description": "La biseccion de Kwon-Euler encontro una velocidad exacta dentro del rango realizable del casco ([0.4, 1.2] x velocidad de diseno).\n\nNO ES UN INDICADOR DE ERROR. false significa SATURACION, y hay dos casos opuestos que `nota` distingue: (a) sobra tiempo incluso a v_min -> se recomienda el minimo, que es el caso bueno del JIT y el mas frecuente; (b) la ventana no llega ni a v_max -> el buque llega tarde aunque vaya a tope. Usar convergio como senal de alerta marcaria casi todos los eventos."
+        },
+        "excede_v_diseno": {
+          "type": "boolean",
+          "description": "La velocidad recomendada supera la de diseno del casco: no es ejecutable. Solo puede ocurrir en el caso de ventana insuficiente."
+        },
+        "alerta_cii": {
+          "type": "boolean",
+          "description": "El CII empeora con la velocidad JIT (cii.ahorro_pct < 0). Es la rama condicional que el propio grafo tomo hacia fetch_resumen_alerta, y esta promovido a columna en la tabla para poder filtrar sin abrir el jsonb."
+        },
+        "nota": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Aviso de Kwon-Euler sobre su propia solucion, en texto libre. Se muestra SIEMPRE que no sea null: es la letra pequena del numero grande."
+        },
+        "cii": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inicial",
+            "jit",
+            "metodo",
+            "ahorro_pct"
+          ],
+          "properties": {
+            "inicial": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "CII a la velocidad actual, en gCO2/(t.nm)."
+            },
+            "jit": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "CII a la velocidad recomendada, misma ruta."
+            },
+            "metodo": {
+              "type": "string",
+              "enum": [
+                "eexi",
+                "fallback_admiralty"
+              ],
+              "description": "Procedencia del CII. `eexi` sale del indicador declarado en thetis_mrv; `fallback_admiralty` de un DWT geometrico estimado desde las dimensiones del casco. NO son comparables entre buques, asi que el frontal lo muestra y degrada la fiabilidad cuando es fallback."
+            },
+            "ahorro_pct": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Mejora porcentual del CII. Negativo = empeora, y entonces alerta_cii es true."
+            }
+          }
+        },
+        "weather_speed_loss_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Perdida media de velocidad por meteo en esta ruta, en por ciento (correccion Kwon: `perdida_media_pct`). Cuanto castiga el mar al buque, y por tanto cuanta de la velocidad recomendada se la come la meteo en vez del motor."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ContextVessel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mmsi",
+        "name",
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "mmsi": {
+          "type": [
+            "integer",
+            "string"
+          ],
+          "description": "Llega tal cual venga en paquete_2, asi que puede ser numero o texto. El frontal normaliza a string."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "HOY SIEMPRE null: paquete_2 no trae nombres."
+        },
+        "lat": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "lon": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "es_objetivo": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "PENDIENTE (TODO 5). jit_calculus ya lo calcula pero no se propaga. Mientras no llegue, el frontal deduplica comparando con vessel.mmsi."
+        }
+      }
+    },
+    "WaitingVessel": {
+      "description": "Buque del contexto que ademas espera: fondeados y en camino. Se declara completo en vez de heredar de ContextVessel con `allOf` — con `additionalProperties: false` cada rama del allOf valida por separado y la del padre rechazaba `estimated_wait_hours`.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mmsi",
+        "name",
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "mmsi": {
+          "type": [
+            "integer",
+            "string"
+          ],
+          "description": "Llega tal cual venga en paquete_2, asi que puede ser numero o texto. El frontal normaliza a string."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "HOY SIEMPRE null: paquete_2 no trae nombres."
+        },
+        "lat": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "lon": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "es_objetivo": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "PENDIENTE (TODO 5). jit_calculus ya lo calcula pero no se propaga. Mientras no llegue, el frontal deduplica comparando con vessel.mmsi."
+        },
+        "estimated_wait_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Espera MODELADA por jit_calculus, no observada. El frontal la rotula como estimada."
+        }
+      }
+    }
+  }
+}
