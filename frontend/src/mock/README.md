@@ -41,7 +41,7 @@ de FRONTEND.md).
 | `MSC PRATITI` → Algeciras | cola larga, frena a v_min, CII +52,9 % — **el caso frecuente** |
 | `SAGA FLORA` → Barcelona | `excede_v_diseno`, `alerta_cii`, y el único `fuel_saved_t` no nulo (**negativo**: combustible extra) |
 | `MSC MASHA 3` → Valencia | sin IMO → CII por `fallback_admiralty` y `vessel.name` nulo |
-| `CONTSHIP ZEN` → Algeciras | `heading` ausente → círculo, no triángulo |
+| `CONTSHIP ZEN` → Algeciras | `heading` ausente → círculo, no casco |
 | `MAERSK NAMIBIA` → Barcelona | sin `ETA_dynamic` → `eta_current` e `idle_hours_avoided` nulos |
 | `HAMBURG EXPRESS` → Valencia | puerto despejado → 9 → 32,4 kn, CII −1191 % |
 | `ELBTOWER` → Valencia | ventana JIT alcanzable → `convergio: true`, pero acelerando (el CII empeora) |

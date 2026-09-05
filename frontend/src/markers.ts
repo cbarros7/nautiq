@@ -6,7 +6,7 @@
  * contexto: si compitiera en color, el buque que importa se perdería.
  *
  * Reglas que no se negocian:
- *  - La orientación es `heading`. Si llega `null` -> círculo, no triángulo: no se
+ *  - La orientación es `heading`. Si llega `null` -> círculo, no casco: no se
  *    inventa un rumbo (el centinela 511 del AIS real hace que sea el caso normal).
  *  - El buque del evento aparece TAMBIÉN en `context_vessels.inbound` — verificado en
  *    el propio ejemplo del oráculo. Se deduplica por MMSI o se pinta dos veces.
@@ -50,6 +50,30 @@ function envoltorio(opacidad: number): HTMLElement {
   return n
 }
 
+/**
+ * Silueta de casco en planta, apuntando a 0deg = norte para que `rotate(heading)` la lleve
+ * al rumbo real igual que hacia el triangulo anterior. Proa en punta, cuerpo paralelo y
+ * espejo de popa recto: a esta escala es la forma minima que se lee como buque y no como
+ * flecha, y la asimetria proa/popa es lo que da el sentido de la marcha de un vistazo.
+ *
+ * El relleno es `currentColor`, asi que el color de estado sigue llegando por la misma via
+ * de siempre: `--c` en la raiz del marcador, que el CSS pasa a `color`.
+ */
+const CASCO = 'M8 0C9.6 3.4 15 7.2 15 11.4L15 28.6C15 31.4 14.7 33.1 14.1 35'
+  + 'L1.9 35C1.3 33.1 1 31.4 1 28.6L1 11.4C1 7.2 6.4 3.4 8 0Z'
+
+function casco(): HTMLElement {
+  const caja = el('mk-casco')
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 16 35')
+  const trazo = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  trazo.setAttribute('d', CASCO)
+  trazo.setAttribute('fill', 'currentColor')
+  svg.appendChild(trazo)
+  caja.appendChild(svg)
+  return caja
+}
+
 function marcadorBuque(
   fila: FilaRecomendacion,
   seleccionado: boolean,
@@ -79,7 +103,7 @@ function marcadorBuque(
   raiz.appendChild(contenido)
 
   const heading = ev.vessel.heading
-  const forma = el(heading === null || heading === undefined ? 'mk-circulo' : 'mk-triangulo')
+  const forma = heading === null || heading === undefined ? el('mk-circulo') : casco()
   if (heading !== null && heading !== undefined) {
     forma.style.transform = `rotate(${heading}deg)`
   }
