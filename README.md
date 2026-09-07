@@ -12,6 +12,7 @@ El repositorio está organizado como un **Monorepo** basado en componentes. Esta
 - **`contracts/` (Reglas de datos):** Esquemas **Avro** (compatibles con Schema Registry) que definen de forma estricta cómo debe ser la información que fluye por el sistema, garantizando la calidad desde el primer paso (*Shift-Left Validation*). Única fuente de verdad de los esquemas.
 - **`databricks/` (Analítica avanzada):** Entorno destinado al procesamiento de datos históricos, abarcando las capas de transformación y reporte para inteligencia de negocios.
 - **`infrastructure/` (Infraestructura como código):** Archivos de Terraform para el despliegue automatizado en la nube (Azure/Oracle) y configuraciones de Docker para levantar el ecosistema en desarrollo local.
+- **`frontend/` (Visualización):** Frontal de solo lectura que pinta las recomendaciones del oráculo sobre un mapa. **Es la única pieza que no vive en el workspace `uv`**: es JavaScript, su ciclo de vida es `npm` y sus comandos se lanzan desde `frontend/`, no desde la raíz (`cd frontend && npm install && npm run dev`). Ver [`frontend/README.md`](frontend/README.md).
 - **`docs/` (Documentación):** Repositorio de los manuales del sistema y los Registros de Decisiones de Arquitectura (ADRs).
 - **`main.py`:** Archivo orquestador diseñado exclusivamente para arrancar el Producto Mínimo Viable (MVP) durante la fase de desarrollo local.
 

@@ -1,0 +1,79 @@
+/*
+ * Tokens de la interfaz. Los colores de ESTADO (severidad) vienen de la paleta de
+ * estado del sistema de visualización y son fijos: no se tematizan y no se reutilizan
+ * para nada que no sea estado. El resto es cromo, y es deliberadamente sobrio para que
+ * el único color saturado de la pantalla sea dato.
+ *
+ * El frontal es una sola pantalla oscura, a propósito: es un panel de instrumentos
+ * sobre un mapa náutico nocturno, no un documento. Por eso no hay tema claro.
+ */
+:root {
+  color-scheme: dark;
+
+  --plano:        #0d0d0d;
+  /* Colores del mapa, duplicados aqui para que el CSS pinte el mismo mar que MapLibre
+     mientras las teselas cargan (la fuente de verdad es MAPA en map.ts). */
+  --mar:          #041b2d;
+  --mar-sombra:   #02101c;
+  --superficie:   #1a1a19;
+  --superficie-2: #232322;
+  --superficie-3: #2c2c2a;
+
+  --tinta:        #ffffff;
+  --tinta-2:      #c3c2b7;
+  --tinta-3:      #898781;
+
+  --linea:        #2c2c2a;
+  --linea-fuerte: #383835;
+  --anillo:       rgba(255, 255, 255, 0.10);
+
+  /* Paleta de estado — fija, nunca temática, nunca una serie. */
+  --estado-ok:       #0ca30c;
+  --estado-alerta:   #fab219;
+  --estado-critico:  #d03b3b;
+
+  /*
+   * Flota de contexto: un solo tono para todo el grupo, y las FORMAS distinguen el papel
+   * (amarrado / fondeado / en camino). No tres colores: los colores saturados están
+   * reservados para el estado de la recomendación, y tres marcas de color más competirían
+   * con ellos. Cian náutico, distinto del ámbar del oleaje y de los tres de estado.
+   */
+  --contexto:       #4fbfd0;
+  --contexto-suave: rgba(79, 191, 208, .18);
+
+  /* Serie única de los gráficos pequeños (ranura 1 del sistema, paso oscuro). */
+  --serie:        #3987e5;
+  --serie-suave:  rgba(57, 135, 229, 0.16);
+
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--plano);
+  color: var(--tinta);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--serie);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

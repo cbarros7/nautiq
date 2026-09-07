@@ -150,6 +150,7 @@ activemq-data/
 # Environments
 .env
 .envrc
+
 .venv
 env/
 venv/
@@ -254,3 +255,5 @@ local.settings.json
 # Sello de build que escribe el workflow antes de empaquetar (SHA del commit).
 # Se genera en cada despliegue, no se versiona.
 BUILD_INFO
+# Pycharm
+.idea/
