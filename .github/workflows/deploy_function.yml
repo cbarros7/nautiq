@@ -120,7 +120,7 @@ name: Deploy Oracle Function
 
 on:
   push:
-    branches: [main, feature/math_oracle]
+    branches: [main]
     paths:
       - "api/**"
       - ".github/workflows/deploy_function.yml"
