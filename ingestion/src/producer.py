@@ -25,14 +25,26 @@ from .ais.publisher import build_dlq_publisher, build_publishers
 from .ais.tracker import AISTracker
 
 
-def _build_feeds() -> list[tuple[AISStreamClient, list[str]]]:
+async def _build_feeds():
     """
     Reparte los dos tipos de mensaje entre las API keys disponibles.
 
     AISStream admite UNA conexión por key: con dos keys se dedica una conexión a cada
     tipo (aísla el caudal de posiciones del de estáticas, de modo que un backoff en uno
     no ciega al otro); con una sola key, ambos tipos comparten conexión.
+
+    Con `AIS_SYNTHETIC=true` (temporal, ver `ais/synthetic.py`) se sustituye por un
+    único feed generado localmente, con la misma interfaz `.stream()`: el tracker no
+    distingue el origen de los mensajes.
     """
+    if constants.AIS_SYNTHETIC:
+        from .ais import synthetic
+        fleet = await synthetic.build_fleet()
+        con_imo = sum(1 for v in fleet.vessels if v.imo)
+        print(f"[SINTETICO] {len(fleet.vessels)} buques simulados "
+              f"({con_imo} con IMO real de THETIS).")
+        return [(synthetic.SyntheticAISClient(fleet), ["ShipStaticData", "PositionReport"])]
+
     static_client = AISStreamClient(config.AISSTREAM_API_KEY)
     if config.AISSTREAM_AUX_API_KEY:
         return [
@@ -46,7 +58,10 @@ def _build_feeds() -> list[tuple[AISStreamClient, list[str]]]:
 async def run_ingestion_service():
     print("[INICIO] SERVICIO DE INGESTA AIS -> KAFKA")
 
-    if not config.AISSTREAM_API_KEY:
+    if constants.AIS_SYNTHETIC:
+        print("[SINTETICO] Generando datos sinteticos: NO hay conexion a AISStream real. "
+              "Desactivar con AIS_SYNTHETIC=false en cuanto el proveedor se recupere.")
+    elif not config.AISSTREAM_API_KEY:
         print("[ERROR] AISSTREAM_API_KEY no encontrada en la configuración.")
         sys.exit(1)
 
@@ -57,7 +72,7 @@ async def run_ingestion_service():
         dlq_pub=build_dlq_publisher(),
     )
 
-    await tracker.run(_build_feeds(), constants.AIS_COVERAGE_BBOX,
+    await tracker.run(await _build_feeds(), constants.AIS_COVERAGE_BBOX,
                       stats_interval=constants.STATS_INTERVAL_SECONDS)
 
 

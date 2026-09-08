@@ -74,7 +74,10 @@ class AISTracker:
     def _reject(self, message: dict, reason: str) -> None:
         self.stats["rejected"] += 1
         if self.dlq_pub:
-            self.dlq_pub.publish(message, reason=reason)
+            try:
+                self.dlq_pub.publish(message, reason=reason)
+            except Exception as e:  # noqa: BLE001 — DLQ es best-effort: si falla, se descarta
+                print(f"[ERROR][DLQ] no se pudo publicar el rechazo (se descarta): {e}")
 
     async def _handle(self, message: dict) -> None:
         """Valida contra el contrato y publica; lo que no cumple va a la DLQ."""
