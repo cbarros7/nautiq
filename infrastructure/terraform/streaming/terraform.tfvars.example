@@ -1,0 +1,31 @@
+# ==============================================================================
+# Nautiq Streaming — terraform.tfvars.example
+# Copiar este archivo como 'terraform.tfvars' y completar con tus valores
+# ==============================================================================
+
+# ID de tu suscripción de Azure (Requerido)
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Región (Mismo datacenter de tu Azure Data Lake para transferencias gratuitas)
+location       = "swedencentral"
+location_short = "swc"
+
+# Usuario administrador de la VM
+admin_username      = "azureuser"
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+
+# Seguridad de Red: Reemplaza con tu IP pública (curl -s https://ifconfig.me/ip) para restringir accesos
+allowed_ssh_cidr     = "0.0.0.0/0" # Puerto 22 (SSH)
+allowed_ui_cidr      = "0.0.0.0/0" # Puertos 8081 y 8082 (Flink Web UI)
+allowed_metrics_cidr = "0.0.0.0/0" # Puertos 9249-9252 (Métricas Prometheus)
+
+# Tamaños de máquina (Standard_D2s_v5 tiene 2 vCPUs y 8 GB RAM, ideal para Flink + RocksDB)
+vm_size_prod = "Standard_D2s_v5"
+vm_size_dev  = "Standard_D2s_v5"
+
+# Ahorro de Costes (Spot)
+spot_prod = false  # False para 100% SLA continuo sin interrupción en PROD
+spot_dev  = true   # True para ~80% de descuento en DEV
+
+# (Opcional) URL del repositorio si deseas clonar en el boot
+git_repo_url = ""
