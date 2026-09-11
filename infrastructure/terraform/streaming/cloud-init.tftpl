@@ -22,40 +22,40 @@ packages:
 write_files:
   # Certificados Aiven Kafka
   - path: /home/${admin_username}/.secrets_staging/.certs/ca.pem
-    owner: ${admin_username}:${admin_username}
+    owner: root:root
     permissions: '0644'
     encoding: b64
     content: ${ca_pem_b64}
 
   - path: /home/${admin_username}/.secrets_staging/.certs/service.cert
-    owner: ${admin_username}:${admin_username}
+    owner: root:root
     permissions: '0644'
     encoding: b64
     content: ${service_cert_b64}
 
   - path: /home/${admin_username}/.secrets_staging/.certs/service.key
-    owner: ${admin_username}:${admin_username}
+    owner: root:root
     permissions: '0600'
     encoding: b64
     content: ${service_key_b64}
 
   # Certificado SSL Azure Function
   - path: /home/${admin_username}/.secrets_staging/${azure_cert_filename}
-    owner: ${admin_username}:${admin_username}
+    owner: root:root
     permissions: '0644'
     encoding: b64
     content: ${azure_cert_b64}
 
   # Archivo de entorno (.env.dev o .env.prod)
   - path: /home/${admin_username}/.secrets_staging/${env_filename}
-    owner: ${admin_username}:${admin_username}
+    owner: root:root
     permissions: '0600'
     encoding: b64
     content: ${env_file_b64}
 
   # Script de orquestacion y ejecucion Flink (disponible desde el primer segundo)
   - path: /home/${admin_username}/nautiq/run_flink.sh
-    owner: ${admin_username}:${admin_username}
+    owner: root:root
     permissions: '0755'
     encoding: b64
     content: ${run_flink_b64}
@@ -93,6 +93,7 @@ runcmd:
 
   # 2. Agregar usuario administrador al grupo docker (sin necesidad de sudo)
   - usermod -aG docker ${admin_username}
+  - chown -R ${admin_username}:${admin_username} /home/${admin_username}
   - systemctl enable docker
   - systemctl start docker
 
@@ -105,6 +106,8 @@ runcmd:
   - cp /home/${admin_username}/.secrets_staging/${azure_cert_filename} /home/${admin_username}/nautiq/streaming/src/
   - cp /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/${env_filename}
   - cp /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/.env
+  - cat /home/${admin_username}/nautiq/.certs/service.cert /home/${admin_username}/nautiq/.certs/service.key > /home/${admin_username}/nautiq/.certs/service_full.pem 2>/dev/null || true
+  - chmod 644 /home/${admin_username}/nautiq/.certs/service_full.pem 2>/dev/null || true
   - chmod 600 /home/${admin_username}/nautiq/.certs/service.key
   - chmod 600 /home/${admin_username}/nautiq/${env_filename}
   - chown -R ${admin_username}:${admin_username} /home/${admin_username}/nautiq
@@ -131,6 +134,8 @@ runcmd:
       cp -n /home/${admin_username}/.secrets_staging/${azure_cert_filename} /home/${admin_username}/nautiq/streaming/src/ 2>/dev/null || true
       cp -n /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/${env_filename} 2>/dev/null || true
       cp -n /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/.env 2>/dev/null || true
+      cat /home/${admin_username}/nautiq/.certs/service.cert /home/${admin_username}/nautiq/.certs/service.key > /home/${admin_username}/nautiq/.certs/service_full.pem 2>/dev/null || true
+      chmod 644 /home/${admin_username}/nautiq/.certs/service_full.pem 2>/dev/null || true
       chmod 600 /home/${admin_username}/nautiq/.certs/service.key 2>/dev/null || true
       chmod 600 /home/${admin_username}/nautiq/.env* 2>/dev/null || true
       chmod +x /home/${admin_username}/nautiq/run_flink.sh 2>/dev/null || true

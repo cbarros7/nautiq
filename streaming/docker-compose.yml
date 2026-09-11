@@ -15,7 +15,7 @@ services:
       - ./flink-checkpoints:/opt/flink/checkpoints
       - ../.certs:/opt/flink/certs:ro
     env_file:
-      - ../.env
+      - ${ENV_FILE:-../.env}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/config > /dev/null || exit 1"]
       interval: 30s
@@ -42,4 +42,4 @@ services:
       - ./flink-checkpoints:/opt/flink/checkpoints
       - ../.certs:/opt/flink/certs:ro
     env_file:
-      - ../.env
+      - ${ENV_FILE:-../.env}

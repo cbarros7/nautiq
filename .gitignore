@@ -226,8 +226,19 @@ data/*.db-shm
 # Datasets de referencia reales (grandes; UN/LOCODE se auto-descarga, THETIS manual)
 data/reference/
 
-# Certificados
+# Certificados y llaves
 .certs/
+*.pem
+*.crt
+*.key
+*.p12
+*.jks
+streaming/src/*.pem
+
+# Environments y secretos
+.env*
+!.env.example
+
 
 # Egg-info
 .egg-info/
@@ -273,3 +284,7 @@ local.settings.json
 BUILD_INFO
 # Pycharm
 .idea/
+
+# Temporary and debug outputs
+tmp/
+streaming/src/debug_output/

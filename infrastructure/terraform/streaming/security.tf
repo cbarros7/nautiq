@@ -5,9 +5,10 @@
 # políticas de acceso independientes y evitar reglas globales compartidas.
 
 # ------------------------------------------------------------------------------
-# 1. NSG para DEV
+# 1. NSG para DEV (Opcional, condicionado por var.enable_dev)
 # ------------------------------------------------------------------------------
 resource "azurerm_network_security_group" "dev" {
+  count               = var.enable_dev ? 1 : 0
   name                = "nsg-nautiq-streaming-dev-${var.location_short}"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
@@ -56,14 +57,16 @@ resource "azurerm_network_security_group" "dev" {
 
 # Asociar NSG a la NIC de DEV
 resource "azurerm_network_interface_security_group_association" "dev" {
-  network_interface_id      = azurerm_network_interface.dev.id
-  network_security_group_id = azurerm_network_security_group.dev.id
+  count                     = var.enable_dev ? 1 : 0
+  network_interface_id      = azurerm_network_interface.dev[0].id
+  network_security_group_id = azurerm_network_security_group.dev[0].id
 }
 
 # ------------------------------------------------------------------------------
-# 2. NSG para PROD
+# 2. NSG para PROD (Opcional, condicionado por var.enable_prod)
 # ------------------------------------------------------------------------------
 resource "azurerm_network_security_group" "prod" {
+  count               = var.enable_prod ? 1 : 0
   name                = "nsg-nautiq-streaming-prod-${var.location_short}"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
@@ -112,6 +115,7 @@ resource "azurerm_network_security_group" "prod" {
 
 # Asociar NSG a la NIC de PROD
 resource "azurerm_network_interface_security_group_association" "prod" {
-  network_interface_id      = azurerm_network_interface.prod.id
-  network_security_group_id = azurerm_network_security_group.prod.id
+  count                     = var.enable_prod ? 1 : 0
+  network_interface_id      = azurerm_network_interface.prod[0].id
+  network_security_group_id = azurerm_network_security_group.prod[0].id
 }

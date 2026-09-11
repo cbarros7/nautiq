@@ -6,7 +6,8 @@ CREATE TABLE EtaAlertsHttpSink (
     'url' = '{webhook_url}',
     'format' = 'raw',
     'insert-method' = 'POST',
-    'gid.connector.http.sink.request.timeout' = '10',
+    'gid.connector.http.sink.writer.request.mode' = 'single',
+    'gid.connector.http.sink.request.timeout' = '60',
     'gid.connector.http.sink.header.Content-Type' = 'application/json',
-    'gid.connector.http.sink.header.X-Nautiq-Source' = 'Flink-ETA-Engine'{webhook_auth_header}
+    'gid.connector.http.sink.header.X-Nautiq-Source' = 'Flink-ETA-Engine'{webhook_security_options}{webhook_auth_header}
 )

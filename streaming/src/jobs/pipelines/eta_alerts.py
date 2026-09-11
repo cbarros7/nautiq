@@ -92,40 +92,57 @@ def build_eta_alerts_pipeline(t_env: StreamTableEnvironment, stmt_set: Statement
     
     # Crear Auth Header si hay una key definida
     webhook_auth_header = ""
-    webhook_key = os.getenv("FASTAPI_WEBHOOK_KEY", "")
+    webhook_key = config.FASTAPI_WEBHOOK_KEY
     if webhook_key:
         webhook_auth_header = f",\n    'gid.connector.http.sink.header.Authorization' = 'Bearer {webhook_key}'"
 
+    # Opciones de seguridad SSL para HTTP Sink (requerido por flink-http-connector en HTTPS)
+    webhook_security_options = ""
+    if config.FASTAPI_WEBHOOK_URL and config.FASTAPI_WEBHOOK_URL.lower().startswith("https://"):
+        keystore_path = "/etc/ssl/certs/java/cacerts"
+        if not os.path.exists(keystore_path):
+            keystore_path = "/opt/java/openjdk/lib/security/cacerts"
+        webhook_security_options = (
+            f",\n    'gid.connector.http.security.keystore.path' = '{keystore_path}',"
+            f"\n    'gid.connector.http.security.keystore.password' = 'changeit'"
+        )
+        cert_prod = "/opt/flink/usrlib/src/azure_function_cert_prod.pem"
+        cert_dev = "/opt/flink/usrlib/src/azure_function_cert.pem"
+        if os.path.exists(cert_prod):
+            webhook_security_options += f",\n    'gid.connector.http.security.cert.server' = '{cert_prod}'"
+        elif os.path.exists(cert_dev):
+            webhook_security_options += f",\n    'gid.connector.http.security.cert.server' = '{cert_dev}'"
+
     sink_sql = schema_utils.read_sql_file(os.path.join(sql_dir, "ddl", "create_eta_alerts_sink.sql")).format(
         webhook_url=config.FASTAPI_WEBHOOK_URL,
+        webhook_security_options=webhook_security_options,
         webhook_auth_header=webhook_auth_header
     )
     t_env.execute_sql(sink_sql)
 
-    # --- 3. Crear Sink de Salida Local (JSON Debug) ---
-    import logging
-    logger = logging.getLogger("nautiq_job")
-    logger.info("Inyectando Debug Sinks (JSON local) para port_inventory_summary...")
-    
-    debug_inventory_ddl = """
-    CREATE TABLE DebugInventorySummary (
-        port_name STRING,
-        window_start TIMESTAMP(3),
-        congested_count BIGINT,
-        atracados_json STRING,
-        fondeados_json STRING,
-        en_camino_json STRING
-    ) WITH (
-        'connector' = 'filesystem',
-        'path' = 'file:///opt/flink/usrlib/src/debug_output/inventory',
-        'format' = 'json'
-    )
-    """
-    t_env.execute_sql(debug_inventory_ddl)
+    # --- 3. Crear Sink de Salida Local (JSON Debug, sólo en dev) ---
+    if config.FLINK_ENV == "dev":
+        import logging
+        logger = logging.getLogger("nautiq_job")
+        logger.info("Inyectando Debug Sinks (JSON local en /tmp) para port_inventory_summary...")
+        
+        debug_inventory_ddl = """
+        CREATE TABLE DebugInventorySummary (
+            port_name STRING,
+            window_start TIMESTAMP(3),
+            congested_count BIGINT,
+            atracados_json STRING,
+            fondeados_json STRING,
+            en_camino_json STRING
+        ) WITH (
+            'connector' = 'filesystem',
+            'path' = 'file:///tmp/debug_output/inventory',
+            'format' = 'json'
+        )
+        """
+        t_env.execute_sql(debug_inventory_ddl)
+        stmt_set.add_insert_sql("INSERT INTO DebugInventorySummary SELECT * FROM port_inventory_summary")
 
     # --- 4. Añadir INSERTs directos al statement set ---
     # Añadimos la inserción del payload final al HTTP Sink
     stmt_set.add_insert_sql(payload_insert_sql)
-    
-    # Añadimos la inserción de la tabla intermedia al Local Sink
-    stmt_set.add_insert_sql("INSERT INTO DebugInventorySummary SELECT * FROM port_inventory_summary")

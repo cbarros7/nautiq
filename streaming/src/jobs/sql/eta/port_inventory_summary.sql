@@ -27,17 +27,17 @@ SELECT
     JSON_ARRAYAGG(
         CASE WHEN vessel_status = 'ATRACADO' 
              THEN JSON_OBJECT(KEY 'mmsi' VALUE mmsi, KEY 'eslora' VALUE length_m, KEY 'tipo_buque' VALUE ship_type NULL ON NULL) 
-        END NULL ON NULL
+        END ABSENT ON NULL
     ) AS atracados_json,
     JSON_ARRAYAGG(
         CASE WHEN vessel_status = 'FONDEADO' 
              THEN JSON_OBJECT(KEY 'mmsi' VALUE mmsi, KEY 'eslora' VALUE length_m, KEY 'tipo_buque' VALUE ship_type NULL ON NULL) 
-        END NULL ON NULL
+        END ABSENT ON NULL
     ) AS fondeados_json,
     JSON_ARRAYAGG(
         CASE WHEN vessel_status = 'EN_CAMINO' 
              THEN JSON_OBJECT(KEY 'mmsi' VALUE mmsi, KEY 'eslora' VALUE length_m, KEY 'tipo_buque' VALUE ship_type NULL ON NULL) 
-        END NULL ON NULL
+        END ABSENT ON NULL
     ) AS en_camino_json
 FROM unique_port_vessel_inventory
 GROUP BY port_name, TUMBLE(window_rowtime, INTERVAL '{dedup_window}' MINUTE);
