@@ -1,8 +1,9 @@
 FROM flink:1.19.0-scala_2.12-java11
 
-# Instalar Python 3.11 y herramientas de compilación (JDK/gcc) necesarias para arquitectura ARM64
+# Instalar Python 3.11, herramientas de compilación y asegurar certificados CA
 RUN apt-get update -y && \
-    apt-get install -y python3 python3-pip python3-dev openjdk-11-jdk gcc g++ && \
+    apt-get install -y python3 python3-pip python3-dev openjdk-11-jdk gcc g++ ca-certificates ca-certificates-java && \
+    (test -f /opt/java/openjdk/lib/security/cacerts && cp -f /opt/java/openjdk/lib/security/cacerts /etc/ssl/certs/java/cacerts || update-ca-certificates -f) && \
     rm -rf /var/lib/apt/lists/*
 
 # Vincular python3 a python por defecto

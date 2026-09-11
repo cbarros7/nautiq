@@ -34,14 +34,18 @@ ADLS_BRONZE_URL = f"abfss://bronze@{AZURE_STORAGE_ACCOUNT}.dfs.core.windows.net/
 ADLS_DLQ_SPOOFING_URL = f"abfss://bronze@{AZURE_STORAGE_ACCOUNT}.dfs.core.windows.net/dlq/spoofing"
 ADLS_DLQ_CONTRACTS_URL = f"abfss://bronze@{AZURE_STORAGE_ACCOUNT}.dfs.core.windows.net/dlq/contracts"
 
-# FastAPI Webhook
-FASTAPI_WEBHOOK_URL = os.getenv("FASTAPI_WEBHOOK_URL")
+# FastAPI / Azure Function Webhook
+FASTAPI_WEBHOOK_URL = os.getenv("ETA_ALERTS_WEBHOOK_URL") or os.getenv("FASTAPI_WEBHOOK_URL")
+FASTAPI_WEBHOOK_KEY = os.getenv("ETA_ALERTS_WEBHOOK_KEY") or os.getenv("FASTAPI_WEBHOOK_KEY", "")
 
 # Tópicos fuente y DLQ
-KAFKA_TOPIC_POSITIONS = os.getenv("KAFKA_TOPIC_POSITIONS", "dev-vessel-positions-raw")
-KAFKA_TOPIC_STATIC = os.getenv("KAFKA_TOPIC_STATIC", "dev-vessel-static-raw")
-KAFKA_TOPIC_DLQ = os.getenv("KAFKA_TOPIC_DLQ", "dev-vessel-contracts-dlq")
-KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "flink-ais-consumer-test")
+_nautiq_env = os.getenv("NAUTIQ_ENV", "dev").lower()
+_topic_prefix = "prod" if _nautiq_env in ("pro", "prod") else "dev"
+
+KAFKA_TOPIC_POSITIONS = os.getenv("KAFKA_TOPIC_POSITIONS") or f"{_topic_prefix}-vessel-positions-raw"
+KAFKA_TOPIC_STATIC = os.getenv("KAFKA_TOPIC_STATIC") or f"{_topic_prefix}-vessel-static-raw"
+KAFKA_TOPIC_DLQ = os.getenv("KAFKA_TOPIC_DLQ")
+KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", f"flink-ais-consumer-{_topic_prefix}")
 
 # --------------------------------------------------------------------------
 # Lógica de Negocio: Detección de Spoofing
@@ -86,19 +90,19 @@ TARGET_PORTS = [
 ]
 
 # ---- Reglas de Negocio ETA & Alertas ----
-ETA_ALERT_HORIZON_HOURS = 48        # Disparar alerta si ETA dinámico < N horas (Dev: 48 a 72 horas). (Prod: 12 a 24 horas)
-CONGESTION_VESSEL_THRESHOLD = 1     # Mínimo de buques en puerto para considerar "congestión" (Dev: 1 para pruebas). (Prod: 3 a 5 pruebas)
-ALERT_DEDUP_WINDOW_MINUTES = 1     # Ventana de deduplicación por buque (Dev: 1 a 5 para pruebas). (Prod: 30 a 60 minutos)
-EN_CAMINO_MAX_ETA_HOURS = 72        # Filtro de distancia temporal para buques "en camino" (Dev: 48 a 72 horas). (Prod: 48 a 72 horas)
+ETA_ALERT_HORIZON_HOURS = int(os.getenv("ETA_ALERT_HORIZON_HOURS", "48"))        # Disparar alerta si ETA dinámico < N horas (Dev: 48 a 72 horas). (Prod: 12 a 24 horas)
+CONGESTION_VESSEL_THRESHOLD = int(os.getenv("CONGESTION_VESSEL_THRESHOLD", "1")) # Mínimo de buques en puerto para considerar "congestión" (Dev: 1 para pruebas). (Prod: 3 a 5 pruebas)
+ALERT_DEDUP_WINDOW_MINUTES = int(os.getenv("ALERT_DEDUP_WINDOW_MINUTES", "1"))     # Ventana de deduplicación por buque (Dev: 1 a 5 para pruebas). (Prod: 30 a 60 minutos)
+EN_CAMINO_MAX_ETA_HOURS = int(os.getenv("EN_CAMINO_MAX_ETA_HOURS", "72"))        # Filtro de distancia temporal para buques "en camino" (Dev: 48 a 72 horas). (Prod: 48 a 72 horas)
 
 # ---- Configuración de Flink ----
-FLINK_PARALLELISM = 2               # Número de hilos paralelos (Task Slots)
+FLINK_PARALLELISM = int(os.getenv("FLINK_PARALLELISM", "2"))               # Número de hilos paralelos (Task Slots)
 
 # ---- Configuración del Orquestador (External Orchestrator Pattern) ----
 # ADLS_SAVEPOINTS_URL: Ruta centralizada para almacenar los Savepoints en Azure ADLS.
 ADLS_SAVEPOINTS_URL = f"abfss://checkpoints@{AZURE_STORAGE_ACCOUNT}.dfs.core.windows.net/flink_savepoints"
 # FLINK_ENV: Entorno de despliegue (dev/prod).
-FLINK_ENV = os.getenv("FLINK_ENV", "dev")
+FLINK_ENV = os.getenv("FLINK_ENV") or os.getenv("NAUTIQ_ENV") or "dev"
 # FLINK_FORCE_COLD_START: Bandera de emergencia para ignorar Savepoints y reconstruir la memoria desde cero.
 FLINK_FORCE_COLD_START = os.getenv("FLINK_FORCE_COLD_START", "false").lower() == "true"
 # FLINK_IGNORE_UNCLAIMED_STATE: Bandera para permitir cambios menores (como quitar un JOIN) sin corromper el arranque.
