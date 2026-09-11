@@ -1,0 +1,37 @@
+{
+  "IsEncrypted": false,
+  "_comentario": [
+    "Plantilla para ejecutar la Function EN LOCAL con Azure Functions Core Tools:",
+    "  cp local.settings.json.example local.settings.json   (y rellena los valores)",
+    "  func start",
+    "",
+    "local.settings.json NO se commitea (está en .gitignore y .funcignore) y NO se",
+    "despliega: en Azure estos mismos nombres van en las Application Settings del",
+    "Function App. El código lee siempre con os.getenv, así que no distingue de",
+    "dónde vienen; python-dotenv sigue funcionando para el replay fuera de Functions.",
+    "",
+    "Los valores de 'Values' se inyectan como variables de entorno del proceso."
+  ],
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+
+    "NAUTIQ_ENV": "DEV",
+
+    "PGHOST": "db.<project-ref>.supabase.co",
+    "PGPORT": "5432",
+    "PGDATABASE": "postgres",
+    "PGUSER": "postgres",
+    "PGPASSWORD": "",
+    "PGSSLMODE": "require",
+
+    "ADLS_SAS_TOKEN": "",
+
+    "GEMINI_API_KEY": "",
+    "GEMINI_MODEL": "",
+
+    "FOUNDRY_ENDPOINT": "",
+    "FOUNDRY_API_KEY": "",
+    "FOUNDRY_MODEL": "gpt-4.1-mini"
+  }
+}

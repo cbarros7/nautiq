@@ -1,0 +1,15 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+
+# Secretos locales: las variables van en las Application Settings del
+# Function App, NUNCA dentro del paquete desplegado. El patrón cubre también
+# el .example, que es documentación y no pinta nada en el runtime.
+local.settings.json*
+.env
+
+# Utilidades de desarrollo que no forman parte del runtime de la Function.
+scripts/
+replay.log
+Dockerfile

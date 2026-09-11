@@ -150,6 +150,7 @@ activemq-data/
 # Environments
 .env
 .envrc
+
 .venv
 env/
 venv/
@@ -217,6 +218,14 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# SQLite del MVP (artefacto de runtime)
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Datasets de referencia reales (grandes; UN/LOCODE se auto-descarga, THETIS manual)
+data/reference/
+
 # Certificados
 .certs/
 
@@ -226,7 +235,6 @@ __marimo__/
 .DS_Store
 
 # Terraform 
-# Terraform
 *.tfstate
 *.tfstate.*
 *.tfstate.backup
@@ -242,3 +250,26 @@ override.tf.json
 !*.tfvars.example
 .terraformrc
 terraform.rc
+#claude
+.claude/
+
+#oraculo
+prueba.ipynb
+# Node / frontend (Vite)
+node_modules/
+frontend/dist/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Azure Functions: secretos de ejecucion local (la plantilla versionada es
+# api/local.settings.json.example). En Azure van en Application Settings.
+local.settings.json
+.python_packages/
+
+# Sello de build que escribe el workflow antes de empaquetar (SHA del commit).
+# Se genera en cada despliegue, no se versiona.
+BUILD_INFO
+# Pycharm
+.idea/
