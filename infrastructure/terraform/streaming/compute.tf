@@ -50,7 +50,7 @@ resource "azurerm_linux_virtual_machine" "dev" {
 
   admin_ssh_key {
     username   = var.admin_username
-    public_key = file(var.ssh_public_key_path)
+    public_key = file(pathexpand(var.ssh_public_key_path))
   }
 
   os_disk {
@@ -66,7 +66,7 @@ resource "azurerm_linux_virtual_machine" "dev" {
     version   = "latest"
   }
 
-  # Inyección de dependencias, swap y certificados secretos de DEV vía cloud-init
+  # Inyección de dependencias, swap, scripts y certificados secretos de DEV vía cloud-init
   custom_data = base64encode(templatefile("${path.module}/cloud-init.tftpl", {
     admin_username      = var.admin_username
     git_repo_url        = var.git_repo_url
@@ -77,6 +77,7 @@ resource "azurerm_linux_virtual_machine" "dev" {
     azure_cert_b64      = filebase64("${path.root}/../../../streaming/src/azure_function_cert.pem")
     env_filename        = ".env.dev"
     env_file_b64        = filebase64("${path.root}/../../../.env.dev")
+    run_flink_b64       = filebase64("${path.root}/../../../run_flink.sh")
     target_env          = "dev"
   }))
 
@@ -131,7 +132,7 @@ resource "azurerm_linux_virtual_machine" "prod" {
 
   admin_ssh_key {
     username   = var.admin_username
-    public_key = file(var.ssh_public_key_path)
+    public_key = file(pathexpand(var.ssh_public_key_path))
   }
 
   os_disk {
@@ -147,7 +148,7 @@ resource "azurerm_linux_virtual_machine" "prod" {
     version   = "latest"
   }
 
-  # Inyección de dependencias, swap y certificados secretos de PROD vía cloud-init
+  # Inyección de dependencias, swap, scripts y certificados secretos de PROD vía cloud-init
   custom_data = base64encode(templatefile("${path.module}/cloud-init.tftpl", {
     admin_username      = var.admin_username
     git_repo_url        = var.git_repo_url
@@ -158,6 +159,7 @@ resource "azurerm_linux_virtual_machine" "prod" {
     azure_cert_b64      = filebase64("${path.root}/../../../streaming/src/azure_function_cert_prod.pem")
     env_filename        = ".env.prod"
     env_file_b64        = filebase64("${path.root}/../../../.env.prod")
+    run_flink_b64       = filebase64("${path.root}/../../../run_flink.sh")
     target_env          = "prod"
   }))
 

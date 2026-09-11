@@ -118,6 +118,12 @@ jobs:
             echo "Verificando estado de los contenedores Docker..."
             sleep 6
             docker ps --filter "name=nautiq-${TARGET_ENV}" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            RUNNING_CONTAINERS="$(docker ps --filter "name=nautiq-${TARGET_ENV}" --filter "status=running" -q)"
+            if [ -z "$RUNNING_CONTAINERS" ]; then
+              echo "::error::Fallo en el despliegue: No hay contenedores en ejecucion para nautiq-${TARGET_ENV}"
+              docker logs "nautiq-${TARGET_ENV}-jobmanager-1" --tail 50 2>/dev/null || true
+              exit 1
+            fi
 
             echo "=========================================================="
             echo "Re-despliegue de streaming completado con éxito en $TARGET_ENV"

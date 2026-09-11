@@ -32,7 +32,19 @@ variable "ssh_public_key_path" {
 }
 
 variable "allowed_ssh_cidr" {
-  description = "Rango CIDR con permiso para conectarse por SSH (por defecto 0.0.0.0/0, puedes poner tu IP pública x.x.x.x/32)"
+  description = "Rango CIDR con permiso para conectarse por SSH (puerto 22). Recomendado: tu IP pública x.x.x.x/32"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+variable "allowed_ui_cidr" {
+  description = "Rango CIDR con permiso para acceder al Dashboard de Flink (8081/8082). Recomendado: tu IP pública x.x.x.x/32"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+variable "allowed_metrics_cidr" {
+  description = "Rango CIDR con permiso para raspar métricas Prometheus (9249-9252). Recomendado: IP de Grafana/Prometheus scraper"
   type        = string
   default     = "0.0.0.0/0"
 }

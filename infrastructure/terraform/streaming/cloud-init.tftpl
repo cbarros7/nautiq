@@ -53,6 +53,13 @@ write_files:
     encoding: b64
     content: ${env_file_b64}
 
+  # Script de orquestacion y ejecucion Flink (disponible desde el primer segundo)
+  - path: /home/${admin_username}/nautiq/run_flink.sh
+    owner: ${admin_username}:${admin_username}
+    permissions: '0755'
+    encoding: b64
+    content: ${run_flink_b64}
+
   # 3. Servicio systemd para auto-arranque tras reinicios (Spot / Mantenimiento)
   - path: /etc/systemd/system/nautiq-streaming.service
     owner: root:root

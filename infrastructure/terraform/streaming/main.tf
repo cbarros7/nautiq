@@ -13,13 +13,12 @@ terraform {
     }
   }
 
-  # Descomentar si deseas usar el backend remoto existente en Azure Storage
-  # backend "azurerm" {
-  #   resource_group_name  = "rg-nautiq-tfstate-swc"
-  #   storage_account_name = "stnautiqtfstate"
-  #   container_name       = "tfstate"
-  #   key                  = "streaming.terraform.tfstate"
-  # }
+  backend "azurerm" {
+    resource_group_name  = "rg-nautiq-tfstate-swc"
+    storage_account_name = "stnautiqtfstate"
+    container_name       = "tfstate"
+    key                  = "streaming.terraform.tfstate"
+  }
 }
 
 provider "azurerm" {

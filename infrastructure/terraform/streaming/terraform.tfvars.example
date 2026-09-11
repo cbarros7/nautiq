@@ -14,9 +14,10 @@ location_short = "swc"
 admin_username      = "azureuser"
 ssh_public_key_path = "~/.ssh/id_rsa.pub"
 
-# Seguridad: Reemplaza con tu IP pública para que solo tú puedas ver la Web UI y acceder por SSH
-# Para obtener tu IP: curl -s https://ifconfig.me/ip
-allowed_ssh_cidr = "0.0.0.0/0"
+# Seguridad de Red: Reemplaza con tu IP pública (curl -s https://ifconfig.me/ip) para restringir accesos
+allowed_ssh_cidr     = "0.0.0.0/0" # Puerto 22 (SSH)
+allowed_ui_cidr      = "0.0.0.0/0" # Puertos 8081 y 8082 (Flink Web UI)
+allowed_metrics_cidr = "0.0.0.0/0" # Puertos 9249-9252 (Métricas Prometheus)
 
 # Tamaños de máquina (Standard_D2s_v5 tiene 2 vCPUs y 8 GB RAM, ideal para Flink + RocksDB)
 vm_size_prod = "Standard_D2s_v5"
