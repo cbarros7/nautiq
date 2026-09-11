@@ -31,7 +31,7 @@ name: Deploy Streaming (Flink VM)
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - "streaming/**"
       - "run_flink.sh"
