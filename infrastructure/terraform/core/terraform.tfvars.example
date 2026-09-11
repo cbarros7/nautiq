@@ -1,0 +1,12 @@
+# ============================================================================
+# Nautiq Core — Variables de Ejemplo
+# ============================================================================
+# Copia este archivo a terraform.tfvars y rellena los valores.
+#   cp terraform.tfvars.example terraform.tfvars
+# ============================================================================
+
+subscription_id_core = "00000000-0000-0000-0000-000000000000"
+location             = "swedencentral"
+location_short       = "swc"
+environment          = "dev"
+app_service_sku      = "B1"
