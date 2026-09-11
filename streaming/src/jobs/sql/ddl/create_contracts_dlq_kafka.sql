@@ -1,7 +1,7 @@
 /* DDL: Crea la tabla origen para contratos rotos (Kafka DLQ). */
 CREATE TABLE {table_name} (
     `raw_payload` STRING,
-    `kafka_ingestion_time` TIMESTAMP_LTZ(3) METADATA FROM 'timestamp'
+    `_kafka_ingestion_time` TIMESTAMP_LTZ(3) METADATA FROM 'timestamp'
 ) WITH (
     'connector' = 'kafka',
     'topic' = '{topic_name}',

@@ -5,7 +5,7 @@ ENV_VAR="dev"
 DETACH=false
 
 # Parse arguments
-while [[ "$#" -gt 0 ]]; do
+while [ "$#" -gt 0 ]; do
     case $1 in
         --env) ENV_VAR="$2"; shift ;;
         --detach|-d) DETACH=true ;;
@@ -14,17 +14,17 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [[ "$ENV_VAR" != "prod" && "$ENV_VAR" != "dev" ]]; then
+if [ "$ENV_VAR" != "prod" ] && [ "$ENV_VAR" != "dev" ]; then
     echo "Error: Entorno '$ENV_VAR' no es válido. Solo se permite 'prod' y 'dev'."
     exit 1
 fi
 
 # Asegurar que ejecutamos comandos desde la carpeta 'streaming' independientemente de dónde se llame al script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" > /dev/null 2>&1 && pwd)"
 cd "$SCRIPT_DIR/streaming" || { echo "Error: No se encontró el directorio 'streaming'"; exit 1; }
 
 # Asignar puerto según entorno para evitar colisiones
-if [ "$ENV_VAR" == "prod" ]; then
+if [ "$ENV_VAR" = "prod" ]; then
     UI_PORT="${FLINK_UI_PORT_PROD:-8082}"
     PROM_JM_PORT="${FLINK_PROM_PORT_JM_PROD:-9249}"
     PROM_TM_PORT="${FLINK_PROM_PORT_TM_PROD:-9250}"
@@ -49,10 +49,10 @@ echo "  - Metrics TM: http://localhost:$PROM_TM_PORT/metrics"
 echo "=================================================="
 
 echo "Deteniendo contenedores antiguos de $PROJECT_NAME..."
-# Detener también contenedores legacy sin prefijo si existen para liberar puertos
-docker stop streaming-jobmanager-1 streaming-taskmanager-1 2>/dev/null || true
-docker rm -f streaming-jobmanager-1 streaming-taskmanager-1 2>/dev/null || true
-docker compose -p "$PROJECT_NAME" --env-file "../.env.$ENV_VAR" down
+# Detener y remover contenedores previos para evitar conflictos de nombres y puertos
+docker stop "$JOBMANAGER_CONTAINER" "$TASKMANAGER_CONTAINER" streaming-jobmanager-1 streaming-taskmanager-1 2>/dev/null || true
+docker rm -f "$JOBMANAGER_CONTAINER" "$TASKMANAGER_CONTAINER" streaming-jobmanager-1 streaming-taskmanager-1 2>/dev/null || true
+docker compose -p "$PROJECT_NAME" --env-file "../.env.$ENV_VAR" down 2>/dev/null || true
 
 echo "Levantando y reconstruyendo contenedores para $PROJECT_NAME (usando .env.$ENV_VAR)..."
 ENV_FILE="../.env.$ENV_VAR" NAUTIQ_ENV=$ENV_VAR FLINK_UI_PORT=$UI_PORT FLINK_PROM_PORT_JM=$PROM_JM_PORT FLINK_PROM_PORT_TM=$PROM_TM_PORT docker compose -p "$PROJECT_NAME" --env-file "../.env.$ENV_VAR" up --build -d
@@ -62,16 +62,16 @@ RETRIES=0
 MAX_RETRIES=60
 while [ $RETRIES -lt $MAX_RETRIES ]; do
     RUNNING=$(docker inspect --format='{{.State.Running}}' "$JOBMANAGER_CONTAINER" 2>/dev/null || echo "false")
-    STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$JOBMANAGER_CONTAINER" 2>/dev/null || echo "starting")
+    STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}starting{{end}}' "$JOBMANAGER_CONTAINER" 2>/dev/null || echo "starting")
     
-    if [ "$STATUS" == "healthy" ]; then
-        echo -e "\nJobManager listo y saludable."
+    if [ "$STATUS" = "healthy" ]; then
+        printf "\nJobManager listo y saludable.\n"
         break
-    elif [ "$STATUS" == "unhealthy" ]; then
-        echo -e "\nError: El JobManager falló su healthcheck. Revisa los logs con 'docker logs $JOBMANAGER_CONTAINER'."
+    elif [ "$STATUS" = "unhealthy" ]; then
+        printf "\nError: El JobManager falló su healthcheck. Revisa los logs con 'docker logs %s'.\n" "$JOBMANAGER_CONTAINER"
         exit 1
-    elif [ "$RUNNING" == "false" ] && [ "$STATUS" != "starting" ]; then
-        echo -e "\nError: El JobManager no pudo arrancar. Revisa los logs con 'docker logs $JOBMANAGER_CONTAINER'."
+    elif [ $RETRIES -gt 5 ] && [ "$RUNNING" = "false" ]; then
+        printf "\nError: El JobManager no pudo arrancar. Revisa los logs con 'docker logs %s'.\n" "$JOBMANAGER_CONTAINER"
         exit 1
     fi
     printf "."
@@ -80,7 +80,7 @@ while [ $RETRIES -lt $MAX_RETRIES ]; do
 done
 
 if [ $RETRIES -ge $MAX_RETRIES ]; then
-    echo -e "\nError: Timeout esperando a que el JobManager esté saludable."
+    printf "\nError: Timeout esperando a que el JobManager esté saludable.\n"
     exit 1
 fi
 

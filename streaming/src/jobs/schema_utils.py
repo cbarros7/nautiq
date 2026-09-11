@@ -239,6 +239,7 @@ def generate_contracts_dlq_ddl(topic_name: str, table_name: str, config_dict: di
             table_name=table_name,
             topic_name=topic_name,
             kafka_bootstrap_servers=config_dict["KAFKA_BOOTSTRAP_SERVERS"],
+            kafka_group_id=config_dict.get("KAFKA_GROUP_ID", "flink-contracts-dlq-consumer"),
             kafka_security_protocol=config_dict["KAFKA_SECURITY_PROTOCOL"],
             kafka_ssl_ca_location=config_dict["KAFKA_SSL_CA_LOCATION"],
             kafka_ssl_cert_location=config_dict["KAFKA_SSL_CERT_LOCATION"]

@@ -38,10 +38,13 @@ ADLS_DLQ_CONTRACTS_URL = f"abfss://bronze@{AZURE_STORAGE_ACCOUNT}.dfs.core.windo
 FASTAPI_WEBHOOK_URL = os.getenv("FASTAPI_WEBHOOK_URL")
 
 # Tópicos fuente y DLQ
-KAFKA_TOPIC_POSITIONS = os.getenv("KAFKA_TOPIC_POSITIONS", "dev-vessel-positions-raw")
-KAFKA_TOPIC_STATIC = os.getenv("KAFKA_TOPIC_STATIC", "dev-vessel-static-raw")
-KAFKA_TOPIC_DLQ = os.getenv("KAFKA_TOPIC_DLQ", "dev-vessel-contracts-dlq")
-KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "flink-ais-consumer-test")
+_nautiq_env = os.getenv("NAUTIQ_ENV", "dev").lower()
+_topic_prefix = "prod" if _nautiq_env in ("pro", "prod") else "dev"
+
+KAFKA_TOPIC_POSITIONS = os.getenv("KAFKA_TOPIC_POSITIONS") or f"{_topic_prefix}-vessel-positions-raw"
+KAFKA_TOPIC_STATIC = os.getenv("KAFKA_TOPIC_STATIC") or f"{_topic_prefix}-vessel-static-raw"
+KAFKA_TOPIC_DLQ = os.getenv("KAFKA_TOPIC_DLQ")
+KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", f"flink-ais-consumer-{_topic_prefix}")
 
 # --------------------------------------------------------------------------
 # Lógica de Negocio: Detección de Spoofing
