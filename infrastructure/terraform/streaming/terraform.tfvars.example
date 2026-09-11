@@ -24,8 +24,12 @@ vm_size_prod = "Standard_D2s_v5"
 vm_size_dev  = "Standard_D2s_v5"
 
 # Ahorro de Costes (Spot)
-spot_prod = false  # False para 100% SLA continuo sin interrupción en PROD
+spot_prod = true   # True requerido en Azure for Students (cuota regular = 0). False para Pay-As-You-Go con SLA continuo
 spot_dev  = true   # True para ~80% de descuento en DEV
+
+# Control de Entornos (Para Azure for Students con cuota de 1 VM activa/región)
+enable_dev  = false # No desplegar DEV
+enable_prod = true  # Desplegar únicamente PROD
 
 # (Opcional) URL del repositorio si deseas clonar en el boot
 git_repo_url = ""

@@ -3,11 +3,12 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# 1. ENTORNO DEV
+# 1. ENTORNO DEV (Opcional, condicionado por var.enable_dev)
 # ------------------------------------------------------------------------------
 
 # IP Pública para DEV
 resource "azurerm_public_ip" "dev" {
+  count               = var.enable_dev ? 1 : 0
   name                = "pip-nautiq-flink-dev-${var.location_short}"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
@@ -19,6 +20,7 @@ resource "azurerm_public_ip" "dev" {
 
 # Interfaz de Red para DEV
 resource "azurerm_network_interface" "dev" {
+  count               = var.enable_dev ? 1 : 0
   name                = "nic-nautiq-flink-dev-${var.location_short}"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
@@ -27,7 +29,7 @@ resource "azurerm_network_interface" "dev" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.streaming.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.dev.id
+    public_ip_address_id          = azurerm_public_ip.dev[0].id
   }
 
   tags = merge(local.common_tags, { environment = "dev" })
@@ -35,13 +37,14 @@ resource "azurerm_network_interface" "dev" {
 
 # Máquina Virtual DEV
 resource "azurerm_linux_virtual_machine" "dev" {
+  count               = var.enable_dev ? 1 : 0
   name                = "vm-nautiq-flink-dev"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
   size                = var.vm_size_dev
   admin_username      = var.admin_username
 
-  network_interface_ids = [azurerm_network_interface.dev.id]
+  network_interface_ids = [azurerm_network_interface.dev[0].id]
 
   # Configuración Spot opcional para DEV (~80% de ahorro)
   priority        = var.spot_dev ? "Spot" : "Regular"
@@ -85,11 +88,12 @@ resource "azurerm_linux_virtual_machine" "dev" {
 }
 
 # ------------------------------------------------------------------------------
-# 2. ENTORNO PROD
+# 2. ENTORNO PROD (Opcional, condicionado por var.enable_prod)
 # ------------------------------------------------------------------------------
 
 # IP Pública para PROD
 resource "azurerm_public_ip" "prod" {
+  count               = var.enable_prod ? 1 : 0
   name                = "pip-nautiq-flink-prod-${var.location_short}"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
@@ -101,6 +105,7 @@ resource "azurerm_public_ip" "prod" {
 
 # Interfaz de Red para PROD
 resource "azurerm_network_interface" "prod" {
+  count               = var.enable_prod ? 1 : 0
   name                = "nic-nautiq-flink-prod-${var.location_short}"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
@@ -109,7 +114,7 @@ resource "azurerm_network_interface" "prod" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.streaming.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.prod.id
+    public_ip_address_id          = azurerm_public_ip.prod[0].id
   }
 
   tags = merge(local.common_tags, { environment = "prod" })
@@ -117,13 +122,14 @@ resource "azurerm_network_interface" "prod" {
 
 # Máquina Virtual PROD
 resource "azurerm_linux_virtual_machine" "prod" {
+  count               = var.enable_prod ? 1 : 0
   name                = "vm-nautiq-flink-prod"
   resource_group_name = azurerm_resource_group.streaming.name
   location            = azurerm_resource_group.streaming.location
   size                = var.vm_size_prod
   admin_username      = var.admin_username
 
-  network_interface_ids = [azurerm_network_interface.prod.id]
+  network_interface_ids = [azurerm_network_interface.prod[0].id]
 
   # Configuración Spot (false por defecto en PROD para 100% SLA continuo)
   priority        = var.spot_prod ? "Spot" : "Regular"

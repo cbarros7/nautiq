@@ -64,9 +64,9 @@ variable "vm_size_dev" {
 
 # Opciones de Descuento Spot
 variable "spot_prod" {
-  description = "Si es true, la VM de PROD se desplegará con precio Spot (no recomendado para 100% SLA continuo)"
+  description = "Si es true, la VM de PROD se desplegará con precio Spot (~80% descuento). Requerido en Azure for Students porque la cuota regular es 0"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "spot_dev" {
@@ -79,4 +79,17 @@ variable "git_repo_url" {
   description = "URL HTTPS del repositorio Git para clonar automáticamente en el arranque (dejar vacío si se clonará manualmente)"
   type        = string
   default     = ""
+}
+
+# Control de Entornos (Importante para Azure for Students con cuota de 1 VM activa/región)
+variable "enable_dev" {
+  description = "Habilitar el despliegue del entorno DEV (por defecto false si solo desplegamos PROD en Azure for Students)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_prod" {
+  description = "Habilitar el despliegue del entorno PROD"
+  type        = bool
+  default     = true
 }
