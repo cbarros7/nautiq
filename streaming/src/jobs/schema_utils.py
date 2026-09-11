@@ -145,12 +145,17 @@ def get_columns_from_registry(topic_name: str, table_name: str, config_dict: dic
         
     columns_str = ",\n".join(columns)
     
-    # Event-Time y Watermarks: sólo para la tabla de posiciones (origen).
+    # Event-Time y Watermarks:
     # _event_time es una columna técnica computada (prefijo _).
     if not is_sink and table_name == "PositionsKafka":
         watermark_ddl = (
             ",\n    `_event_time` AS TO_TIMESTAMP(REPLACE(SUBSTRING(`timestamp`, 1, 19), 'T', ' ')),"
             "\n    WATERMARK FOR `_event_time` AS `_event_time` - INTERVAL '1' MINUTE"
+        )
+        columns_str += watermark_ddl
+    elif not is_sink and table_name == "StaticKafka":
+        watermark_ddl = (
+            ",\n    WATERMARK FOR `_kafka_ingestion_time` AS `_kafka_ingestion_time` - INTERVAL '1' MINUTE"
         )
         columns_str += watermark_ddl
         

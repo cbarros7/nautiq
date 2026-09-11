@@ -27,5 +27,33 @@ else
     echo "[entrypoint] WARNING: AZURE_STORAGE_ACCOUNT o AZURE_STORAGE_KEY no están definidas. ADLS no estará disponible."
 fi
 
+# Sincronizar y configurar el almacén de certificados SSL de Java (cacerts)
+if [[ -f "/opt/java/openjdk/lib/security/cacerts" ]]; then
+    echo "[entrypoint] Sincronizando certificados raíz en cacerts de Java..."
+    mkdir -p /etc/ssl/certs/java 2>/dev/null || true
+    cp -f /opt/java/openjdk/lib/security/cacerts /etc/ssl/certs/java/cacerts 2>/dev/null || true
+    
+    # Sincronizar también con OpenJDK de Debian si existe
+    for jvm_sec in /usr/lib/jvm/*/lib/security; do
+        if [[ -d "$jvm_sec" ]]; then
+            cp -f /opt/java/openjdk/lib/security/cacerts "$jvm_sec/cacerts" 2>/dev/null || true
+        fi
+    done
+fi
+
+# Importar certificado de Azure Function en el cacerts si está disponible
+AZURE_CERT="/opt/flink/usrlib/src/azure_function_cert_prod.pem"
+if [[ ! -f "$AZURE_CERT" ]]; then
+    AZURE_CERT="/opt/flink/usrlib/src/azure_function_cert.pem"
+fi
+if [[ -f "$AZURE_CERT" && -f "/opt/java/openjdk/lib/security/cacerts" ]]; then
+    echo "[entrypoint] Importando certificado de Azure Function ($AZURE_CERT) en cacerts..."
+    keytool -importcert -noprompt -trustcacerts -alias azurefunction \
+        -file "$AZURE_CERT" \
+        -keystore /opt/java/openjdk/lib/security/cacerts \
+        -storepass changeit 2>/dev/null || true
+    cp -f /opt/java/openjdk/lib/security/cacerts /etc/ssl/certs/java/cacerts 2>/dev/null || true
+fi
+
 # Delegar al entrypoint oficial de Flink
 exec /docker-entrypoint.sh "$@"

@@ -13,6 +13,7 @@ CREATE TABLE {table_name} (
     'properties.ssl.keystore.type' = 'PEM',
     'properties.ssl.keystore.location' = '{kafka_ssl_cert_location}',
     'scan.startup.mode' = 'group-offsets',
+    'scan.watermark.idle-timeout' = '10000',
     'properties.auto.offset.reset' = 'earliest',
     'format' = 'avro-confluent',
     'avro-confluent.url' = '{kafka_schema_registry_url}',

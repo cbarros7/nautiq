@@ -10,6 +10,8 @@ SELECT payload_json FROM (
             FIRST_VALUE(correlation_id) AS correlation_id,
             FIRST_VALUE(imo) AS imo,
             FIRST_VALUE(destination_port) AS destination_port,
+            FIRST_VALUE(port_lat) AS lat_port,
+            FIRST_VALUE(port_lon) AS lon_port,
             FIRST_VALUE(nav_status) AS nav_status,
             FIRST_VALUE(lon) AS lon,
             FIRST_VALUE(lat) AS lat,
@@ -25,36 +27,34 @@ SELECT payload_json FROM (
         GROUP BY mmsi, TUMBLE(`_event_time`, INTERVAL '{dedup_window}' MINUTE)
     )
     SELECT 
-        JSON_OBJECT(
-            KEY 'paquete_1' VALUE JSON_OBJECT(
+        CONCAT(
+            '{{"paquete_1":',
+            JSON_OBJECT(
                 KEY 'mmsi' VALUE c.mmsi,
                 KEY 'correlation_id' VALUE c.correlation_id,
                 KEY 'imo' VALUE c.imo,
                 KEY 'puerto' VALUE c.destination_port,
                 KEY 'estado' VALUE c.nav_status,
-                KEY 'longitud' VALUE c.lon,
-                KEY 'latitud' VALUE c.lat,
+                KEY 'lon_buque' VALUE c.lon,
+                KEY 'lat_buque' VALUE c.lat,
+                KEY 'lon_port' VALUE c.lon_port,
+                KEY 'lat_port' VALUE c.lat_port,
                 KEY 'direccion' VALUE c.cog,
                 KEY 'velocidad_buque' VALUE c.speed,
                 KEY 'eslora' VALUE c.length_m,
                 KEY 'manga' VALUE c.beam_m,
                 KEY 'calado_de_diseno' VALUE c.draught_m,
                 KEY 'tipo_buque' VALUE c.ship_type,
+                KEY 'ETA_dynamic' VALUE CAST(c._eta_dynamic_hours AS DOUBLE),
                 KEY 'ETA' VALUE CAST(c._eta_dynamic_hours AS DOUBLE),
                 KEY 'ETA_static' VALUE c.eta_static_raw
                 NULL ON NULL
             ),
-            KEY 'paquete_2' VALUE JSON_OBJECT(
-                KEY 'puerto' VALUE c.destination_port,
-                KEY 'estados' VALUE JSON_OBJECT(
-                    KEY 'num_buques_atracados' VALUE COALESCE(pis.atracados_json, JSON_ARRAY()),
-                    KEY 'num_buques_fondeados' VALUE COALESCE(pis.fondeados_json, JSON_ARRAY()),
-                    KEY 'num_buques_en_camino' VALUE COALESCE(pis.en_camino_json, JSON_ARRAY())
-                    NULL ON NULL
-                )
-                NULL ON NULL
-            )
-            NULL ON NULL
+            ',"paquete_2":{{"puerto":"', c.destination_port, '","estados":{{',
+            '"num_buques_atracados":', COALESCE(pis.atracados_json, '[]'), ',',
+            '"num_buques_fondeados":', COALESCE(pis.fondeados_json, '[]'), ',',
+            '"num_buques_en_camino":', COALESCE(pis.en_camino_json, '[]'),
+            '}}}}}}'
         ) AS payload_json
     FROM eta_candidates c
     INNER JOIN port_inventory_summary pis 
