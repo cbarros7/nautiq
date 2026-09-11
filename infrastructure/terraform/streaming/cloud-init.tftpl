@@ -1,0 +1,149 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+# 1. Archivo de intercambio (Swap de 4GB)
+# Fundamental para soportar la JVM de Flink (JobManager + TaskManager) y RocksDB sin OOM
+swap:
+  filename: /swapfile
+  size: 4294967296
+  maxsize: 4294967296
+
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - software-properties-common
+  - jq
+  - git
+
+# 2. Inyección de Certificados y Secretos (Codificados en Base64 sin pasar por Git)
+write_files:
+  # Certificados Aiven Kafka
+  - path: /home/${admin_username}/.secrets_staging/.certs/ca.pem
+    owner: root:root
+    permissions: '0644'
+    encoding: b64
+    content: ${ca_pem_b64}
+
+  - path: /home/${admin_username}/.secrets_staging/.certs/service.cert
+    owner: root:root
+    permissions: '0644'
+    encoding: b64
+    content: ${service_cert_b64}
+
+  - path: /home/${admin_username}/.secrets_staging/.certs/service.key
+    owner: root:root
+    permissions: '0600'
+    encoding: b64
+    content: ${service_key_b64}
+
+  # Certificado SSL Azure Function
+  - path: /home/${admin_username}/.secrets_staging/${azure_cert_filename}
+    owner: root:root
+    permissions: '0644'
+    encoding: b64
+    content: ${azure_cert_b64}
+
+  # Archivo de entorno (.env.dev o .env.prod)
+  - path: /home/${admin_username}/.secrets_staging/${env_filename}
+    owner: root:root
+    permissions: '0600'
+    encoding: b64
+    content: ${env_file_b64}
+
+  # Script de orquestacion y ejecucion Flink (disponible desde el primer segundo)
+  - path: /home/${admin_username}/nautiq/run_flink.sh
+    owner: root:root
+    permissions: '0755'
+    encoding: b64
+    content: ${run_flink_b64}
+
+  # 3. Servicio systemd para auto-arranque tras reinicios (Spot / Mantenimiento)
+  - path: /etc/systemd/system/nautiq-streaming.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Nautiq Flink Streaming Service (${target_env})
+      After=docker.service network-online.target
+      Wants=docker.service network-online.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      User=${admin_username}
+      WorkingDirectory=/home/${admin_username}/nautiq
+      ExecStart=/home/${admin_username}/nautiq/run_flink.sh --env ${target_env} --detach
+      ExecStop=/usr/bin/docker compose -p nautiq-${target_env} --env-file /home/${admin_username}/nautiq/${env_filename} down
+      TimeoutStartSec=600
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # 1. Instalar Docker oficial y Docker Compose Plugin (v2)
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # 2. Agregar usuario administrador al grupo docker (sin necesidad de sudo)
+  - usermod -aG docker ${admin_username}
+  - chown -R ${admin_username}:${admin_username} /home/${admin_username}
+  - systemctl enable docker
+  - systemctl start docker
+
+  # 3. Preparar directorio del proyecto Nautiq
+  - mkdir -p /home/${admin_username}/nautiq/streaming/src
+  - mkdir -p /home/${admin_username}/nautiq/.certs
+
+  # 4. Desplegar secretos inyectados en la ruta final del repositorio
+  - cp /home/${admin_username}/.secrets_staging/.certs/* /home/${admin_username}/nautiq/.certs/
+  - cp /home/${admin_username}/.secrets_staging/${azure_cert_filename} /home/${admin_username}/nautiq/streaming/src/
+  - cp /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/${env_filename}
+  - cp /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/.env
+  - chmod 600 /home/${admin_username}/nautiq/.certs/service.key
+  - chmod 600 /home/${admin_username}/nautiq/${env_filename}
+  - chown -R ${admin_username}:${admin_username} /home/${admin_username}/nautiq
+  - chown -R ${admin_username}:${admin_username} /home/${admin_username}/.secrets_staging
+
+  # 5. Clonado opcional si se configuró URL del repositorio
+%{ if git_repo_url != "" ~}
+  - |
+    su - ${admin_username} -c "
+      export GIT_TERMINAL_PROMPT=0
+      git config --global --add safe.directory /home/${admin_username}/nautiq
+      cd /home/${admin_username}/nautiq
+      git init
+      git remote add origin ${git_repo_url} 2>/dev/null || git remote set-url origin ${git_repo_url}
+      git fetch --all || true
+
+      # Seleccionar rama activa según el entorno (develop en dev, main en prod)
+      TARGET_BRANCH=\"%{ if target_env == "dev" ~}develop%{ else ~}main%{ endif ~}\"
+      git checkout -B \$TARGET_BRANCH origin/\$TARGET_BRANCH 2>/dev/null || git checkout -B main origin/main 2>/dev/null || git reset --hard origin/main 2>/dev/null || true
+
+      # Restaurar secretos sobreescritos con permisos seguros
+      mkdir -p /home/${admin_username}/nautiq/.certs /home/${admin_username}/nautiq/streaming/src
+      cp -n /home/${admin_username}/.secrets_staging/.certs/* /home/${admin_username}/nautiq/.certs/ 2>/dev/null || true
+      cp -n /home/${admin_username}/.secrets_staging/${azure_cert_filename} /home/${admin_username}/nautiq/streaming/src/ 2>/dev/null || true
+      cp -n /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/${env_filename} 2>/dev/null || true
+      cp -n /home/${admin_username}/.secrets_staging/${env_filename} /home/${admin_username}/nautiq/.env 2>/dev/null || true
+      chmod 600 /home/${admin_username}/nautiq/.certs/service.key 2>/dev/null || true
+      chmod 600 /home/${admin_username}/nautiq/.env* 2>/dev/null || true
+      chmod +x /home/${admin_username}/nautiq/run_flink.sh 2>/dev/null || true
+    "
+%{ endif ~}
+
+  # 6. Habilitar auto-arranque automático de Flink en reinicios (Spot / Mantenimiento)
+  - chmod +x /home/${admin_username}/nautiq/run_flink.sh 2>/dev/null || true
+  - systemctl daemon-reload
+  - systemctl enable nautiq-streaming.service
+%{ if git_repo_url != "" ~}
+  - systemctl start nautiq-streaming.service || true
+%{ endif ~}
+
+
