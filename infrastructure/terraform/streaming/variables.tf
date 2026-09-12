@@ -51,22 +51,22 @@ variable "allowed_metrics_cidr" {
 
 # Configuración de Tamaños de VM
 variable "vm_size_prod" {
-  description = "Tamaño de la VM para PROD (Recomendado: Standard_D2s_v5 con 2 vCPUs y 8 GB RAM, o Standard_D4s_v5 con 16 GB)"
+  description = "Tamaño de la VM para PROD (Standard_D2s_v3 con 2 vCPUs y 8 GB RAM, compatible con cuota regular de Azure for Students)"
   type        = string
-  default     = "Standard_D2s_v5"
+  default     = "Standard_D2s_v3"
 }
 
 variable "vm_size_dev" {
-  description = "Tamaño de la VM para DEV (Recomendado: Standard_D2s_v5 con 2 vCPUs y 8 GB RAM)"
+  description = "Tamaño de la VM para DEV (Recomendado: Standard_D2s_v5 o Standard_D2s_v3 con 2 vCPUs y 8 GB RAM)"
   type        = string
   default     = "Standard_D2s_v5"
 }
 
 # Opciones de Descuento Spot
 variable "spot_prod" {
-  description = "Si es true, la VM de PROD se desplegará con precio Spot (~80% descuento). Requerido en Azure for Students porque la cuota regular es 0"
+  description = "Si es true, la VM de PROD se desplegará con precio Spot. False (por defecto) para On-Demand/Regular con alta disponibilidad y SLA continuo sin desalojos"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "spot_dev" {

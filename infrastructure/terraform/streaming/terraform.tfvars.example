@@ -19,13 +19,14 @@ allowed_ssh_cidr     = "0.0.0.0/0" # Puerto 22 (SSH)
 allowed_ui_cidr      = "0.0.0.0/0" # Puertos 8081 y 8082 (Flink Web UI)
 allowed_metrics_cidr = "0.0.0.0/0" # Puertos 9249-9252 (Métricas Prometheus)
 
-# Tamaños de máquina (Standard_D2s_v5 tiene 2 vCPUs y 8 GB RAM, ideal para Flink + RocksDB)
-vm_size_prod = "Standard_D2s_v5"
+# Tamaños de máquina (Standard_D2s_v3 tiene 2 vCPUs y 8 GB RAM, compatible con cuota regular de Azure for Students)
+vm_size_prod = "Standard_D2s_v3"
 vm_size_dev  = "Standard_D2s_v5"
 
 # Ahorro de Costes (Spot)
-spot_prod = true   # True requerido en Azure for Students (cuota regular = 0). False para Pay-As-You-Go con SLA continuo
+spot_prod = false  # False (Recomendado): On-Demand con SLA continuo del 99.9% sin desalojos. True si se desea Spot
 spot_dev  = true   # True para ~80% de descuento en DEV
+
 
 # Control de Entornos (Para Azure for Students con cuota de 1 VM activa/región)
 enable_dev  = false # No desplegar DEV
