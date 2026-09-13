@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
     "gen:types": "json2ts -i ../contracts/oracle_recommendation_v1.schema.json -o src/types.ts --additionalProperties false --bannerComment \"/* GENERADO por 'npm run gen:types' desde contracts/oracle_recommendation_v1.schema.json. NO editar a mano. */\""
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@vitejs/plugin-react": "^4.3.0",
     "json-schema-to-typescript": "^15.0.0",
     "typescript": "^5.6.0",
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "vitest": "^2.1.9"
   }
 }
