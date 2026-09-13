@@ -246,6 +246,19 @@ Flink consume estas tablas (LEFT JOIN por IMO / resolución de destino).
 > `synthetic.py` lee `thetis_mrv.xlsx`/`un_locode.csv` en local para construir su
 > fixture (una vez, aquí) en lugar de consultar Postgres en cada arranque.
 
+## Tests
+
+Tests unitarios de los contratos Pydantic (`ais/models.py`): parseo de timestamp,
+limpieza de texto AIS y validación de `AISPosition`/`AISStatic` a partir de mensajes
+crudos de AISStream. Sin red, sin Kafka, sin PostgreSQL.
+
+Se ejecutan con `pytest` **desde la raíz del repositorio** (el `pyproject.toml` raíz
+fija `testpaths = ["ingestion/tests"]` y añade la raíz a `pythonpath`):
+
+```bash
+uv run pytest ingestion/tests
+```
+
 ## Fuentes de datos (reales)
 
 | Fuente | Procedencia |
