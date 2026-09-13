@@ -4,7 +4,7 @@ Replay de alertas reales por el oráculo, de punta a punta.
 Lee un fichero de alertas capturadas de Flink (paquete_1 + paquete_2),
 las inyecta en el grafo de math_oracle como si acabaran de llegar por el
 webhook, y deja el resultado en los destinos REALES: Supabase
-(oracle_recommendations, fuente de verdad) y ADLS Gen2 (copia analítica
+(oracle_recommendations_*, fuente de verdad) y ADLS Gen2 (copia analítica
 para Databricks).
 
 Sirve para tres cosas: probar el pipeline completo con datos reales,

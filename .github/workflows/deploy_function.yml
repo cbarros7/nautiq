@@ -95,18 +95,25 @@
 #     --name <FUNCTION_APP_NAME> --resource-group <RG> \
 #     --maximum-instance-count 5
 #
-# Ese tope NO se dimensiona por el tráfico esperado —las cifras de alertas que
-# tenemos salen de un generador sintético y no predicen producción—, sino por
-# lo que aguantan los recursos de aguas abajo. Es un cortafuegos:
+# El tope es un cortafuegos sobre los recursos de aguas abajo, no un ajuste de
+# rendimiento:
 #   - Conexiones: db_conn abre una conexión por invocación (sin pool), así que
 #     el máximo simultáneo es instancias x concurrencia. Con el defecto de 100
 #     salen hasta 800 conexiones contra Supabase; con 5, cuarenta.
 #   - Coste: 100 instancias x 2 GB sostenidas una hora son 720.000 GB-s, y el
 #     grant mensual son 100.000. Una tormenta de reintentos lo agotaría en
 #     minutos, sin que nadie se entere hasta que llega la factura.
-# Si el tráfico real supera esa capacidad, el síntoma es encolado y latencia
-# —visible y ajustable subiendo el tope— en vez de agotar la base de datos o
-# el grant en silencio. Revisar el número con tráfico real, no con el fixture.
+#
+# Que 5 basta se comprueba contra tráfico REAL (9 días en producción, 7.290
+# recomendaciones): 810 alertas/día de media, pico sostenido de 5,6/min y
+# ráfaga máxima de 119 alertas en un minuto. A concurrencia 8 y ~5 s por
+# alerta, una instancia sostiene ~92 alertas/min, así que el tope da del orden
+# de 460/min: ~4x la peor ráfaga observada.
+#
+# Si algún día el tráfico supera esa capacidad, el síntoma es encolado y
+# latencia —visible y ajustable subiendo el tope— en vez de agotar la base de
+# datos o el grant en silencio. Conviene revisar el número si cambia el número
+# de puertos monitorizados, que es lo que escala el volumen.
 #
 # Consultar lo que hay puesto:
 #   az functionapp scale config show --name <FUNCTION_APP_NAME> --resource-group <RG>

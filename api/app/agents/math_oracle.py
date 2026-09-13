@@ -43,7 +43,7 @@ Secuencia
 7. fetch_cii_jit       — CII con la velocidad JIT recomendada.
 8. build_informe       — compara CII inicial vs. CII con velocidad JIT.
 9. fetch_historial     — últimas recomendaciones para este mismo
-   mmsi+puerto (oracle_recommendations, ventana de 24h), para que el
+   mmsi+puerto (oracle_recommendations_*, ventana de 24h), para que el
    LLM mantenga coherencia entre avisos sucesivos — la alerta se
    dispara cada 30 min mientras el buque está a <12h del puerto, así
    que una misma aproximación genera varios resúmenes.
@@ -58,7 +58,7 @@ Secuencia
 11. publicar_recomendacion — construye el evento con la forma de
     contracts/oracle_recommendation_v1 (construir_evento_contrato) y lo
     publica en dos destinos, en orden: primero Supabase
-    (oracle_recommendations, FUENTE DE VERDAD: frontera de contrato con
+    (oracle_recommendations_*, FUENTE DE VERDAD: frontera de contrato con
     el frontal + historial para la siguiente alerta), y sólo si esa
     confirma, la copia analítica en ADLS Gen2 para Databricks
     (adls_conn). Ninguno de los dos fallos tumba el grafo.
@@ -123,9 +123,18 @@ class BuqueNoNavegandoError(ValueError):
     grafo puede distinguir "esta alerta hay que descartarla" (el webhook
     devolvería 422, no 500) de "algo se ha roto".
 
-    Es un caso REAL, no hipotético: el generador sintético emite
-    sog=0.0 con nav_status=5 para los buques atracados, y los fondeados
-    salen con sog entre 0.0 y 0.3, que redondeado puede dar 0.0.
+    Es un caso REAL, no hipotético: los buques atracados reportan
+    sog=0.0 con nav_status=5, y los fondeados oscilan entre 0.0 y 0.3
+    nudos, que redondeado puede dar 0.0.
+
+    OJO: el umbral es `<= 0`, y se queda corto. En producción entran
+    buques a 0,6-1,3 nudos —maniobrando o garreando— que superan este
+    filtro sin estar navegando de verdad. Como el CII va con el cuadrado
+    de la velocidad, su CII inicial es minúsculo y la comparación contra
+    la velocidad recomendada produce variaciones sin sentido (se han
+    observado del orden de -149.000 %). Subir el umbral a ~3-5 nudos lo
+    resolvería; mientras tanto, hay que filtrar por velocidad antes de
+    agregar cualquier estadística sobre las recomendaciones.
     """
 
 
@@ -406,7 +415,7 @@ def fetch_historial(state: OracleState) -> dict:
     mmsi+puerto, para dar contexto al LLM y mantener coherencia entre
     avisos sucesivos — la alerta se dispara cada 30 min mientras el
     buque está a <12h del puerto, así que una misma aproximación
-    genera varios registros en oracle_recommendations.
+    genera varios registros en oracle_recommendations_*.
     """
     mmsi = str(state["paquete_1"].get("mmsi"))
     puerto = state["port"].name
@@ -622,7 +631,7 @@ def publicar_recomendacion(state: OracleState) -> dict:
     Construye el evento (oracle_recommendation_v1) y lo publica en los
     dos destinos, en este orden:
 
-    1. Supabase (oracle_recommendations) — FUENTE DE VERDAD: frontera de
+    1. Supabase (oracle_recommendations_*) — FUENTE DE VERDAD: frontera de
        contrato con el frontal y historial que da contexto al LLM en la
        siguiente alerta (30 min después, mismo mmsi+puerto).
     2. ADLS Gen2 (adls_conn) — copia analítica para Databricks. Sólo se
@@ -680,7 +689,7 @@ def publicar_recomendacion(state: OracleState) -> dict:
             # porque el intento anterior pudo fallar justo ahí y así el
             # reintento lo recupera.
             logger.info(
-                "event_id=%s ya existía en oracle_recommendations (reintento); "
+                "event_id=%s ya existía en oracle_recommendations_* (reintento); "
                 "se republica en ADLS de todos modos (idempotente)", event_id,
             )
     except Exception:
@@ -828,7 +837,7 @@ if __name__ == "__main__":
     print("-" * 60)
     print(f"  [alerta_cii={result['resumen']['alerta_cii']}] {result['resumen']['texto']}")
     print("=" * 60)
-    print("  EVENTO oracle_recommendation_v1 (persistido en oracle_recommendations)")
+    print("  EVENTO oracle_recommendation_v1 (persistido en oracle_recommendations_*)")
     print("=" * 60)
     print(json.dumps(result["evento_contrato"], indent=2, ensure_ascii=False))
     print("=" * 60)

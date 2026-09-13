@@ -122,7 +122,7 @@ grande que en realidad no puede usar ninguno.
 **Tiempo de servicio por tipo de buque.** Cuánto ocupa el atraque depende de
 la operativa, no del tamaño: un portacontenedores descarga en ~28 h, un
 granelero en ~42 h, un tanque en ~49 h. Los valores proceden de literatura
-sobre AIS (ver §6) y se corrigen por eslora (`FACTOR_ESLORA`), porque un buque
+sobre AIS (ver §7) y se corrigen por eslora (`FACTOR_ESLORA`), porque un buque
 más grande mueve más carga.
 
 **Tiempo hasta que se libera un atraque.** Aquí hay un punto sutil. Sabiendo
@@ -167,7 +167,7 @@ tienen tiempos de servicio muy distintos. Por eso el IMO va antes.
 > de congestión del 85 % que cita UNCTAD). Como AIS solo ve una fracción de
 > los buques realmente atracados, **la capacidad sale infraestimada y las
 > esperas resultan artificialmente largas**. Es la limitación más relevante
-> del modelo y afecta a todo lo que viene después. Ver §5.
+> del modelo y afecta a todo lo que viene después. Ver §6.
 
 ### 3.4 `kwon_euler.py` — a qué velocidad navegar
 
@@ -349,7 +349,67 @@ recomendación sea auditable y el frontal pueda explicar *por qué* frenar.
 
 ---
 
-## 5. Limitaciones conocidas
+## 5. Verificación
+
+La batería (`tests/`, ejecutable con `uv run pytest`) son **47 tests** que
+cubren deliberadamente **las dos fronteras del sistema** más un conjunto de
+regresiones, pero no el cálculo interno:
+
+**Entrada — qué acepta, rechaza y descarta el webhook.** Importa porque el
+productor (Flink) no valida contra el contrato: envía lo que tiene. El oráculo
+debe separar tres situaciones que se parecen y no lo son — petición mal formada
+(400), alerta que no aplica (422) y fallo propio (500). Confundir las dos
+últimas haría que el productor reintentara indefinidamente alertas de buques
+atracados, y que los fallos reales se perdieran entre ellas.
+
+
+**Salida — la forma del evento `oracle_recommendation_v1`.** Es el acuerdo con
+el frontal y con la capa analítica, y tiene una particularidad que lo hace
+frágil: **romperlo no produce ningún error**. El payload va a una columna
+`jsonb` y a un blob JSON, y ambos aceptan cualquier estructura. Un campo
+renombrado o desaparecido solo se detecta cuando alguien, aguas abajo, deja de
+ver un dato. Los tests son la red que suple esa ausencia de validación.
+
+**Regresiones — fallos que ya ocurrieron.** Un tercer fichero recoge los
+errores detectados en producción, con un criterio de admisión estricto: solo
+entran los que fueron **silenciosos**, es decir, los que produjeron números
+plausibles sin lanzar ninguna excepción. El caso que da nombre al criterio es
+el de las unidades del coeficiente de Almirantazgo (§3.5): convertir nudos a
+m/s antes de elevar al cubo dividía la potencia por ~7,3, y el CII resultante
+—0,8 en vez de 5,9— seguía pareciendo razonable a simple vista. Ese tipo de
+fallo no lo caza revisar el código; lo caza comprobar el orden de magnitud.
+Acotar el criterio evita que el fichero degenere en un cajón de sastre.
+
+Los tests son **unitarios en sentido estricto**: no tocan Supabase, ni ADLS,
+ni Open-Meteo, ni ningún LLM. El contrato se prueba sobre un estado ya
+calculado, construido a mano, de forma que un fallo señale la traducción al
+contrato y no el cálculo que hay detrás. Corren en poco más de un segundo, sin
+credenciales y sin depender de cuotas de API.
+
+**Validación de los propios tests.** Que una batería pase no demuestra que
+sirva: podría estar comprobando algo trivial. Para verificarlo se introdujeron
+errores deliberados en el código —renombrar un campo del contrato, tratar la
+alerta no aplicable como fallo, usar el DWT estimado donde debe exigirse el
+real, reintroducir el error de unidades— y se comprobó que el test
+correspondiente falla.
+
+El ejercicio destapó **dos tests defectuosos**, ambos del tipo más difícil de
+ver: pasaban, pero no comprobaban lo que declaraban. Uno porque otra condición
+cortaba antes de llegar a la que interesaba; otro porque el rango que usaba
+como criterio era lo bastante ancho como para admitir también el valor
+erróneo. Los dos se corrigieron y ahora sí detectan su mutación.
+
+La conclusión metodológica es más general que los dos casos: **escribir un
+test y comprobar que falla cuando debe** cuesta un minuto, y es la diferencia
+entre tener una red de seguridad y creer que se tiene.
+
+Fuera de alcance por ahora: los módulos de cálculo (colas, Kwon-Euler) no
+tienen tests propios más allá de esas regresiones. Son funciones puras y por
+tanto fáciles de cubrir; es la extensión natural de esta batería.
+
+---
+
+## 6. Limitaciones conocidas
 
 Documentadas por honestidad metodológica: afectan a cómo deben leerse los
 resultados.
@@ -360,17 +420,26 @@ resultados.
    acelerar al máximo (velocidades por encima de lo físicamente razonable).
    Se resolvería con datos reales de infraestructura portuaria, no
    disponibles en el TFM.
-2. **Kwon aproximado.** El artículo original publica una tabla; aquí se usa un
+2. **Buques casi parados aceptados como navegantes.** El filtro solo rechaza
+   `velocidad = 0`, así que un buque a 0,6-1,3 nudos —maniobrando, garreando o
+   a la deriva— entra al cálculo. Como el CII crece con el cuadrado de la
+   velocidad, su CII inicial es minúsculo y recomendarle acelerar produce
+   variaciones absurdas: el peor caso observado en producción fue un
+   −149.233 %. No invalida el resto de resultados, pero **obliga a filtrar por
+   velocidad mínima antes de agregar estadísticas**, o unas pocas
+   observaciones destrozan cualquier media. Se corrige subiendo el umbral de
+   `BuqueNoNavegandoError` a ~3-5 nudos.
+3. **Kwon aproximado.** El artículo original publica una tabla; aquí se usa un
    ajuste polinómico que reproduce el orden de magnitud, no los valores
    exactos.
-3. **Tipos de buque desde AIS.** Cuando falta el IMO, la granularidad de AIS
+4. **Tipos de buque desde AIS.** Cuando falta el IMO, la granularidad de AIS
    no distingue operativas con tiempos de servicio muy distintos.
-4. **Sin `locode` de puerto.** No hay tabla nombre→locode conectada; el evento
+5. **Sin `locode` de puerto.** No hay tabla nombre→locode conectada; el evento
    lo publica como `null`.
 
 ---
 
-## 6. Referencias
+## 7. Referencias
 
 - Ma, Zhou & Zhu (2023). *Identification and analysis of ship waiting behavior
   outside the port based on AIS data*. Scientific Reports 13:11267.
@@ -389,7 +458,7 @@ resultados.
 
 ---
 
-## 7. Estructura del código
+## 8. Estructura del código
 
 ```
 api/
@@ -409,9 +478,18 @@ api/
 │           ├── gemini_client.py / foundry_client.py
 │           ├── db_conn.py       Supabase
 │           └── adls_conn.py     ADLS Gen2
+├── tests/                       47 tests (ver §5; `uv run pytest`)
+│   ├── conftest.py              fixtures con una alerta real de Flink
+│   ├── test_webhook_entrada.py  qué acepta, rechaza y descarta
+│   ├── test_contrato_salida.py  forma de oracle_recommendation_v1
+│   └── test_regresiones.py      fallos silenciosos ya ocurridos
 └── scripts/
     ├── replay_alertas.py        reproduce alertas reales end-to-end
     ├── empaquetar.py            construye el paquete de despliegue
     ├── desplegar.py             despliegue a Azure
     └── verificar_despliegue.py  comprobación post-despliegue
 ```
+
+`tests/` y `scripts/` son de desarrollo y no viajan al paquete desplegado:
+están excluidos en `.funcignore`, y `pytest` se declara en el grupo `dev` de
+`pyproject.toml`, que `uv export --no-dev` deja fuera de `requirements.txt`.

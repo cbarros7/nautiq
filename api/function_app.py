@@ -152,6 +152,29 @@ def _respuesta(cuerpo: dict, status: int) -> func.HttpResponse:
     )
 
 
+#: Campos de paquete_1 que el grafo lee con acceso directo (no con .get) y sin
+#: los cuales revienta. El resto son opcionales y degradan con elegancia.
+CAMPOS_OBLIGATORIOS = (
+    "puerto", "lat_buque", "lon_buque", "lat_port", "lon_port", "velocidad_buque",
+)
+
+
+def _campos_que_faltan(paquete_1: dict) -> list[str]:
+    """
+    Campos obligatorios ausentes o nulos en paquete_1.
+
+    Se comprueban por adelantado en vez de dejar que falten dentro del
+    grafo: allí producen un KeyError dos o tres nodos más adentro, que
+    sale como 500 con un mensaje que no señala el campo. Aquí sale un 400
+    nombrándolo, que es la diferencia entre diagnosticar un cambio de
+    contrato del productor en un minuto o en una tarde.
+
+    Es una comprobación de PRESENCIA, no de tipo: el objetivo es detectar
+    que el emisor ha cambiado el contrato, no validar cada valor.
+    """
+    return [c for c in CAMPOS_OBLIGATORIOS if paquete_1.get(c) is None]
+
+
 @app.route(route="alerta", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
 def alerta(req: func.HttpRequest) -> func.HttpResponse:
     """Webhook de Flink: una alerta por petición."""
@@ -165,6 +188,18 @@ def alerta(req: func.HttpRequest) -> func.HttpResponse:
         logger.warning("Petición sin paquete_1 y/o paquete_2")
         return _respuesta(
             {"error": "Se esperan las claves 'paquete_1' y 'paquete_2' en el cuerpo"}, 400
+        )
+
+    if not isinstance(alerta_json["paquete_1"], dict):
+        return _respuesta({"error": "'paquete_1' debe ser un objeto"}, 400)
+
+    faltan = _campos_que_faltan(alerta_json["paquete_1"])
+    if faltan:
+        logger.warning("paquete_1 sin los campos obligatorios: %s", ", ".join(faltan))
+        return _respuesta(
+            {"error": f"Faltan campos obligatorios en paquete_1: {', '.join(faltan)}",
+             "campos_faltantes": faltan},
+            400,
         )
 
     mmsi = alerta_json["paquete_1"].get("mmsi")

@@ -938,6 +938,11 @@ dependencies = [
     { name = "searoute" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "azure-ai-inference", specifier = ">=1.0.0b9" },
@@ -954,6 +959,9 @@ requires-dist = [
     { name = "requests", specifier = ">=2.31" },
     { name = "searoute", specifier = ">=1.6.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.0" }]
 
 [[package]]
 name = "nautiq-ingestion"
