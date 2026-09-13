@@ -30,3 +30,15 @@ dependencies = [
     # "fastapi", "uvicorn"
     "azure-storage-blob>=12.30.0",
 ]
+
+[dependency-groups]
+# Solo para desarrollo: NO viaja en el paquete desplegado (requirements.txt se
+# genera con `uv export --no-dev`, y .funcignore excluye tests/ y scripts/).
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Los tests importan `app.*` y `function_app`, que viven en la raíz de api/.
+pythonpath = ["."]

@@ -12,7 +12,7 @@ from app.config import TABLA_RECOMENDACIONES
 load_dotenv()
 
 # Tabla de recomendaciones del entorno activo (ver app/config.py):
-# DEV -> oracle_recommendations, PRO -> oracle_recommendations_prod.
+# DEV -> oracle_recommendations_*, PRO -> oracle_recommendations_prod.
 # Se interpola en el SQL porque Postgres no admite parámetros `%s` para
 # identificadores; el valor viene ya validado de app.config.
 _TABLA = f"public.{TABLA_RECOMENDACIONES}"
@@ -123,7 +123,7 @@ def get_port(locode) -> Optional[dict]:
 
 
 # ──────────────────────────────────────────────────────────────────────
-#  oracle_recommendations: frontera de contrato con el frontal
+#  oracle_recommendations_*: frontera de contrato con el frontal
 #  (oracle_recommendation_v1) y, a la vez, historial de recomendaciones
 #  JIT para dar contexto al LLM entre avisos sucesivos del mismo
 #  mmsi+puerto — la alerta se dispara cada 30 min mientras el buque
@@ -164,7 +164,7 @@ def guardar_recomendacion(
     payload: dict,
 ) -> bool:
     """
-    Inserta un evento en oracle_recommendations. `event_id` es la clave
+    Inserta un evento en oracle_recommendations_*. `event_id` es la clave
     de idempotencia (= correlation_id del webhook): un reintento del
     mismo evento no duplica la fila (ON CONFLICT DO NOTHING), igual que
     pedía el contrato del frontal con "resolution=ignore-duplicates" en
@@ -200,7 +200,7 @@ def get_historial_recomendaciones(
     horas: int = 24,
 ) -> list[dict]:
     """
-    Últimos `limite` eventos de oracle_recommendations para este mismo
+    Últimos `limite` eventos de oracle_recommendations_* para este mismo
     mmsi+puerto, dentro de las últimas `horas` — acotar por tiempo (no
     sólo por cantidad) evita traer historial de una visita anterior del
     mismo buque al mismo puerto sin relación con la aproximación

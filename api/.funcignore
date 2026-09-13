@@ -13,3 +13,6 @@ local.settings.json*
 scripts/
 replay.log
 Dockerfile
+
+# Tests: son de desarrollo, no forman parte del runtime de la Function.
+tests/

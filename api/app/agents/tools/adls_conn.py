@@ -2,7 +2,7 @@
 Escritura de recomendaciones del oráculo a ADLS Gen2 (capa analítica,
 consumida por Databricks).
 
-Supabase (db_conn.oracle_recommendations) es la FUENTE DE VERDAD: sirve
+Supabase (db_conn.oracle_recommendations_*) es la FUENTE DE VERDAD: sirve
 al frontal y es lo que decide si un evento existe. Esto es la copia
 analítica — se escribe DESPUÉS de que Supabase haya confirmado, nunca
 antes, y su fallo no invalida la recomendación (ver
