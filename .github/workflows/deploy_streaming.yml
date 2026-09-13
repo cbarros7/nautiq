@@ -1,0 +1,133 @@
+# ============================================================================
+# Nautiq — Deploy Streaming Engine (Apache Flink) to Azure VM
+# ============================================================================
+#
+# DESPLIEGUE CONTINUO EN CALIENTE SOBRE LA MÁQUINA VIRTUAL DE AZURE
+# ----------------------------------------------------------------------------
+# A diferencia de Terraform (que aprovisiona la infraestructura una sola vez),
+# este workflow se encarga del ciclo de vida del CÓDIGO (despliegue continuo).
+#
+# Cada vez que se hace push a 'develop' o 'main' que modifique 'streaming/**', este workflow:
+#   1. Se conecta por SSH a la VM de Azure del entorno correspondiente.
+#   2. Descarga los últimos cambios de la rama activa ('develop' o 'main').
+#   3. Asegura la persistencia de secretos inyectados (.env y certificados).
+#   4. Reconstruye y levanta los contenedores de Flink en segundo plano (--detach).
+#   5. Verifica la salud del JobManager y TaskManager.
+#
+# UN WORKFLOW, DOS ENTORNOS (GitHub Environments)
+# ----------------------------------------------------------------------------
+# Cada entorno (dev / prod) utiliza su propio GitHub Environment:
+#   - secret STREAMING_VM_HOST    : IP pública de la VM (output de Terraform)
+#   - secret STREAMING_VM_SSH_KEY : Clave privada SSH autorizada en la VM
+#   - secret STREAMING_VM_USER    : Usuario admin (por defecto: azureuser)
+#
+# Comportamiento según la rama de origen:
+#   - Push a 'develop'           -> Despliega automáticamente en el entorno 'dev'.
+#   - Push a 'main'              -> Despliega automáticamente en el entorno 'prod'.
+#   - Manual (workflow_dispatch) -> Permite seleccionar explícitamente el entorno ('dev' o 'prod').
+# ============================================================================
+
+name: Deploy Streaming (Flink VM)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "streaming/**"
+      - "run_flink.sh"
+      - ".github/workflows/deploy_streaming.yml"
+  workflow_dispatch:
+    inputs:
+      entorno:
+        description: "Entorno de despliegue en Azure VM"
+        required: true
+        default: dev
+        type: choice
+        options: [dev, prod]
+
+jobs:
+  deploy-streaming:
+    name: Deploy Streaming Engine (${{ inputs.entorno || (github.ref_name == 'main' && 'prod' || 'dev') }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.entorno || (github.ref_name == 'main' && 'prod' || 'dev') }}
+
+    steps:
+      - name: Validar secretos de conexión SSH
+        run: |
+          TARGET_ENV="${{ inputs.entorno || (github.ref_name == 'main' && 'prod' || 'dev') }}"
+          if [ -z "${{ secrets.STREAMING_VM_HOST }}" ]; then
+            echo "::error::Falta el secreto STREAMING_VM_HOST en el entorno '${TARGET_ENV}'."
+            exit 1
+          fi
+          if [ -z "${{ secrets.STREAMING_VM_SSH_KEY }}" ]; then
+            echo "::error::Falta el secreto STREAMING_VM_SSH_KEY en el entorno '${TARGET_ENV}'."
+            exit 1
+          fi
+
+      - name: Ejecutar despliegue en la Azure VM vía SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STREAMING_VM_HOST }}
+          username: ${{ secrets.STREAMING_VM_USER || 'azureuser' }}
+          key: ${{ secrets.STREAMING_VM_SSH_KEY }}
+          envs: ENTORNO,TARGET_BRANCH
+          script_stop: true
+          script: |
+            TARGET_ENV="${ENTORNO:-dev}"
+            BRANCH="${TARGET_BRANCH:-develop}"
+            echo "=========================================================="
+            echo "Iniciando re-despliegue de Nautiq Streaming [$TARGET_ENV | rama: $BRANCH]"
+            echo "=========================================================="
+
+            VM_USER="$(whoami)"
+            REPO_DIR="/home/$VM_USER/nautiq"
+
+            if [ ! -d "$REPO_DIR" ]; then
+              echo "Error: No se encontró el directorio del proyecto en $REPO_DIR"
+              exit 1
+            fi
+
+            cd "$REPO_DIR"
+
+            # 1. Actualización de código Git según la rama activa
+            echo "Actualizando repositorio a la última versión de origin/$BRANCH..."
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH" 2>/dev/null || git checkout -b "$BRANCH" "origin/$BRANCH"
+            git reset --hard "origin/$BRANCH"
+
+            # 2. Respaldo y restauración preventiva de secretos y certificados
+            # cloud-init almacena los secretos en ~/.secrets_staging para sobrevivir a limpiezas de Git
+            if [ -d "/home/$VM_USER/.secrets_staging" ]; then
+              echo "Sincronizando certificados y variables de entorno desde staging..."
+              mkdir -p .certs streaming/src
+              cp -n /home/$VM_USER/.secrets_staging/.certs/* .certs/ 2>/dev/null || true
+              cp -n /home/$VM_USER/.secrets_staging/*.pem streaming/src/ 2>/dev/null || true
+              cp -n /home/$VM_USER/.secrets_staging/.env* . 2>/dev/null || true
+              chmod 600 .certs/service.key 2>/dev/null || true
+              chmod 600 .env* 2>/dev/null || true
+            fi
+
+            # 3. Permisos de ejecución
+            chmod +x run_flink.sh
+
+            # 4. Re-lanzamiento de Flink en segundo plano (--detach)
+            echo "Levantando contenedores Flink y orquestador en segundo plano..."
+            ./run_flink.sh --env "$TARGET_ENV" --detach
+
+            # 5. Verificación de salud posterior al arranque
+            echo "Verificando estado de los contenedores Docker..."
+            sleep 6
+            docker ps --filter "name=nautiq-${TARGET_ENV}" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            RUNNING_CONTAINERS="$(docker ps --filter "name=nautiq-${TARGET_ENV}" --filter "status=running" -q)"
+            if [ -z "$RUNNING_CONTAINERS" ]; then
+              echo "::error::Fallo en el despliegue: No hay contenedores en ejecucion para nautiq-${TARGET_ENV}"
+              docker logs "nautiq-${TARGET_ENV}-jobmanager-1" --tail 50 2>/dev/null || true
+              exit 1
+            fi
+
+            echo "=========================================================="
+            echo "Re-despliegue de streaming completado con éxito en $TARGET_ENV"
+            echo "=========================================================="
+        env:
+          ENTORNO: ${{ inputs.entorno || (github.ref_name == 'main' && 'prod' || 'dev') }}
+          TARGET_BRANCH: ${{ github.ref_name }}

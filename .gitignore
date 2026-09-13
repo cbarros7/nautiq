@@ -226,14 +226,41 @@ data/*.db-shm
 # Datasets de referencia reales (grandes; UN/LOCODE se auto-descarga, THETIS manual)
 data/reference/
 
-# Certificados
+# Certificados y llaves
 .certs/
+*.pem
+*.crt
+*.key
+*.p12
+*.jks
+streaming/src/*.pem
+
+# Environments y secretos
+.env*
+!.env.example
+
 
 # Egg-info
 .egg-info/
 
 .DS_Store
 
+# Terraform 
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfvars
+!*.tfvars.example
+.terraformrc
+terraform.rc
 #claude
 .claude/
 
@@ -257,3 +284,7 @@ local.settings.json
 BUILD_INFO
 # Pycharm
 .idea/
+
+# Temporary and debug outputs
+tmp/
+streaming/src/debug_output/

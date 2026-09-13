@@ -58,12 +58,26 @@ producción se ve rellena para que no haya duda. Detalle en [FRONTEND.md §8](FR
 | `npm run dev` | servidor de desarrollo |
 | `npm run build` | `tsc` + build de producción a `dist/` |
 | `npm run typecheck` | solo tipos |
+| `npm run test` | tests unitarios (Vitest) |
 | `npm run gen:types` | **regenera `src/types.ts`** desde `../contracts/oracle_recommendation_v1.schema.json` |
 
 `src/types.ts` está **generado**: no se edita a mano. Si el contrato del oráculo cambia, se
 actualiza el esquema en `contracts/` y se ejecuta `gen:types` —- los errores de compilación
 señalan qué hay que tocar. El workflow de despliegue falla si el fichero generado no coincide
 con el esquema.
+
+## Tests
+
+Tests unitarios (Vitest) de la lógica pura del frontal: `format.ts` (cómo se ve un
+`null`), `douglas.ts` (bandas de estado del mar) y `status.ts` (severidad, saturación y
+fiabilidad derivadas del oráculo). Sin DOM ni red: se ejecutan con entorno `node`.
+
+```bash
+cd frontend
+npm test
+```
+
+Cada fichero de test vive junto al módulo que cubre (`src/*.test.ts`).
 
 ## Mapa de ficheros
 
