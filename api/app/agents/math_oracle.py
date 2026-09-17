@@ -107,7 +107,11 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 
 from app.agents.tools import adls_conn, cii_calculus, db_conn, informe_llm, jit_calculus, kwon_euler
-from app.agents.tools.open_meteo import marine_weather_at_eta, waypoints_with_eta, wind_at_eta
+from app.agents.tools.open_meteo import (
+    meteo_de_ruta,
+    meteo_de_ruta_no_disponible,
+    waypoints_with_eta,
+)
 from app.agents.tools.sea_route import Port, Route, route_to_port
 
 logger = logging.getLogger(__name__)
@@ -151,6 +155,12 @@ class OracleState(TypedDict):
     distance_nm: float
     weather: list[dict]
     wind: list[dict]
+    # El proveedor de meteo falló y se siguió sin corrección de Kwon. Es
+    # estado INTERNO y deliberadamente NO viaja al evento publicado: el
+    # contrato con el frontal no se amplía sin acordarlo. La condición ya es
+    # observable sin campo nuevo — `weather_speed_loss_pct` queda en 0 y los
+    # valores de `route_weather` en null— y el nodo lo registra en el log.
+    meteo_degradada: bool
     cii_inicial: cii_calculus.CIIResult
     db_record: Optional[dict]  # ficha de thetis_mrv, resuelta una vez y reutilizada
     estimacion_jit: dict
@@ -233,12 +243,37 @@ def fetch_route(state: OracleState) -> dict:
 
 
 def fetch_weather(state: OracleState) -> dict:
+    """
+    Oleaje y viento a lo largo de la derrota, en el ETA de cada punto.
+
+    Si el proveedor no responde, se DEGRADA en vez de interrumpir: la meteo
+    es una corrección al cálculo, no un prerrequisito. Sin ella la pérdida
+    de Kwon queda en 0 y la recomendación sigue siendo válida —basada en la
+    cola del puerto y la distancia navegable—, solo que menos precisa.
+
+    Es el mismo criterio que ya se aplica a Supabase, a ADLS y al LLM. No
+    aplicarlo aquí costó una caída de 13 h: el free tier de Open-Meteo se
+    agotó, empezó a devolver 429 y CADA alerta moría, dejando el sistema
+    entero sin producir nada durante horas.
+    """
     points_with_eta = waypoints_with_eta(
         state["route"].waypoints,
         state["speed_knot"],
         state["departure_time"],
     )
-    return {"weather": marine_weather_at_eta(points_with_eta), 'wind': wind_at_eta(points_with_eta)}
+
+    try:
+        oleaje, viento = meteo_de_ruta(points_with_eta)
+        return {"weather": oleaje, "wind": viento, "meteo_degradada": False}
+    except Exception:
+        logger.exception(
+            "No se pudo obtener la meteo de la derrota (mmsi=%s, puerto=%s); se "
+            "continúa sin corrección por estado del mar y se marca la "
+            "recomendación como degradada",
+            state["paquete_1"].get("mmsi"), state["paquete_1"].get("puerto"),
+        )
+        oleaje, viento = meteo_de_ruta_no_disponible(points_with_eta)
+        return {"weather": oleaje, "wind": viento, "meteo_degradada": True}
 
 
 def fetch_cii_inicial(state: OracleState) -> dict:

@@ -88,6 +88,84 @@ def waypoints_with_eta(
     return result
 
 
+#: Máximo de puntos por los que se consulta meteo. Open-Meteo NO factura por
+#: petición HTTP sino por LOCALIZACIÓN: una petición con 14 waypoints consume
+#: 14 llamadas de cuota, no 1. Con rutas de 14 puntos de media (hasta 63) y dos
+#: APIs, cada alerta costaba ~28 llamadas — suficiente para agotar el free tier
+#: de 10.000/día y devolver 429 a todo el sistema.
+#:
+#: Seis puntos bastan: la integración de Euler conserva los tramos completos de
+#: la derrota, solo toma la meteo del punto muestreado más próximo. Sobre 300
+#: millas eso son muestras cada ~60 millas, escala a la que el estado del mar
+#: no cambia lo bastante como para alterar la velocidad recomendada.
+MAX_PUNTOS_METEO = 6
+
+_CAMPOS_OLEAJE = ("wave_height", "wave_direction", "wave_period")
+_CAMPOS_VIENTO = ("wind_speed_kn", "wind_direction", "wind_gusts_kn")
+
+
+def submuestrear_para_meteo(
+    points_with_eta: list[tuple[float, float, datetime]],
+    maximo: int = MAX_PUNTOS_METEO,
+) -> tuple[list[tuple[float, float, datetime]], list[int]]:
+    """
+    Reduce los puntos por los que se pregunta al proveedor de meteo.
+
+    Devuelve (puntos_muestreados, mapa), donde `mapa[i]` es el índice del
+    punto muestreado cuya meteo le corresponde al waypoint original `i`.
+    Se conservan siempre el primero y el último, que son la posición
+    actual del buque y el puerto.
+    """
+    n = len(points_with_eta)
+    if n <= maximo:
+        return points_with_eta, list(range(n))
+
+    paso = (n - 1) / (maximo - 1)
+    indices = sorted({round(k * paso) for k in range(maximo)})
+    muestreados = [points_with_eta[i] for i in indices]
+    mapa = [min(range(len(indices)), key=lambda k: abs(indices[k] - i)) for i in range(n)]
+    return muestreados, mapa
+
+
+def _expandir(
+    valores: list[dict],
+    mapa: list[int],
+    points_with_eta: list[tuple[float, float, datetime]],
+) -> list[dict]:
+    """
+    Reparte la meteo muestreada sobre todos los waypoints originales.
+
+    Cada waypoint conserva SUS coordenadas y su ETA —son los que viajan al
+    contrato— y toma los valores meteorológicos del punto muestreado más
+    cercano.
+    """
+    salida = []
+    for i, (lon, lat, eta) in enumerate(points_with_eta):
+        registro = dict(valores[mapa[i]])
+        registro.update({"lat": lat, "lon": lon, "eta": eta})
+        salida.append(registro)
+    return salida
+
+
+def meteo_no_disponible(
+    points_with_eta: list[tuple[float, float, datetime]],
+    campos: tuple[str, ...],
+) -> list[dict]:
+    """
+    Serie meteorológica vacía, con la forma y longitud que espera el resto
+    del pipeline pero sin valores.
+
+    Es lo que se usa cuando el proveedor no responde. Los `None` no son un
+    parche: es el mismo valor que ya devuelve Open-Meteo para celdas que su
+    modelo no cubre, y kwon_euler lo interpreta como "sin penalización por
+    meteo" en vez de inventarse un estado del mar.
+    """
+    return [
+        {"lat": lat, "lon": lon, "eta": eta, **{c: None for c in campos}}
+        for lon, lat, eta in points_with_eta
+    ]
+
+
 def marine_weather_at_eta(
     points_with_eta: list[tuple[float, float, datetime]],
 ) -> list[dict]:
@@ -167,3 +245,32 @@ def wind_at_eta(
             "wind_gusts_kn": loc_result.hourly.wind_gusts_10m[idx],
         })
     return output
+
+
+def meteo_de_ruta(
+    points_with_eta: list[tuple[float, float, datetime]],
+) -> tuple[list[dict], list[dict]]:
+    """
+    Oleaje y viento para toda la derrota, submuestreando los puntos por los
+    que se pregunta (ver MAX_PUNTOS_METEO).
+
+    El submuestreo se hace UNA vez y se comparte entre las dos APIs, para
+    que ambas consulten exactamente las mismas localizaciones.
+
+    Propaga cualquier fallo del proveedor: decidir si un 429 degrada o
+    interrumpe el cálculo es del orquestador, no de este módulo.
+    """
+    muestreados, mapa = submuestrear_para_meteo(points_with_eta)
+    oleaje = _expandir(marine_weather_at_eta(muestreados), mapa, points_with_eta)
+    viento = _expandir(wind_at_eta(muestreados), mapa, points_with_eta)
+    return oleaje, viento
+
+
+def meteo_de_ruta_no_disponible(
+    points_with_eta: list[tuple[float, float, datetime]],
+) -> tuple[list[dict], list[dict]]:
+    """Series vacías de oleaje y viento, para el caso degradado."""
+    return (
+        meteo_no_disponible(points_with_eta, _CAMPOS_OLEAJE),
+        meteo_no_disponible(points_with_eta, _CAMPOS_VIENTO),
+    )
