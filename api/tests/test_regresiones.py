@@ -10,9 +10,75 @@ se detectó comprobando el orden de magnitud a mano.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 
-from app.agents.tools import cii_calculus
+from app.agents.tools import cii_calculus, open_meteo
+from app.agents.tools.sea_route import Route
+
+
+def test_fallo_de_meteo_degrada_en_vez_de_interrumpir(monkeypatch, paquete_1):
+    """
+    Regresión del incidente de la cuota de Open-Meteo.
+
+    El proveedor empezó a devolver 429 al agotarse el free tier y, como la
+    meteo se trataba de facto como un prerrequisito, CADA alerta moría: el
+    sistema pasó 13 horas sin publicar una sola recomendación.
+
+    La meteo es una CORRECCIÓN al cálculo, no un requisito. Sin ella la
+    pérdida de Kwon es 0 y la recomendación sigue apoyada en la cola del
+    puerto y la distancia navegable. Este test fija ese comportamiento: un
+    fallo del proveedor no puede propagarse fuera del nodo.
+    """
+    from app.agents import math_oracle
+
+    def _revienta(*_a, **_kw):
+        raise RuntimeError("429 Too Many Requests")
+
+    # Se parchea donde la función SE USA, no donde se define: math_oracle la
+    # importó con `from ... import`, así que tiene su propia referencia y
+    # parchear el módulo de origen no le afectaría.
+    monkeypatch.setattr(math_oracle, "meteo_de_ruta", _revienta)
+    fetch_weather = math_oracle.fetch_weather
+
+    estado = {
+        "paquete_1": paquete_1,
+        "route": Route(distance_nm=325.9, duration_hours=27.9,
+                       waypoints=[(7.13, 42.63), (4.0, 42.0), (2.17, 41.34)]),
+        "speed_knot": 11.7,
+        "departure_time": datetime(2026, 8, 16, 17, 20, tzinfo=timezone.utc),
+    }
+    salida = fetch_weather(estado)
+
+    assert salida["meteo_degradada"] is True
+    # Las series deben conservar la forma que espera kwon_euler: una entrada
+    # por waypoint. Devolver listas vacías rompería la comprobación de
+    # longitudes de construir_tramos y solo movería el fallo de sitio.
+    assert len(salida["weather"]) == len(estado["route"].waypoints)
+    assert len(salida["wind"]) == len(estado["route"].waypoints)
+    assert salida["wind"][0]["wind_speed_kn"] is None
+
+
+def test_submuestreo_conserva_extremos_de_la_derrota():
+    """
+    Open-Meteo factura por localización, no por petición: mandar los 14
+    waypoints de media (hasta 63) de cada ruta agotaba la cuota diaria.
+
+    El submuestreo debe conservar SIEMPRE el primer y el último punto —la
+    posición del buque y el puerto—, que son los extremos de la
+    integración, y no exceder el máximo.
+    """
+    puntos = [(float(i), 40.0 + i, datetime(2026, 9, 1, tzinfo=timezone.utc))
+              for i in range(30)]
+    muestreados, mapa = open_meteo.submuestrear_para_meteo(puntos, maximo=6)
+
+    assert len(muestreados) <= 6
+    assert muestreados[0] == puntos[0]
+    assert muestreados[-1] == puntos[-1]
+    # Cada waypoint original debe tener asignado un punto muestreado válido.
+    assert len(mapa) == len(puntos)
+    assert all(0 <= k < len(muestreados) for k in mapa)
 
 
 def test_cii_por_almirantazgo_da_potencia_realista():
